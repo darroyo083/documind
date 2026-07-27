@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+*.key
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.next/
+*.tsbuildinfo
+
+# Local tooling
+.atl/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-data/
+
+# Uploads (development)
+backend/uploads/
+
+# Logs
+*.log
+
+# Alembic
+backend/alembic/versions/*.pyc
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
