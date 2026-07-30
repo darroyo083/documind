@@ -1,10 +1,12 @@
 import asyncio
 from logging.config import fileConfig
 
+from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 from app.config import settings
+from app.infrastructure import models as _models  # noqa: F401
 from app.infrastructure.database import Base
 
 config = context.config
@@ -32,14 +34,18 @@ def do_run_migrations(connection):
         context.run_migrations()
 
 
-async def run_migrations_online() -> None:
-    connectable = create_async_engine(settings.database_url)
+async def run_async_migrations() -> None:
+    connectable = create_async_engine(settings.database_url, poolclass=pool.NullPool)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()
 
 
+def run_migrations_online() -> None:
+    asyncio.run(run_async_migrations())
+
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    asyncio.run(run_migrations_online())
+    run_migrations_online()

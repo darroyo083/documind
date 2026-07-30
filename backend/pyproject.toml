@@ -42,6 +42,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.ruff.format]
 quote-style = "double"
+exclude = ["alembic/versions/*.py"]
 
 [tool.mypy]
 python_version = "3.12"

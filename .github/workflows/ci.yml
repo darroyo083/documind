@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 jobs:
@@ -38,6 +38,10 @@ jobs:
         run: cd backend && ruff format --check .
       - name: MyPy type check
         run: cd backend && mypy .
+      - name: Verify migrations
+        run: cd backend && python scripts/verify_migrations.py
+        env:
+          DATABASE_URL: postgresql+asyncpg://documind:documind@localhost:5432/documind
       - name: Run tests
         run: cd backend && pytest --cov -v
         env:

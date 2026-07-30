@@ -48,7 +48,7 @@ cd backend
 # Install with dev dependencies
 pip install -e ".[dev]"
 
-# Run tests
+# Run tests (requires PostgreSQL and creates a disposable test database)
 pytest --cov -v
 
 # Format code
@@ -66,6 +66,15 @@ alembic upgrade head
 # Create a migration
 alembic revision --autogenerate -m "description"
 ```
+
+The canonical Docker Compose workflow runs Alembic from the backend container:
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python scripts/verify_migrations.py
+```
+
+See [`docs/migrations.md`](docs/migrations.md) for revision inspection, downgrade, lifecycle verification, and safe local reset commands.
 
 ### Frontend
 
