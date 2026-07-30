@@ -46,6 +46,10 @@ async function request<T>(
     throw new ApiError(response.status, data.detail || "Unknown error");
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json();
 }
 
@@ -95,4 +99,55 @@ export function login(data: LoginRequest): Promise<TokenResponse> {
 
 export function me(): Promise<UserResponse> {
   return request<UserResponse>("/auth/me");
+}
+
+/* Knowledge Spaces */
+
+export interface SpaceResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSpaceRequest {
+  name: string;
+  description?: string | null;
+}
+
+export interface UpdateSpaceRequest {
+  name?: string;
+  description?: string | null;
+}
+
+export function createSpace(data: CreateSpaceRequest): Promise<SpaceResponse> {
+  return request<SpaceResponse>("/knowledge-spaces", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function listSpaces(): Promise<SpaceResponse[]> {
+  return request<SpaceResponse[]>("/knowledge-spaces");
+}
+
+export function getSpace(id: string): Promise<SpaceResponse> {
+  return request<SpaceResponse>(`/knowledge-spaces/${id}`);
+}
+
+export function updateSpace(
+  id: string,
+  data: UpdateSpaceRequest
+): Promise<SpaceResponse> {
+  return request<SpaceResponse>(`/knowledge-spaces/${id}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
+export function deleteSpace(id: string): Promise<void> {
+  return request<void>(`/knowledge-spaces/${id}`, {
+    method: "DELETE",
+  });
 }
