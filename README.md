@@ -106,20 +106,49 @@ Key environment variables (see `.env.example`):
 | `DATABASE_URL` | PostgreSQL connection string (async) | `postgresql+asyncpg://...` |
 | `SECRET_KEY` | JWT signing secret | `change-me-in-production` |
 | `GENERATION_PROVIDER` | Generation provider (`deepseek`, `mock`) | `mock` |
-| `EMBEDDING_PROVIDER` | Embedding provider (`local`, `mock`) | `mock` |
+| `DEEPSEEK_API_KEY` | DeepSeek API key; required when generation uses DeepSeek | empty |
+| `DEEPSEEK_MODEL` | DeepSeek chat model | `deepseek-chat` |
+| `EMBEDDING_PROVIDER` | Embedding provider (`local`, `mock`) | `local` |
+| `EMBEDDING_MODEL` | Local embedding model | `BAAI/bge-small-en-v1.5` |
+| `EMBEDDING_DIMENSION` | Local embedding vector dimension | `384` |
+| `CHUNK_SIZE` | Target chunk size in characters | `800` |
+| `CHUNK_OVERLAP` | Chunk overlap in characters | `120` |
 | `MAX_UPLOAD_SIZE_MB` | Maximum file upload size | `10` |
+| `UPLOAD_DIR` | Private local PDF storage directory | `uploads` |
+| `DEFAULT_TOP_K` | Default number of retrieved chunks | `5` |
+| `RETRIEVAL_MAX_TOP_K` | Maximum allowed `top_k` | `10` |
+| `DEFAULT_SIMILARITY_THRESHOLD` | Minimum cosine similarity for retrieved chunks | `0.2` |
+
+## Development defaults and mock behavior
+
+The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
+AI model: the deterministic mock echoes the top retrieved chunk verbatim as the answer and
+cites that single chunk. This makes the retrieval, grounding, and citation pipeline testable
+without an API key, but the text shown is raw document content, not a generated answer.
+Set `GENERATION_PROVIDER=deepseek` and `DEEPSEEK_API_KEY` to enable real grounded answers.
+The embedding pipeline defaults to the real local model (`EMBEDDING_PROVIDER=local`), which is
+downloaded to the FastEmbed cache on first use.
+
+## Known limitations (v0.1)
+
+- Text-based PDFs only. OCR is not implemented; scanned or image-only PDFs are rejected as failed.
+- Ingestion is synchronous: uploads block until extraction, chunking, and embedding complete.
+- Background workers, chat history, and evaluation tooling are not implemented.
+- The local embedding model `BAAI/bge-small-en-v1.5` is optimized for English text. Quality on
+  other languages is not guaranteed; a multilingual model comparison is a later milestone.
+- Local disk storage is for development. Object storage and lifecycle policies are out of scope
+  for v0.1.
 
 ## v0.1 Scope
 
 - User authentication and resource-level authorization
 - Isolated knowledge spaces
-- PDF, Markdown, and TXT upload and processing
+- Text-based PDF upload and processing
 - Text extraction and fixed-size chunking
 - Local embeddings and pgvector storage
 - Semantic retrieval with configurable top-k and similarity threshold
 - DeepSeek generation (or mock provider for testing)
-- RAG pipeline with citations and insufficient-context detection
-- Conversation history
+- RAG pipeline with page-level citations and insufficient-context detection
 - Docker Compose development environment
 - CI with linting, type checking, and tests
 
