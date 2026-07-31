@@ -41,10 +41,23 @@ _assert_safe_database_server()
 _assert_disposable_database_name(test_database_name)
 test_database_url = source_database_url.set(database=test_database_name)
 os.environ["DATABASE_URL"] = test_database_url.render_as_string(hide_password=False)
+os.environ["DEFAULT_SIMILARITY_THRESHOLD"] = "0.2"
+os.environ["EMBEDDING_PROVIDER"] = "mock"
+os.environ["GENERATION_PROVIDER"] = "mock"
 
+from app.application.dependencies import (  # noqa: E402
+    get_answer_provider,
+    get_document_storage,
+    get_embedding_provider,
+)
 from app.config import settings  # noqa: E402
 from app.infrastructure.database import Base, get_db  # noqa: E402
 from app.infrastructure.database import engine as application_engine  # noqa: E402
+from app.infrastructure.providers import (  # noqa: E402
+    DeterministicAnswerProvider,
+    DeterministicEmbeddingProvider,
+)
+from app.infrastructure.storage import LocalDocumentStorage  # noqa: E402
 from app.main import app  # noqa: E402
 
 if make_url(settings.database_url) != test_database_url:
@@ -109,11 +122,18 @@ async def db_session(test_engine):
 
 
 @pytest.fixture
-async def async_client(db_session):
+async def async_client(db_session, tmp_path):
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_document_storage] = lambda: LocalDocumentStorage(
+        tmp_path / "uploads"
+    )
+    app.dependency_overrides[get_embedding_provider] = lambda: DeterministicEmbeddingProvider(
+        settings.embedding_dimension
+    )
+    app.dependency_overrides[get_answer_provider] = DeterministicAnswerProvider
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client

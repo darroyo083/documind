@@ -16,8 +16,14 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import settings  # noqa: E402
 
-EXPECTED_TABLES = {"alembic_version", "knowledge_spaces", "users"}
-EXPECTED_HEAD = "003"
+EXPECTED_TABLES = {
+    "alembic_version",
+    "document_chunks",
+    "documents",
+    "knowledge_spaces",
+    "users",
+}
+EXPECTED_HEAD = "004"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -129,11 +135,18 @@ async def verify_head_schema(database_url: URL) -> None:
     constraints = await scalar_rows(
         database_url,
         "SELECT constraint_name FROM information_schema.table_constraints "
-        "WHERE table_schema = 'public' AND table_name IN ('users', 'knowledge_spaces')",
+        "WHERE table_schema = 'public' "
+        "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks')",
     )
     required_constraints = {
         "knowledge_spaces_pkey",
         "knowledge_spaces_user_id_fkey",
+        "documents_pkey",
+        "documents_knowledge_space_id_fkey",
+        "documents_storage_key_key",
+        "document_chunks_pkey",
+        "document_chunks_document_id_fkey",
+        "uq_document_chunks_position",
         "users_email_key",
         "users_pkey",
     }
@@ -144,7 +157,9 @@ async def verify_head_schema(database_url: URL) -> None:
     delete_action = await scalar_rows(
         database_url,
         "SELECT delete_rule FROM information_schema.referential_constraints "
-        "WHERE constraint_name = 'knowledge_spaces_user_id_fkey'",
+        "WHERE constraint_name IN ("
+        "'knowledge_spaces_user_id_fkey', 'documents_knowledge_space_id_fkey', "
+        "'document_chunks_document_id_fkey')",
     )
     if delete_action != {"CASCADE"}:
         raise RuntimeError(f"Unexpected FK delete action: {sorted(delete_action)}")
@@ -156,6 +171,12 @@ async def verify_head_schema(database_url: URL) -> None:
     required_indexes = {
         "ix_knowledge_spaces_user_id",
         "ix_users_email",
+        "ix_documents_knowledge_space_id",
+        "ix_document_chunks_document_id",
+        "documents_storage_key_key",
+        "documents_pkey",
+        "document_chunks_pkey",
+        "uq_document_chunks_position",
         "knowledge_spaces_pkey",
         "users_email_key",
         "users_pkey",
@@ -168,7 +189,7 @@ async def verify_head_schema(database_url: URL) -> None:
         database_url,
         "SELECT table_name || '.' || column_name, data_type || ':' || is_nullable "
         "FROM information_schema.columns WHERE table_schema = 'public' "
-        "AND table_name IN ('users', 'knowledge_spaces')",
+        "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks')",
     )
     required_columns = {
         "knowledge_spaces.id": "uuid:NO",
@@ -178,6 +199,14 @@ async def verify_head_schema(database_url: URL) -> None:
         "users.hashed_password": "character varying:NO",
         "users.id": "uuid:NO",
         "users.is_active": "boolean:NO",
+        "documents.id": "uuid:NO",
+        "documents.knowledge_space_id": "uuid:NO",
+        "documents.file_size": "bigint:NO",
+        "documents.page_count": "integer:YES",
+        "document_chunks.id": "uuid:NO",
+        "document_chunks.document_id": "uuid:NO",
+        "document_chunks.page_number": "integer:NO",
+        "document_chunks.embedding": "USER-DEFINED:NO",
     }
     for column, expected in required_columns.items():
         if column_types.get(column) != expected:
@@ -195,6 +224,10 @@ async def verify_head_schema(database_url: URL) -> None:
         "users.created_at": "now()",
         "users.is_active": "true",
         "users.updated_at": "now()",
+        "documents.created_at": "now()",
+        "documents.status": "'processing'::character varying",
+        "documents.updated_at": "now()",
+        "document_chunks.created_at": "now()",
     }
     for column, expected in expected_defaults.items():
         if defaults.get(column) != expected:
@@ -207,12 +240,22 @@ async def verify_head_schema(database_url: URL) -> None:
     if extensions != {"vector"}:
         raise RuntimeError("pgvector extension is not installed")
 
+    vector_type = await scalar_rows(
+        database_url,
+        "SELECT format_type(a.atttypid, a.atttypmod) "
+        "FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid "
+        "WHERE c.relname = 'document_chunks' AND a.attname = 'embedding'",
+    )
+    if vector_type != {"vector(384)"}:
+        raise RuntimeError(f"Unexpected embedding type: {sorted(vector_type)}")
+
 
 async def verify_base_schema(database_url: URL) -> None:
     tables = await scalar_rows(
         database_url,
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema = 'public' AND table_name IN ('users', 'knowledge_spaces')",
+        "WHERE table_schema = 'public' "
+        "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks')",
     )
     if tables:
         raise RuntimeError(f"Application tables remain at base: {sorted(tables)}")

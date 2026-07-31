@@ -13,17 +13,25 @@ class Settings(BaseSettings):
 
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 10
+    chunk_size: int = 800
+    chunk_overlap: int = 120
 
     generation_provider: str = "mock"
     generation_model: str = "mock-model"
     deepseek_api_key: str = ""
     deepseek_model: str = "deepseek-chat"
 
-    embedding_provider: str = "mock"
-    embedding_model: str = "mock-model"
+    embedding_provider: str = "local"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimension: int = 384
+
+    deepseek_base_url: str = "https://api.deepseek.com"
+    provider_timeout_seconds: float = 30.0
 
     default_top_k: int = 5
-    default_similarity_threshold: float = 0.5
+    retrieval_max_top_k: int = 10
+    default_similarity_threshold: float = 0.2
+    max_question_length: int = 1000
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

@@ -22,6 +22,11 @@ frontend/.next/
 
 # Local tooling
 .atl/
+.playwright-mcp/
+
+# Caches
+.mypy_cache/
+.ruff_cache/
 
 # IDE
 .idea/

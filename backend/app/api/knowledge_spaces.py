@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.dependencies import get_document_storage
 from app.auth import get_current_user
+from app.domain.rag import DocumentStorage
 from app.infrastructure.database import get_db
-from app.infrastructure.models import KnowledgeSpace, User
+from app.infrastructure.models import Document, KnowledgeSpace, User
 from app.schemas.knowledge_space import (
     CreateSpaceRequest,
     SpaceResponse,
@@ -96,7 +98,13 @@ async def delete_space(
     space_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    storage: DocumentStorage = Depends(get_document_storage),
 ):
     space = await _get_owned_space(space_id, current_user.id, db)
+    result = await db.execute(
+        select(Document.storage_key).where(Document.knowledge_space_id == space.id)
+    )
+    for storage_key in result.scalars():
+        await storage.delete(storage_key)
     await db.delete(space)
     await db.commit()
