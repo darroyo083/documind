@@ -2,7 +2,7 @@ const API_BASE = "/api";
 
 interface RequestOptions {
   method?: string;
-  body?: unknown;
+  body?: unknown | FormData;
   headers?: Record<string, string>;
 }
 
@@ -25,20 +25,25 @@ async function request<T>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
+  const isFormData = options.body instanceof FormData;
+  const headers: Record<string, string> = { ...options.headers };
+  if (!isFormData) headers["Content-Type"] = "application/json";
 
   const token = getToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const body: BodyInit | undefined = options.body
+    ? isFormData
+      ? (options.body as FormData)
+      : JSON.stringify(options.body)
+    : undefined;
+
   const response = await fetch(`${API_BASE}${path}`, {
     method: options.method || "GET",
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body,
   });
 
   if (!response.ok) {
@@ -149,5 +154,73 @@ export function updateSpace(
 export function deleteSpace(id: string): Promise<void> {
   return request<void>(`/knowledge-spaces/${id}`, {
     method: "DELETE",
+  });
+}
+
+/* Documents and grounded answers */
+
+export interface DocumentResponse {
+  id: string;
+  original_filename: string;
+  media_type: string;
+  file_size: number;
+  page_count: number | null;
+  status: "processing" | "ready" | "failed";
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CitationResponse {
+  source_id: string;
+  document_id: string;
+  document_name: string;
+  page_number: number;
+  chunk_id: string;
+  excerpt: string;
+  score: number;
+}
+
+export interface AnswerResponse {
+  answer: string;
+  supported: boolean;
+  citations: CitationResponse[];
+  embedding_model: string;
+  answer_model: string;
+}
+
+export function uploadDocument(
+  spaceId: string,
+  file: File
+): Promise<DocumentResponse> {
+  const body = new FormData();
+  body.append("file", file);
+  return request<DocumentResponse>(`/knowledge-spaces/${spaceId}/documents`, {
+    method: "POST",
+    body,
+  });
+}
+
+export function listDocuments(spaceId: string): Promise<DocumentResponse[]> {
+  return request<DocumentResponse[]>(`/knowledge-spaces/${spaceId}/documents`);
+}
+
+export function deleteDocument(
+  spaceId: string,
+  documentId: string
+): Promise<void> {
+  return request<void>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}`,
+    { method: "DELETE" }
+  );
+}
+
+export function askDocuments(
+  spaceId: string,
+  question: string
+): Promise<AnswerResponse> {
+  return request<AnswerResponse>(`/knowledge-spaces/${spaceId}/ask`, {
+    method: "POST",
+    body: { question },
   });
 }
