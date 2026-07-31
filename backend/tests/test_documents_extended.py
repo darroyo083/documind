@@ -57,11 +57,13 @@ async def upload_pdf(
 
 
 async def chunk_count_for(db_session: AsyncSession, document_id: str) -> int:
-    return await db_session.scalar(
+    count = await db_session.scalar(
         select(func.count())
         .select_from(DocumentChunk)
         .where(DocumentChunk.document_id == uuid.UUID(document_id))
     )
+    assert count is not None
+    return count
 
 
 @pytest.mark.asyncio
