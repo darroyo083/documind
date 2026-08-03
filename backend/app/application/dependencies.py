@@ -1,8 +1,13 @@
 from functools import lru_cache
 
 from app.config import settings
+from app.domain.analysis import DocumentAnalysisProvider
 from app.domain.errors import ProviderError
 from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider
+from app.infrastructure.analysis_providers import (
+    DeepSeekDocumentAnalysisProvider,
+    DeterministicAnalysisProvider,
+)
 from app.infrastructure.providers import (
     DeepSeekAnswerProvider,
     DeterministicAnswerProvider,
@@ -38,3 +43,17 @@ def get_answer_provider() -> AnswerProvider:
             timeout_seconds=settings.provider_timeout_seconds,
         )
     raise ProviderError("Unsupported answer provider configuration")
+
+
+@lru_cache
+def get_analysis_provider() -> DocumentAnalysisProvider:
+    if settings.analysis_provider == "mock":
+        return DeterministicAnalysisProvider()
+    if settings.analysis_provider == "deepseek":
+        return DeepSeekDocumentAnalysisProvider(
+            api_key=settings.deepseek_api_key,
+            model_name=settings.analysis_model,
+            base_url=settings.deepseek_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    raise ProviderError("Unsupported document analysis provider configuration")
