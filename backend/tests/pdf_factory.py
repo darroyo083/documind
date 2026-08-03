@@ -1,14 +1,36 @@
 def text_pdf(text: str) -> bytes:
-    escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-    stream = f"BT /F1 12 Tf 72 720 Td ({escaped}) Tj ET".encode()
+    return page_pdf([text])
+
+
+def page_pdf(pages: list[str]) -> bytes:
+    if not pages:
+        raise ValueError("At least one page is required")
+    page_objects: list[bytes] = []
+    font_index = 3 + 2 * len(pages)
+    for text in pages:
+        escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        stream = f"BT /F1 12 Tf 72 720 Td ({escaped}) Tj ET".encode()
+        page_objects.append(
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Resources << /Font << /F1 "
+            + str(font_index).encode()
+            + b" 0 R >> >> /Contents "
+            + str(len(page_objects) + 4).encode()
+            + b" 0 R >>"
+        )
+        page_objects.append(
+            b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream"
+        )
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
         (
-            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-            b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>"
+            b"<< /Type /Pages /Kids ["
+            + b" ".join(f"{index} 0 R".encode() for index in range(3, 3 + 2 * len(pages), 2))
+            + b"] /Count "
+            + str(len(pages)).encode()
+            + b" >>"
         ),
-        b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
+        *page_objects,
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     ]
     document = bytearray(b"%PDF-1.4\n")
