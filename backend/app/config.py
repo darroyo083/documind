@@ -21,6 +21,17 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     deepseek_model: str = "deepseek-chat"
 
+    analysis_provider: str = "mock"
+    analysis_model: str = "deepseek-chat"
+    analysis_max_context_chars: int = 120000
+    analysis_max_important_dates: int = 10
+    analysis_max_key_facts: int = 20
+    analysis_max_label_length: int = 100
+    analysis_max_value_length: int = 500
+    analysis_max_summary_length: int = 2000
+    analysis_max_sources_per_item: int = 8
+    analysis_excerpt_chars: int = 2000
+
     embedding_provider: str = "local"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimension: int = 384

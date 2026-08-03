@@ -12,3 +12,27 @@ class TextExtractionError(DocumentError):
 
 class ProviderError(Exception):
     pass
+
+
+class AnalysisError(Exception):
+    pass
+
+
+class AnalysisNotFoundError(AnalysisError):
+    pass
+
+
+class AnalysisConflictError(AnalysisError):
+    pass
+
+
+class AnalysisStateError(AnalysisError):
+    pass
+
+
+class AnalysisContextTooLargeError(AnalysisError):
+    pass
+
+
+class AnalysisValidationError(AnalysisError):
+    pass
