@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -18,6 +19,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database import Base
+
+if TYPE_CHECKING:
+    from app.infrastructure.models.document_analysis import DocumentAnalysis
 
 
 class DocumentStatus(StrEnum):
@@ -63,6 +67,12 @@ class Document(Base):
 
     chunks: Mapped[list["DocumentChunk"]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
+    )
+
+    analysis: Mapped["DocumentAnalysis | None"] = relationship(
+        back_populates="document",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
 
