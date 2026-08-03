@@ -4,9 +4,10 @@ interface RequestOptions {
   method?: string;
   body?: unknown | FormData;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
 }
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
   detail: string;
 
@@ -44,6 +45,7 @@ async function request<T>(
     method: options.method || "GET",
     headers,
     body,
+    signal: options.signal,
   });
 
   if (!response.ok) {
@@ -223,4 +225,61 @@ export function askDocuments(
     method: "POST",
     body: { question },
   });
+}
+
+/* Structured document analysis */
+
+export interface AnalysisSource {
+  chunk_id: string;
+  page_number: number;
+  excerpt: string;
+}
+
+export interface AnalysisImportantDate {
+  label: string;
+  value: string;
+  normalized_date: string | null;
+  sources: AnalysisSource[];
+}
+
+export interface AnalysisKeyFact {
+  label: string;
+  value: string;
+  sources: AnalysisSource[];
+}
+
+export interface DocumentAnalysis {
+  id: string;
+  document_id: string;
+  status: "processing" | "ready" | "failed";
+  document_type: string;
+  normalized_title: string;
+  summary: string;
+  important_dates: AnalysisImportantDate[];
+  key_facts: AnalysisKeyFact[];
+  provider: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function getDocumentAnalysis(
+  spaceId: string,
+  documentId: string,
+  signal?: AbortSignal
+): Promise<DocumentAnalysis> {
+  return request<DocumentAnalysis>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/analysis`,
+    { signal }
+  );
+}
+
+export function analyzeDocument(
+  spaceId: string,
+  documentId: string
+): Promise<DocumentAnalysis> {
+  return request<DocumentAnalysis>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/analysis`,
+    { method: "POST" }
+  );
 }
