@@ -118,6 +118,72 @@ Key environment variables (see `.env.example`):
 | `DEFAULT_TOP_K` | Default number of retrieved chunks | `5` |
 | `RETRIEVAL_MAX_TOP_K` | Maximum allowed `top_k` | `10` |
 | `DEFAULT_SIMILARITY_THRESHOLD` | Minimum cosine similarity for retrieved chunks | `0.2` |
+| `ANALYSIS_PROVIDER` | Structured analysis provider (`deepseek`, `mock`) | `mock` |
+| `ANALYSIS_MODEL` | DeepSeek model used for structured analysis | `deepseek-chat` |
+| `ANALYSIS_MAX_CONTEXT_CHARS` | Max document characters sent to analysis | `120000` |
+| `ANALYSIS_MAX_IMPORTANT_DATES` | Max important dates per analysis | `10` |
+| `ANALYSIS_MAX_KEY_FACTS` | Max key facts per analysis | `20` |
+
+## Structured Document Intelligence (PoC 2.1)
+
+Beyond question answering, DocuMind can answer *"what kind of document is this, what
+are its most important facts and dates, and where did each fact come from?"*.
+
+For a ready, text-based PDF, call:
+
+```text
+POST /knowledge-spaces/{space_id}/documents/{document_id}/analysis
+GET  /knowledge-spaces/{space_id}/documents/{document_id}/analysis
+```
+
+The result is persisted per document and contains:
+
+- `document_type` — one of `contract`, `invoice`, `insurance_policy`,
+  `bank_statement`, `tax_document`, `employment_document`, `housing_document`,
+  `pension_document`, `official_letter`, `receipt`, `report`, `other`, `unknown`.
+- `normalized_title` — the title as written in the document.
+- `summary` — one concise sentence grounded in the document.
+- `important_dates` — labeled dates with a `normalized_date` (`YYYY-MM-DD`) only
+  when the document expresses an exact, unambiguous date. Partial dates
+  (e.g. "January 2027") or relative dates (e.g. "within 30 days") stay `null`.
+- `key_facts` — labeled, short facts.
+- `sources` on every date and fact — server-constructed citation metadata
+  (`chunk_id`, `page_number`, `excerpt`) resolved from the document's stored
+  chunks. The model can never supply page numbers or chunk metadata; every
+  `chunk:<id>` reference is validated against the authenticated user's own
+  document chunks, and any unknown or cross-document reference fails the
+  analysis instead of being trusted. This is source-validated structured
+  extraction: validation proves the cited references exist in the analyzed
+  document and that page numbers and excerpts are server-derived; it does NOT
+  independently prove semantic entailment between an extracted value and its
+  cited excerpt.
+
+### Provider behavior
+
+- Default `ANALYSIS_PROVIDER=mock` is for local development and tests only. It is a
+  deterministic keyword/pattern extractor: it is NOT real AI extraction and its
+  output must not be mistaken for intelligent classification.
+- Set `ANALYSIS_PROVIDER=deepseek` together with `DEEPSEEK_API_KEY` to use the
+  DeepSeek structured-analysis adapter. It reuses `DEEPSEEK_API_KEY`,
+  `DEEPSEEK_BASE_URL` and the provider timeout; no additional API key is needed.
+- Analysis runs synchronously in the request. A document has at most one current
+  analysis: an existing ready analysis is returned idempotently, an in-progress
+  analysis returns `409`, and a failed analysis can be retried. There is no
+  re-analysis or version history in this PoC.
+- Analysis is limited to the document's persisted text chunks; documents whose
+  full content exceeds `ANALYSIS_MAX_CONTEXT_CHARS` are rejected with a clear
+  error rather than silently truncated.
+
+### Limitations (PoC 2.1)
+
+- Text-based PDFs only; OCR is not implemented.
+- No frontend for structured analysis yet (PoC 2.2).
+- Date normalization never invents missing day/month/year components.
+- Structured results are grounded in stored chunks, not external knowledge.
+- If the backend process terminates after an analysis is marked `processing`
+  but before it becomes `ready`/`failed`, the analysis row can remain
+  `processing` indefinitely; later POSTs return `409` until the row is cleared.
+  PoC 2.1 has no recovery, workers, leases, or timeouts for this case.
 
 ## Development defaults and mock behavior
 
@@ -149,6 +215,8 @@ downloaded to the FastEmbed cache on first use.
 - Semantic retrieval with configurable top-k and similarity threshold
 - DeepSeek generation (or mock provider for testing)
 - RAG pipeline with page-level citations and insufficient-context detection
+- Structured Document Intelligence: document type, title, summary, important
+  dates, key facts, and server-validated citations (mock or DeepSeek provider)
 - Docker Compose development environment
 - CI with linting, type checking, and tests
 
