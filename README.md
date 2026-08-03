@@ -185,6 +185,27 @@ The result is persisted per document and contains:
   `processing` indefinitely; later POSTs return `409` until the row is cleared.
   PoC 2.1 has no recovery, workers, leases, or timeouts for this case.
 
+### Structured analysis UI (PoC 2.2)
+
+The frontend now exposes structured analysis inside each knowledge space.
+Selecting a document shows an **Overview** section (structured summary,
+important dates, key facts, and expandable source evidence with page numbers
+and excerpts) alongside the existing **Ask** flow.
+
+- Analysis must be explicitly triggered with the "Analyze document" action; it
+  is only available for ready documents.
+- The mock analysis provider is the default in development; a subtle
+  "Development analysis" label is shown when the result comes from the mock so
+  it is not mistaken for production AI extraction.
+- In development the mock provider is deterministic pattern extraction, not
+  real AI classification.
+- No OCR; text-based PDFs only. Analysis runs synchronously; there is no
+  stale-processing recovery, so a document stuck in `processing` requires the
+  row to be cleared manually.
+- Structured analysis validates source references and server-derived citation
+  metadata; it is not a semantic proof that every extracted statement is
+  logically entailed by the cited excerpt.
+
 ## Development defaults and mock behavior
 
 The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
