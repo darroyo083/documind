@@ -2,6 +2,7 @@ from app.infrastructure.models.document import Document, DocumentChunk, Document
 from app.infrastructure.models.document_actions import DocumentAction, DocumentActionSet
 from app.infrastructure.models.document_analysis import DocumentAnalysis, DocumentAnalysisStatus
 from app.infrastructure.models.knowledge_space import KnowledgeSpace
+from app.infrastructure.models.reference import ReferenceDocument, ReferenceDocumentChunk
 from app.infrastructure.models.user import User
 
 __all__ = [
@@ -13,5 +14,7 @@ __all__ = [
     "DocumentChunk",
     "DocumentStatus",
     "KnowledgeSpace",
+    "ReferenceDocument",
+    "ReferenceDocumentChunk",
     "User",
 ]

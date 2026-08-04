@@ -24,9 +24,11 @@ EXPECTED_TABLES = {
     "document_chunks",
     "documents",
     "knowledge_spaces",
+    "reference_document_chunks",
+    "reference_documents",
     "users",
 }
-EXPECTED_HEAD = "006"
+EXPECTED_HEAD = "007"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -140,7 +142,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "SELECT constraint_name FROM information_schema.table_constraints "
         "WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
-        "'document_analyses', 'document_action_sets', 'document_actions')",
+        "'document_analyses', 'document_action_sets', 'document_actions', "
+        "'reference_documents', 'reference_document_chunks')",
     )
     required_constraints = {
         "knowledge_spaces_pkey",
@@ -160,6 +163,11 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions_pkey",
         "document_actions_action_set_id_fkey",
         "uq_document_actions_position",
+        "reference_documents_pkey",
+        "reference_documents_content_sha256_key",
+        "reference_document_chunks_pkey",
+        "reference_document_chunks_reference_document_id_fkey",
+        "uq_reference_document_chunks_position",
         "users_email_key",
         "users_pkey",
     }
@@ -173,7 +181,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "WHERE constraint_name IN ("
         "'knowledge_spaces_user_id_fkey', 'documents_knowledge_space_id_fkey', "
         "'document_chunks_document_id_fkey', 'document_analyses_document_id_fkey', "
-        "'document_action_sets_document_id_fkey', 'document_actions_action_set_id_fkey')",
+        "'document_action_sets_document_id_fkey', 'document_actions_action_set_id_fkey', "
+        "'reference_document_chunks_reference_document_id_fkey')",
     )
     if delete_action != {"CASCADE"}:
         raise RuntimeError(f"Unexpected FK delete action: {sorted(delete_action)}")
@@ -190,16 +199,21 @@ async def verify_head_schema(database_url: URL) -> None:
         "ix_document_analyses_document_id",
         "ix_document_action_sets_document_id",
         "ix_document_actions_action_set_id",
+        "ix_reference_document_chunks_reference_document_id",
         "documents_storage_key_key",
         "documents_pkey",
         "document_chunks_pkey",
         "document_analyses_pkey",
         "document_action_sets_pkey",
         "document_actions_pkey",
+        "reference_documents_pkey",
+        "reference_documents_content_sha256_key",
+        "reference_document_chunks_pkey",
         "uq_document_chunks_position",
         "uq_document_analyses_document_id",
         "uq_document_action_sets_document_id",
         "uq_document_actions_position",
+        "uq_reference_document_chunks_position",
         "knowledge_spaces_pkey",
         "users_email_key",
         "users_pkey",
@@ -213,7 +227,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "SELECT table_name || '.' || column_name, data_type || ':' || is_nullable "
         "FROM information_schema.columns WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
-        "'document_analyses', 'document_action_sets', 'document_actions')",
+        "'document_analyses', 'document_action_sets', 'document_actions', "
+        "'reference_documents', 'reference_document_chunks')",
     )
     required_columns = {
         "knowledge_spaces.id": "uuid:NO",
@@ -251,6 +266,17 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions.status": "character varying:NO",
         "document_actions.sources": "jsonb:NO",
         "document_actions.completed_at": "timestamp with time zone:YES",
+        "reference_documents.id": "uuid:NO",
+        "reference_documents.title": "character varying:NO",
+        "reference_documents.original_filename": "character varying:NO",
+        "reference_documents.status": "character varying:NO",
+        "reference_documents.content_sha256": "character varying:NO",
+        "reference_documents.page_count": "integer:YES",
+        "reference_document_chunks.id": "uuid:NO",
+        "reference_document_chunks.reference_document_id": "uuid:NO",
+        "reference_document_chunks.page_number": "integer:NO",
+        "reference_document_chunks.chunk_index": "integer:NO",
+        "reference_document_chunks.embedding": "USER-DEFINED:NO",
     }
     for column, expected in required_columns.items():
         if column_types.get(column) != expected:
@@ -285,6 +311,10 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions.status": "'pending'::character varying",
         "document_actions.updated_at": "now()",
         "document_actions.sources": "'[]'::jsonb",
+        "reference_documents.created_at": "now()",
+        "reference_documents.status": "'ready'::character varying",
+        "reference_documents.updated_at": "now()",
+        "reference_document_chunks.created_at": "now()",
     }
     for column, expected in expected_defaults.items():
         if defaults.get(column) != expected:
