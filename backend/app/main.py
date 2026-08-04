@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.actions import router as actions_router
 from app.api.analysis import router as analysis_router
 from app.api.auth import router as auth_router
 from app.api.documents import router as documents_router
@@ -40,3 +41,4 @@ app.include_router(auth_router)
 app.include_router(knowledge_spaces_router)
 app.include_router(documents_router)
 app.include_router(analysis_router)
+app.include_router(actions_router)
