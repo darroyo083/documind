@@ -5,8 +5,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.domain.errors import ProviderError
-from app.domain.rag import AnswerProvider, EmbeddingProvider, RetrievedChunk
-from app.infrastructure.models import Document, DocumentChunk, DocumentStatus, KnowledgeSpace
+from app.domain.rag import (
+    AnswerProvider,
+    EmbeddingProvider,
+    KnowledgeScope,
+    RetrievedChunk,
+    SourceKind,
+)
+from app.infrastructure.models import (
+    Document,
+    DocumentChunk,
+    DocumentStatus,
+    KnowledgeSpace,
+    ReferenceDocument,
+    ReferenceDocumentChunk,
+)
 from app.schemas.document import AnswerResponse, CitationResponse, SearchResponse
 
 
@@ -17,18 +30,13 @@ def resolve_top_k(requested: int | None) -> int:
     return top_k
 
 
-async def retrieve_chunks(
+async def _retrieve_private(
     db: AsyncSession,
     space_id: uuid.UUID,
     user_id: uuid.UUID,
-    query: str,
+    query_embedding: list[float],
     top_k: int,
-    embedding_provider: EmbeddingProvider,
 ) -> list[RetrievedChunk]:
-    query_embedding = await embedding_provider.embed_query(query)
-    if len(query_embedding) != settings.embedding_dimension:
-        raise ProviderError("Embedding provider returned an invalid vector shape")
-
     distance = DocumentChunk.embedding.cosine_distance(query_embedding)
     result = await db.execute(
         select(DocumentChunk, Document, (1 - distance).label("score"))
@@ -40,27 +48,116 @@ async def retrieve_chunks(
             Document.status == DocumentStatus.READY.value,
             distance <= 1 - settings.default_similarity_threshold,
         )
-        .order_by(distance)
+        .order_by(distance, DocumentChunk.chunk_index)
         .limit(top_k)
     )
     return [
         RetrievedChunk(
-            source_id=f"chunk:{chunk.id}",
+            source_id=f"private:{chunk.id}",
+            source_kind=SourceKind.PRIVATE.value,
             document_id=str(document.id),
             document_name=document.original_filename,
             page_number=chunk.page_number,
             chunk_id=str(chunk.id),
             content=chunk.content,
             score=float(score),
+            chunk_index=chunk.chunk_index,
         )
         for chunk, document, score in result.all()
     ]
 
 
+async def _retrieve_reference(
+    db: AsyncSession,
+    query_embedding: list[float],
+    top_k: int,
+) -> list[RetrievedChunk]:
+    distance = ReferenceDocumentChunk.embedding.cosine_distance(query_embedding)
+    result = await db.execute(
+        select(ReferenceDocumentChunk, ReferenceDocument, (1 - distance).label("score"))
+        .join(
+            ReferenceDocument,
+            ReferenceDocumentChunk.reference_document_id == ReferenceDocument.id,
+        )
+        .where(
+            ReferenceDocument.status == "ready",
+            distance <= 1 - settings.default_similarity_threshold,
+        )
+        .order_by(distance, ReferenceDocumentChunk.chunk_index)
+        .limit(top_k)
+    )
+    return [
+        RetrievedChunk(
+            source_id=f"reference:{chunk.id}",
+            source_kind=SourceKind.REFERENCE.value,
+            document_id=str(reference_document.id),
+            document_name=reference_document.title,
+            page_number=chunk.page_number,
+            chunk_id=str(chunk.id),
+            content=chunk.content,
+            score=float(score),
+            chunk_index=chunk.chunk_index,
+        )
+        for chunk, reference_document, score in result.all()
+    ]
+
+
+def _merge_candidates(
+    private_candidates: list[RetrievedChunk],
+    reference_candidates: list[RetrievedChunk],
+    top_k: int,
+) -> list[RetrievedChunk]:
+    """Merge private + reference candidates, sort globally by score, apply global top_k.
+
+    Tie-breaking is deterministic: score descending, then source kind, document id,
+    page number, chunk index. No score boosts or reranking are applied.
+    """
+    combined = [*private_candidates, *reference_candidates]
+    combined.sort(
+        key=lambda candidate: (
+            -candidate.score,
+            candidate.source_kind,
+            candidate.document_id,
+            candidate.page_number,
+            candidate.chunk_index,
+            candidate.chunk_id,
+        )
+    )
+    return combined[:top_k]
+
+
+async def retrieve_chunks(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    user_id: uuid.UUID,
+    query: str,
+    top_k: int,
+    embedding_provider: EmbeddingProvider,
+    scope: KnowledgeScope = KnowledgeScope.PRIVATE,
+) -> list[RetrievedChunk]:
+    query_embedding = await embedding_provider.embed_query(query)
+    if len(query_embedding) != settings.embedding_dimension:
+        raise ProviderError("Embedding provider returned an invalid vector shape")
+
+    if scope == KnowledgeScope.PRIVATE:
+        return await _retrieve_private(db, space_id, user_id, query_embedding, top_k)
+    if scope == KnowledgeScope.REFERENCE:
+        return await _retrieve_reference(db, query_embedding, top_k)
+    if scope == KnowledgeScope.COMBINED:
+        private_candidates = await _retrieve_private(db, space_id, user_id, query_embedding, top_k)
+        reference_candidates = await _retrieve_reference(db, query_embedding, top_k)
+        return _merge_candidates(private_candidates, reference_candidates, top_k)
+    raise ProviderError("Unsupported knowledge scope")
+
+
 def citation_from_chunk(chunk: RetrievedChunk) -> CitationResponse:
     return CitationResponse(
         source_id=chunk.source_id,
-        document_id=uuid.UUID(chunk.document_id),
+        source_kind=chunk.source_kind,
+        document_id=uuid.UUID(chunk.document_id) if chunk.source_kind == "private" else None,
+        reference_document_id=(
+            uuid.UUID(chunk.document_id) if chunk.source_kind == "reference" else None
+        ),
         document_name=chunk.document_name,
         page_number=chunk.page_number,
         chunk_id=uuid.UUID(chunk.chunk_id),
@@ -92,8 +189,11 @@ async def answer_question(
     top_k: int,
     embedding_provider: EmbeddingProvider,
     answer_provider: AnswerProvider,
+    scope: KnowledgeScope = KnowledgeScope.PRIVATE,
 ) -> AnswerResponse:
-    chunks = await retrieve_chunks(db, space_id, user_id, question, top_k, embedding_provider)
+    chunks = await retrieve_chunks(
+        db, space_id, user_id, question, top_k, embedding_provider, scope
+    )
     if not chunks:
         return AnswerResponse(
             answer="I could not find enough evidence in this knowledge space to answer that.",

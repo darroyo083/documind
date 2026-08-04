@@ -17,7 +17,7 @@ from app.application.documents import (
 from app.application.retrieval import answer_question, resolve_top_k, search_space
 from app.auth import get_current_user
 from app.domain.errors import InvalidDocumentError, ProviderError, TextExtractionError
-from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider
+from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider, parse_knowledge_scope
 from app.infrastructure.database import get_db
 from app.infrastructure.models import Document, User
 from app.schemas.document import (
@@ -135,6 +135,7 @@ async def ask_documents(
 ):
     await require_owned_space(db, space_id, current_user.id)
     try:
+        scope = parse_knowledge_scope(body.knowledge_scope)
         return await answer_question(
             db,
             space_id,
@@ -143,6 +144,7 @@ async def ask_documents(
             resolve_top_k(body.top_k),
             embedding_provider,
             answer_provider,
+            scope,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

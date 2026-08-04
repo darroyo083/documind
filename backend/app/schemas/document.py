@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -36,6 +37,7 @@ class SearchRequest(BaseModel):
 class AskRequest(BaseModel):
     question: str = Field(max_length=settings.max_question_length)
     top_k: int | None = Field(default=None, ge=1)
+    knowledge_scope: Literal["private", "reference", "combined"] | None = None
 
     @field_validator("question")
     @classmethod
@@ -48,7 +50,9 @@ class AskRequest(BaseModel):
 
 class CitationResponse(BaseModel):
     source_id: str
-    document_id: uuid.UUID
+    source_kind: str
+    document_id: uuid.UUID | None
+    reference_document_id: uuid.UUID | None
     document_name: str
     page_number: int
     chunk_id: uuid.UUID
