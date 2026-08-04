@@ -21,6 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.database import Base
 
 if TYPE_CHECKING:
+    from app.infrastructure.models.document_actions import DocumentActionSet
     from app.infrastructure.models.document_analysis import DocumentAnalysis
 
 
@@ -70,6 +71,12 @@ class Document(Base):
     )
 
     analysis: Mapped["DocumentAnalysis | None"] = relationship(
+        back_populates="document",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    action_set: Mapped["DocumentActionSet | None"] = relationship(
         back_populates="document",
         uselist=False,
         cascade="all, delete-orphan",

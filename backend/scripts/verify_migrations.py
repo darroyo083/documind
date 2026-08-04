@@ -18,13 +18,15 @@ from app.config import settings  # noqa: E402
 
 EXPECTED_TABLES = {
     "alembic_version",
+    "document_action_sets",
+    "document_actions",
     "document_analyses",
     "document_chunks",
     "documents",
     "knowledge_spaces",
     "users",
 }
-EXPECTED_HEAD = "005"
+EXPECTED_HEAD = "006"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -138,7 +140,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "SELECT constraint_name FROM information_schema.table_constraints "
         "WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
-        "'document_analyses')",
+        "'document_analyses', 'document_action_sets', 'document_actions')",
     )
     required_constraints = {
         "knowledge_spaces_pkey",
@@ -152,6 +154,12 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_analyses_pkey",
         "document_analyses_document_id_fkey",
         "uq_document_analyses_document_id",
+        "document_action_sets_pkey",
+        "document_action_sets_document_id_fkey",
+        "uq_document_action_sets_document_id",
+        "document_actions_pkey",
+        "document_actions_action_set_id_fkey",
+        "uq_document_actions_position",
         "users_email_key",
         "users_pkey",
     }
@@ -164,7 +172,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "SELECT delete_rule FROM information_schema.referential_constraints "
         "WHERE constraint_name IN ("
         "'knowledge_spaces_user_id_fkey', 'documents_knowledge_space_id_fkey', "
-        "'document_chunks_document_id_fkey', 'document_analyses_document_id_fkey')",
+        "'document_chunks_document_id_fkey', 'document_analyses_document_id_fkey', "
+        "'document_action_sets_document_id_fkey', 'document_actions_action_set_id_fkey')",
     )
     if delete_action != {"CASCADE"}:
         raise RuntimeError(f"Unexpected FK delete action: {sorted(delete_action)}")
@@ -179,12 +188,18 @@ async def verify_head_schema(database_url: URL) -> None:
         "ix_documents_knowledge_space_id",
         "ix_document_chunks_document_id",
         "ix_document_analyses_document_id",
+        "ix_document_action_sets_document_id",
+        "ix_document_actions_action_set_id",
         "documents_storage_key_key",
         "documents_pkey",
         "document_chunks_pkey",
         "document_analyses_pkey",
+        "document_action_sets_pkey",
+        "document_actions_pkey",
         "uq_document_chunks_position",
         "uq_document_analyses_document_id",
+        "uq_document_action_sets_document_id",
+        "uq_document_actions_position",
         "knowledge_spaces_pkey",
         "users_email_key",
         "users_pkey",
@@ -198,7 +213,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "SELECT table_name || '.' || column_name, data_type || ':' || is_nullable "
         "FROM information_schema.columns WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
-        "'document_analyses')",
+        "'document_analyses', 'document_action_sets', 'document_actions')",
     )
     required_columns = {
         "knowledge_spaces.id": "uuid:NO",
@@ -222,6 +237,20 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_analyses.document_type": "character varying:NO",
         "document_analyses.important_dates": "jsonb:NO",
         "document_analyses.key_facts": "jsonb:NO",
+        "document_action_sets.id": "uuid:NO",
+        "document_action_sets.document_id": "uuid:NO",
+        "document_action_sets.status": "character varying:NO",
+        "document_actions.id": "uuid:NO",
+        "document_actions.action_set_id": "uuid:NO",
+        "document_actions.position": "integer:NO",
+        "document_actions.action_type": "character varying:NO",
+        "document_actions.title": "character varying:NO",
+        "document_actions.description": "text:YES",
+        "document_actions.timing_text": "character varying:YES",
+        "document_actions.due_date": "date:YES",
+        "document_actions.status": "character varying:NO",
+        "document_actions.sources": "jsonb:NO",
+        "document_actions.completed_at": "timestamp with time zone:YES",
     }
     for column, expected in required_columns.items():
         if column_types.get(column) != expected:
@@ -249,6 +278,13 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_analyses.updated_at": "now()",
         "document_analyses.important_dates": "'[]'::jsonb",
         "document_analyses.key_facts": "'[]'::jsonb",
+        "document_action_sets.created_at": "now()",
+        "document_action_sets.status": "'processing'::character varying",
+        "document_action_sets.updated_at": "now()",
+        "document_actions.created_at": "now()",
+        "document_actions.status": "'pending'::character varying",
+        "document_actions.updated_at": "now()",
+        "document_actions.sources": "'[]'::jsonb",
     }
     for column, expected in expected_defaults.items():
         if defaults.get(column) != expected:
