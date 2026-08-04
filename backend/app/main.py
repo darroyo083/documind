@@ -9,6 +9,7 @@ from app.api.auth import router as auth_router
 from app.api.documents import router as documents_router
 from app.api.health import router as health_router
 from app.api.knowledge_spaces import router as knowledge_spaces_router
+from app.api.reference import router as reference_router
 from app.config import settings
 from app.infrastructure import models as _models  # noqa: F401
 
@@ -42,3 +43,4 @@ app.include_router(knowledge_spaces_router)
 app.include_router(documents_router)
 app.include_router(analysis_router)
 app.include_router(actions_router)
+app.include_router(reference_router)
