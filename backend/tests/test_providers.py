@@ -14,6 +14,7 @@ BASE_URL = "https://api.deepseek.com"
 def chunk(source_id: str = "chunk:abc") -> RetrievedChunk:
     return RetrievedChunk(
         source_id=source_id,
+        source_kind="private",
         document_id=str(uuid.uuid4()),
         document_name="evidence.pdf",
         page_number=1,

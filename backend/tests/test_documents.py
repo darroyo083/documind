@@ -222,7 +222,8 @@ async def test_search_and_answer_include_verified_page_citations(async_client: A
     assert result["document_id"] == document["id"]
     assert result["document_name"] == "evidence.pdf"
     assert result["page_number"] == 1
-    assert result["source_id"].startswith("chunk:")
+    assert result["source_kind"] == "private"
+    assert result["source_id"].startswith("private:")
 
     answer = await async_client.post(
         f"{SPACES_URL}/{space['id']}/ask",
@@ -231,7 +232,8 @@ async def test_search_and_answer_include_verified_page_citations(async_client: A
     )
     assert answer.status_code == 200
     assert answer.json()["supported"] is True
-    assert answer.json()["citations"][0]["source_id"].startswith("chunk:")
+    assert answer.json()["citations"][0]["source_kind"] == "private"
+    assert answer.json()["citations"][0]["source_id"].startswith("private:")
 
 
 @pytest.mark.asyncio
