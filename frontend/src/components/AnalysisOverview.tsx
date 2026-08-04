@@ -4,33 +4,9 @@ import type {
   DocumentAnalysis,
   DocumentResponse,
 } from "../api";
+import { formatIsoDate } from "../utils/date";
 import AnalysisSources from "./AnalysisSources";
 import DocumentTypeBadge from "./DocumentTypeBadge";
-
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatIsoDate(iso: string): string {
-  const parts = iso.split("-");
-  if (parts.length !== 3) return iso;
-  const year = Number(parts[0]);
-  const month = Number(parts[1]);
-  const day = Number(parts[2]);
-  if (!year || !month || !day || month < 1 || month > 12) return iso;
-  return `${day} ${MONTHS[month - 1]} ${year}`;
-}
 
 function DevelopmentIndicator() {
   return (

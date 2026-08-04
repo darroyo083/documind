@@ -283,3 +283,67 @@ export function analyzeDocument(
     { method: "POST" }
   );
 }
+
+/* Document actions and checklists */
+
+export type ActionTypeName =
+  | "required_action"
+  | "deadline"
+  | "reminder"
+  | "recommended_action";
+
+export interface ActionItem {
+  id: string;
+  action_type: string;
+  title: string;
+  description: string | null;
+  timing_text: string | null;
+  due_date: string | null;
+  status: "pending" | "completed";
+  completed_at: string | null;
+  sources: AnalysisSource[];
+}
+
+export interface DocumentActions {
+  id: string;
+  document_id: string;
+  status: "processing" | "ready" | "failed";
+  provider: string;
+  model: string;
+  actions: ActionItem[];
+  created_at: string;
+  updated_at: string;
+}
+
+export function getDocumentActions(
+  spaceId: string,
+  documentId: string,
+  signal?: AbortSignal
+): Promise<DocumentActions> {
+  return request<DocumentActions>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/actions`,
+    { signal }
+  );
+}
+
+export function generateActions(
+  spaceId: string,
+  documentId: string
+): Promise<DocumentActions> {
+  return request<DocumentActions>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/actions`,
+    { method: "POST" }
+  );
+}
+
+export function updateActionStatus(
+  spaceId: string,
+  documentId: string,
+  actionId: string,
+  status: "pending" | "completed"
+): Promise<ActionItem> {
+  return request<ActionItem>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/actions/${actionId}`,
+    { method: "PATCH", body: { status } }
+  );
+}

@@ -1,9 +1,10 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import * as api from "../api";
+import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
 
-type Section = "overview" | "ask";
+type Section = "overview" | "actions" | "ask";
 
 type AnalysisView =
   | { kind: "loading" }
@@ -46,6 +47,9 @@ export default function SpaceDetail() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [section, setSection] = useState<Section>("overview");
   const [analysisView, setAnalysisView] = useState<AnalysisView>({ kind: "loading" });
+  const [actionsView, setActionsView] = useState<ActionsView>({ kind: "loading" });
+  const actionsDocRef = useRef<string | null>(null);
+  const actionsTabRef = useRef<HTMLButtonElement>(null);
   const askTabRef = useRef<HTMLButtonElement>(null);
   const overviewTabRef = useRef<HTMLButtonElement>(null);
 
@@ -106,6 +110,86 @@ export default function SpaceDetail() {
       });
     return () => controller.abort();
   }, [id, selectedDocumentId]);
+
+  useEffect(() => {
+    if (!id || !selectedDocumentId) return;
+    const controller = new AbortController();
+    actionsDocRef.current = selectedDocumentId;
+    setActionsView({ kind: "loading" });
+    api
+      .getDocumentActions(id, selectedDocumentId, controller.signal)
+      .then((data) => {
+        if (data.status === "processing") {
+          setActionsView({ kind: "processing" });
+        } else if (data.status === "failed") {
+          setActionsView({
+            kind: "failed",
+            message: "Action extraction could not be completed. Try again.",
+          });
+        } else {
+          setActionsView({ kind: "ready", data });
+        }
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        if (err instanceof api.ApiError && err.status === 404) {
+          setActionsView({ kind: "none" });
+        } else {
+          setActionsView({
+            kind: "failed",
+            message:
+              err instanceof Error
+                ? err.message
+                : "Action extraction could not be loaded.",
+          });
+        }
+      });
+    return () => controller.abort();
+  }, [id, selectedDocumentId]);
+
+  const handleGenerateActions = useCallback(async () => {
+    if (!id || !selectedDocumentId) return;
+    setActionsView({ kind: "starting" });
+    try {
+      const data = await api.generateActions(id, selectedDocumentId);
+      if (data.status === "processing") {
+        setActionsView({ kind: "processing" });
+      } else {
+        setActionsView({ kind: "ready", data });
+      }
+    } catch (err: unknown) {
+      if (err instanceof api.ApiError) {
+        setActionsView({ kind: "failed", message: mapActionError(err.status, err.detail) });
+      } else {
+        setActionsView({
+          kind: "failed",
+          message: "Action extraction could not be completed. Try again.",
+        });
+      }
+    }
+  }, [id, selectedDocumentId]);
+
+  const handleToggleAction = useCallback(
+    async (actionId: string, status: "pending" | "completed") => {
+      if (!id || !selectedDocumentId) return;
+      const documentId = selectedDocumentId;
+      const updated = await api.updateActionStatus(id, documentId, actionId, status);
+      if (actionsDocRef.current !== documentId) return;
+      setActionsView((current) => {
+        if (current.kind !== "ready") return current;
+        return {
+          kind: "ready",
+          data: {
+            ...current.data,
+            actions: current.data.actions.map((action) =>
+              action.id === updated.id ? updated : action
+            ),
+          },
+        };
+      });
+    },
+    [id, selectedDocumentId]
+  );
 
   const handleAnalyze = useCallback(async () => {
     if (!id || !selectedDocumentId) return;
@@ -186,12 +270,21 @@ export default function SpaceDetail() {
     }
   }
 
+  const SECTION_ORDER: Section[] = ["overview", "actions", "ask"];
+
   function handleSectionKeyDown(event: React.KeyboardEvent) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    const next = section === "overview" ? "ask" : "overview";
+    const index = SECTION_ORDER.indexOf(section);
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const next = SECTION_ORDER[(index + direction + SECTION_ORDER.length) % SECTION_ORDER.length];
     setSection(next);
-    const target = next === "overview" ? overviewTabRef.current : askTabRef.current;
+    const target =
+      next === "overview"
+        ? overviewTabRef.current
+        : next === "actions"
+          ? actionsTabRef.current
+          : askTabRef.current;
     target?.focus();
   }
 
@@ -344,6 +437,22 @@ export default function SpaceDetail() {
                     Overview
                   </button>
                   <button
+                    ref={actionsTabRef}
+                    type="button"
+                    role="tab"
+                    id="section-tab-actions"
+                    aria-controls="section-panel-actions"
+                    aria-selected={section === "actions"}
+                    onClick={() => setSection("actions")}
+                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      section === "actions"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Actions
+                  </button>
+                  <button
                     ref={askTabRef}
                     type="button"
                     role="tab"
@@ -371,6 +480,19 @@ export default function SpaceDetail() {
                       document={selectedDocument}
                       view={analysisView}
                       onAnalyze={handleAnalyze}
+                    />
+                  </div>
+                ) : section === "actions" ? (
+                  <div
+                    role="tabpanel"
+                    id="section-panel-actions"
+                    aria-labelledby="section-tab-actions"
+                  >
+                    <ActionsPanel
+                      document={selectedDocument}
+                      view={actionsView}
+                      onGenerate={handleGenerateActions}
+                      onToggleStatus={handleToggleAction}
                     />
                   </div>
                 ) : (
