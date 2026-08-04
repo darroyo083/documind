@@ -36,3 +36,27 @@ class AnalysisContextTooLargeError(AnalysisError):
 
 class AnalysisValidationError(AnalysisError):
     pass
+
+
+class ActionError(Exception):
+    pass
+
+
+class ActionNotFoundError(ActionError):
+    pass
+
+
+class ActionConflictError(ActionError):
+    pass
+
+
+class ActionStateError(ActionError):
+    pass
+
+
+class ActionContextTooLargeError(ActionError):
+    pass
+
+
+class ActionValidationError(ActionError):
+    pass

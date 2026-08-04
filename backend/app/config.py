@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     analysis_max_sources_per_item: int = 8
     analysis_excerpt_chars: int = 2000
 
+    action_provider: str = "mock"
+    action_model: str = "deepseek-chat"
+    action_max_context_chars: int = 120000
+    action_max_items: int = 20
+    action_max_title_length: int = 200
+    action_max_description_length: int = 1000
+    action_max_timing_length: int = 500
+    action_max_sources_per_item: int = 8
+    action_excerpt_chars: int = 2000
+
     embedding_provider: str = "local"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimension: int = 384
