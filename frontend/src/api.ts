@@ -175,12 +175,24 @@ export interface DocumentResponse {
 
 export interface CitationResponse {
   source_id: string;
-  document_id: string;
+  source_kind: "private" | "reference";
+  document_id: string | null;
+  reference_document_id: string | null;
   document_name: string;
   page_number: number;
   chunk_id: string;
   excerpt: string;
   score: number;
+}
+
+export type KnowledgeScope = "private" | "reference" | "combined";
+
+export interface ReferenceDocumentResponse {
+  id: string;
+  title: string;
+  original_filename: string;
+  page_count: number | null;
+  created_at: string;
 }
 
 export interface AnswerResponse {
@@ -219,12 +231,17 @@ export function deleteDocument(
 
 export function askDocuments(
   spaceId: string,
-  question: string
+  question: string,
+  knowledgeScope: KnowledgeScope = "private"
 ): Promise<AnswerResponse> {
   return request<AnswerResponse>(`/knowledge-spaces/${spaceId}/ask`, {
     method: "POST",
-    body: { question },
+    body: { question, knowledge_scope: knowledgeScope },
   });
+}
+
+export function getReferenceLibrary(): Promise<ReferenceDocumentResponse[]> {
+  return request<ReferenceDocumentResponse[]>("/reference-library");
 }
 
 /* Structured document analysis */

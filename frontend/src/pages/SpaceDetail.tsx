@@ -4,6 +4,12 @@ import * as api from "../api";
 import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
 
+const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
+  private: "My documents",
+  reference: "Reference",
+  combined: "Both",
+};
+
 type Section = "overview" | "actions" | "ask";
 
 type AnalysisView =
@@ -43,6 +49,11 @@ export default function SpaceDetail() {
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<api.AnswerResponse | null>(null);
   const [askError, setAskError] = useState("");
+  const [scope, setScope] = useState<api.KnowledgeScope>("private");
+  const [answerScope, setAnswerScope] = useState<api.KnowledgeScope | null>(null);
+  const [referenceDocuments, setReferenceDocuments] = useState<
+    api.ReferenceDocumentResponse[]
+  >([]);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [section, setSection] = useState<Section>("overview");
@@ -58,10 +69,11 @@ export default function SpaceDetail() {
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([api.getSpace(id), api.listDocuments(id)])
-      .then(([spaceResponse, documentResponse]) => {
+    Promise.all([api.getSpace(id), api.listDocuments(id), api.getReferenceLibrary()])
+      .then(([spaceResponse, documentResponse, referenceResponse]) => {
         setSpace(spaceResponse);
         setDocuments(documentResponse);
+        setReferenceDocuments(referenceResponse);
         setSelectedDocumentId((current) => {
           if (current && documentResponse.some((document) => document.id === current)) {
             return current;
@@ -262,7 +274,9 @@ export default function SpaceDetail() {
     setAskError("");
     setAnswer(null);
     try {
-      setAnswer(await api.askDocuments(id, question.trim()));
+      const result = await api.askDocuments(id, question.trim(), scope);
+      setAnswer(result);
+      setAnswerScope(scope);
     } catch (err: unknown) {
       setAskError(err instanceof Error ? err.message : "Question failed");
     } finally {
@@ -505,6 +519,68 @@ export default function SpaceDetail() {
                     <p className="mt-1 text-sm text-gray-500">
                       Answers are limited to evidence found in ready documents.
                     </p>
+                    <fieldset className="mt-4">
+                      <legend className="text-sm font-medium text-gray-700">
+                        Knowledge scope
+                      </legend>
+                      <div className="mt-2 flex flex-wrap gap-4">
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="radio"
+                            name="knowledge-scope"
+                            value="private"
+                            checked={scope === "private"}
+                            onChange={() => setScope("private")}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          My documents
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="radio"
+                            name="knowledge-scope"
+                            value="reference"
+                            checked={scope === "reference"}
+                            onChange={() => setScope("reference")}
+                            disabled={referenceDocuments.length === 0}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                          />
+                          Reference
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="radio"
+                            name="knowledge-scope"
+                            value="combined"
+                            checked={scope === "combined"}
+                            onChange={() => setScope("combined")}
+                            disabled={referenceDocuments.length === 0}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                          />
+                          Both
+                        </label>
+                      </div>
+                    </fieldset>
+                    {referenceDocuments.length === 0 ? (
+                      <p className="mt-2 text-xs text-gray-500">
+                        No shared reference documents are available.
+                      </p>
+                    ) : (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs font-medium text-gray-600">
+                          {referenceDocuments.length}{" "}
+                          reference document
+                          {referenceDocuments.length === 1 ? "" : "s"} available
+                        </summary>
+                        <ul className="mt-2 space-y-1">
+                          {referenceDocuments.map((document) => (
+                            <li key={document.id} className="text-xs text-gray-500">
+                              {document.title}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     <form onSubmit={handleAsk} className="mt-4">
                       <label htmlFor="question" className="sr-only">
                         Question
@@ -534,6 +610,11 @@ export default function SpaceDetail() {
                     )}
                     {answer && (
                       <div aria-live="polite" className="mt-6 border-t pt-5">
+                        {answerScope && (
+                          <p className="text-xs text-gray-400">
+                            Scope: {SCOPE_LABELS[answerScope]}
+                          </p>
+                        )}
                         <p className="whitespace-pre-wrap leading-7 text-gray-800">
                           {answer.answer}
                         </p>
@@ -548,7 +629,18 @@ export default function SpaceDetail() {
                                   key={citation.source_id}
                                   className="rounded-md bg-gray-50 p-3"
                                 >
-                                  <p className="text-sm font-medium text-gray-800">
+                                  <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-800">
+                                    <span
+                                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        citation.source_kind === "reference"
+                                          ? "bg-indigo-50 text-indigo-700"
+                                          : "bg-gray-100 text-gray-700"
+                                      }`}
+                                    >
+                                      {citation.source_kind === "reference"
+                                        ? "Reference"
+                                        : "Private"}
+                                    </span>
                                     {citation.document_name}, page {citation.page_number}
                                   </p>
                                   <p className="mt-1 line-clamp-3 text-sm text-gray-600">
