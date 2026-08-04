@@ -123,6 +123,10 @@ Key environment variables (see `.env.example`):
 | `ANALYSIS_MAX_CONTEXT_CHARS` | Max document characters sent to analysis | `120000` |
 | `ANALYSIS_MAX_IMPORTANT_DATES` | Max important dates per analysis | `10` |
 | `ANALYSIS_MAX_KEY_FACTS` | Max key facts per analysis | `20` |
+| `ACTION_PROVIDER` | Action extraction provider (`deepseek`, `mock`) | `mock` |
+| `ACTION_MODEL` | DeepSeek model used for action extraction | `deepseek-chat` |
+| `ACTION_MAX_CONTEXT_CHARS` | Max document characters sent to action extraction | `120000` |
+| `ACTION_MAX_ITEMS` | Max actions per document | `20` |
 
 ## Structured Document Intelligence (PoC 2.1)
 
@@ -205,6 +209,41 @@ and excerpts) alongside the existing **Ask** flow.
 - Structured analysis validates source references and server-derived citation
   metadata; it is not a semantic proof that every extracted statement is
   logically entailed by the cited excerpt.
+
+### Grounded Actions & Checklists (PoC 3A)
+
+Each knowledge-space document now has an **Actions** tab between Overview and
+Ask. It extracts document-grounded action items you can mark as completed.
+
+- Action types: `required_action` (explicit obligation), `deadline` (explicit
+  due date), `reminder` (important date/event without an obligation), and
+  `recommended_action` (only when the document explicitly recommends it).
+- Action extraction is triggered explicitly with "Extract actions" and is only
+  available for ready documents. Generated actions are grounded in the
+  document's own chunks with server-validated evidence (page numbers and
+  excerpts are derived server-side; the provider never controls trusted
+  metadata). Source IDs are validated only against chunks of the analyzed
+  document: references to another document's or another user's chunks are
+  rejected.
+- Checklist completion state is user-controlled (`pending`/`completed`) and
+  persists server-side. The provider can never change completion status.
+- Dates are normalized only when the document gives an exact calendar date.
+  Partial dates, relative deadlines, and ambiguous numeric dates are preserved
+  as text without invented precision; no relative-date arithmetic is performed.
+- The mock action provider is the default in development (shown as
+  "Development extraction"). DeepSeek is optional via `ACTION_PROVIDER=deepseek`
+  and `DEEPSEEK_API_KEY`.
+- DocuMind does NOT execute actions: it never sends emails, cancels contracts,
+  submits forms, creates calendar events, or makes payments. It is not an
+  autonomous agent.
+- No notifications, calendar or email integration, recurring tasks, or action
+  history. Generation is synchronous; there is no stale-processing recovery.
+- This is source-validated extraction, not legal, tax, or financial advice, and
+  not a semantic proof that every generated statement is entailed by the cited
+  excerpt. The server validates source identity and citation metadata; it does
+  not independently prove that the assigned action type is semantically
+  correct, for example that an item labeled `required_action` is truly an
+  obligation rather than a recommendation.
 
 ## Development defaults and mock behavior
 
