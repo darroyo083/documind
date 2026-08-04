@@ -245,6 +245,38 @@ Ask. It extracts document-grounded action items you can mark as completed.
   correct, for example that an item labeled `required_action` is truly an
   obligation rather than a recommendation.
 
+### Shared Reference Knowledge (PoC 3D)
+
+DocuMind separates two knowledge layers for grounded Q&A:
+
+- **Private knowledge**: the user's uploaded documents inside their owned
+  knowledge spaces, scoped to the requested space and the authenticated user.
+  Never shared with other users through reference mode.
+- **Shared reference knowledge**: application-managed reference documents,
+  available read-only to every authenticated user. They are imported
+  locally/admin-side (`python scripts/import_reference_document.py --file ... 
+  --title ...`); ordinary users cannot create, modify, or delete them through
+  HTTP APIs.
+
+Query scopes on the Ask endpoint (`knowledge_scope`, defaults to `private` for
+backward compatibility):
+
+- `private` — only the current user's documents in the requested space.
+- `reference` — only the system-managed reference corpus.
+- `combined` — the requested user's private space **plus** the reference
+  corpus; it never includes another user's documents.
+
+Citations distinguish provenance with a `source_kind` (`private` /
+`reference`); document names, page numbers, excerpts, and source kind are
+server-derived and cannot be spoofed by the model. One query embedding is used
+per question; `top_k` is applied globally after merging private and reference
+candidates; the same embedding model/dimension backs both stores.
+
+- No web search, no automatic external synchronization, no user-to-user
+  sharing, no organizations or roles, no OCR, and no semantic-entailment
+  verification.
+- A reference library may legitimately be empty; the UI degrades gracefully.
+
 ## Development defaults and mock behavior
 
 The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
