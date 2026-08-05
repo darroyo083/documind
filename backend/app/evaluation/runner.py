@@ -75,14 +75,15 @@ class QueryResult:
     document_relevant_ranks: list[int]
     first_relevant_rank: int | None
     retrieval_count: int
-    candidate_documents: list[str]
-    candidate_kinds: list[str]
-    candidate_scores: list[float]
-    candidate_relevant: list[bool]
-    candidate_forbidden: list[bool]
-    forbidden_retrieved: list[str]
-    scope_violations: list[str]
-    source_kinds_present: list[str]
+    candidate_documents: list[str] = field(default_factory=list)
+    candidate_kinds: list[str] = field(default_factory=list)
+    candidate_scores: list[float] = field(default_factory=list)
+    candidate_relevant: list[bool] = field(default_factory=list)
+    candidate_forbidden: list[bool] = field(default_factory=list)
+    candidate_contents: list[str] = field(default_factory=list)
+    forbidden_retrieved: list[str] = field(default_factory=list)
+    scope_violations: list[str] = field(default_factory=list)
+    source_kinds_present: list[str] = field(default_factory=list)
     has_cross_user_forbidden: bool = False
     has_cross_space_forbidden: bool = False
 
@@ -321,6 +322,7 @@ async def run_query(
     candidate_scores: list[float] = []
     candidate_relevant: list[bool] = []
     candidate_forbidden: list[bool] = []
+    candidate_contents: list[str] = []
     kinds_present: set[str] = set()
 
     for rank, candidate in enumerate(candidates, start=1):
@@ -330,6 +332,7 @@ async def run_query(
         candidate_documents.append(semantic_doc)
         candidate_kinds.append(candidate.source_kind)
         candidate_scores.append(round(candidate.score, 4))
+        candidate_contents.append(candidate.content)
         kinds_present.add(candidate.source_kind)
 
         is_relevant = False
@@ -368,6 +371,7 @@ async def run_query(
         candidate_scores=candidate_scores,
         candidate_relevant=candidate_relevant,
         candidate_forbidden=candidate_forbidden,
+        candidate_contents=candidate_contents,
         forbidden_retrieved=forbidden_retrieved,
         scope_violations=scope_violations,
         source_kinds_present=sorted(kinds_present),
