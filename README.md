@@ -333,13 +333,14 @@ top_k=5, threshold 0.5):
 
 Observed findings (measured, not tuned — production defaults unchanged):
 
-- The current similarity threshold (0.5) is permissive for unanswerable
-  queries: all 9 returned candidates. The threshold sweep shows rejection only
-  improves to 2/9 (22.2%) at 0.6 and 5/9 (55.6%) at 0.7, where answerable
-  Hit@5 collapses from 1.000 to 0.706. Unanswerable top scores (0.54–0.79)
-  overlap heavily with relevant scores (0.52–0.88), so **no threshold in the
-  swept range provides a good recall/rejection tradeoff** on this corpus. This
-  supersedes any earlier suggestion that ~0.55–0.65 might be worth exploring.
+- The benchmark similarity threshold (0.5; see the threshold terminology note
+  below) is permissive for unanswerable queries: all 9 returned candidates. The
+  threshold sweep shows rejection only improves to 2/9 (22.2%) at 0.6 and 5/9
+  (55.6%) at 0.7, where answerable Hit@5 collapses from 1.000 to 0.706.
+  Unanswerable top scores (0.54–0.79) overlap heavily with relevant scores
+  (0.52–0.88), so **no threshold in the swept range provides a good
+  recall/rejection tradeoff** on this corpus. This supersedes any earlier
+  suggestion that ~0.55–0.65 might be worth exploring.
 - Weakest categories at Hit@1: combined private-winner (0.333), cross-space
   decoy and semantic decoy (0.500) — embedding/proximity limitations, not
   retrieval bugs. All 34 answerable queries retrieved their relevant chunk
@@ -348,6 +349,100 @@ Observed findings (measured, not tuned — production defaults unchanged):
   (21 chunks / 21 pages), so it does not stress long-page splitting, overlap
   boundaries, or facts spanning a chunk boundary. It is not a comprehensive
   chunking-strategy benchmark.
+
+### Evidence Sufficiency / Unsupported-Question Detection (PoC 3E)
+
+Semantic retrieval relevance does not equal answer sufficiency. Retrieval asks
+"which chunks are most similar?"; sufficiency asks "do these chunks contain the
+evidence the question asks for?". A document can be topically relevant while the
+requested fact is absent (e.g. a cancellation-notice clause versus "what is the
+cancellation fee?").
+
+PoC 3C showed that a single similarity threshold cannot separate these cases:
+unanswerable top scores (0.54–0.79) overlap heavily with relevant scores
+(0.52–0.88), and raising the threshold destroys answerable retrieval. PoC 3E
+therefore evaluates an explicit evidence-sufficiency decision layer rather than
+tuning production retrieval.
+
+- Experimental evaluator: `scripts/evaluate_sufficiency.py` reuses the committed
+  PoC 3C corpus and queries (43 queries, 34 answerable / 9 unanswerable) and
+  the real local FastEmbed model. No paid LLM API is called; DeepSeek is never
+  contacted during the comparison. The benchmark runs at similarity threshold
+  `0.5` / `top_k=5` to match the committed PoC 3C baseline (see note on
+  thresholds below).
+- Dataset split: each query carries a deterministic `evaluation_split`
+  (`dev` 30 / `holdout` 13; dev 24 answerable + 6 unanswerable, holdout 10
+  answerable + 3 unanswerable) validated in `app/evaluation/dataset.py`.
+  Methodology: candidate configurations are evaluated on **DEV only**;
+  the frozen selected strategy is then evaluated once on **HOLDOUT** as an
+  overfitting guard. The generated report contains no holdout metrics for
+  unselected candidates.
+- Candidate strategies: max-score threshold (baseline), score margin,
+  score concentration, lexical query-token coverage (top1 and topK union), and
+  a combined score+coverage rule — all deterministic and cheap.
+- Metrics: Answerable Retention, Unsupported Detection, Supported/Unsupported
+  Precision, False Support Rate, False Rejection Rate, Balanced Accuracy.
+- Measured result (dataset v1, BAAI/bge-small-en-v1.5, top_k=5, threshold 0.5):
+
+| Metric | Baseline (threshold 0.5) | DEV-best strategy | HOLDOUT (selected) | Overall (selected) |
+|---|---|---|---|---|
+| Answerable Retention | 34/34 (1.000) | 23/24 (0.958) | 9/10 (0.900) | 32/34 (0.941) |
+| Unsupported Detection | 0/9 (0.000) | 4/6 (0.667) | 0/3 (0.000) | 4/9 (0.444) |
+| Balanced Accuracy | 0.500 | 0.813 | 0.450 | ≈0.693 |
+
+  The DEV-selected strategy (`lexical_topk(min_coverage=0.1)`) collapses on
+  holdout: all three holdout unanswerable queries are semantic near-misses with
+  high top scores (0.72–0.79), which deterministic score/lexical signals cannot
+  separate. The frozen selected strategy fails holdout.
+- Outcome: per the milestone policy, no heuristic was forced into production.
+  No retrieval setting was changed during PoC 3E. This experimentally rules out
+  cheap deterministic abstention on the current corpus and motivates a
+  dedicated evidence-verification model as a future milestone. The sufficiency
+  layer would only ever operate over the already-authorized retrieval
+  candidates, so source privacy/isolation is unaffected by design.
+- `evaluate_sufficiency.py` emits `sufficiency_report.json` / `.md` into the
+  gitignored `backend/evaluation/results/` directory. The retrieval benchmark
+  (`scripts/evaluate_retrieval.py`) is unchanged and remains the canonical
+  retrieval measurement.
+
+### Holdout methodology disclosure
+
+The 13-query `holdout` split was exposed to the candidate grid during the
+initial PoC 3E development run (an earlier evaluator reported holdout metrics
+for every candidate configuration). Although strategy selection itself remained
+DEV-only and the corrected implementation reproduces the same Outcome B, this
+split is **no longer considered a pristine untouched holdout**. It should be
+retained as a **regression set**. A future evidence-verification milestone must
+create a **fresh v2 holdout**.
+
+### PoC 3E limitations
+
+- The current corpus is synthetic, with only **9 unanswerable queries**.
+- Lexical coverage experiments are English-oriented; no multilingual claim.
+- The corpus largely has one chunk per page, so chunking behavior is not
+  stressed.
+- Results do not establish universal abstention quality; no
+  hallucination-elimination claim is made.
+- A dedicated evidence-verification model is a **future experiment**, not
+  implemented.
+
+### Retrieval threshold terminology
+
+There are two distinct values for the retrieval similarity threshold:
+
+- **Code / committed default**: `config.py` sets `default_similarity_threshold
+  = 0.2`, and the committed `.env.example` documents `DEFAULT_SIMILARITY_THRESHOLD=0.2`.
+- **Local runtime / benchmark value**: the untracked local `.env` sets
+  `DEFAULT_SIMILARITY_THRESHOLD=0.5`. `docker-compose.yml` loads that `.env`,
+  so the committed PoC 3C baseline and the PoC 3E experiment ran at threshold
+  `0.5` with `top_k=5`.
+
+The phrase "production default threshold 0.5" is therefore not accurate: the
+committed code/example default is `0.2`; `0.5` is a local-environment value.
+Neither value was changed by PoC 3E. Tests pin `DEFAULT_SIMILARITY_THRESHOLD=0.2`
+in `tests/conftest.py`, so the test suite exercises the code default.
+`top_k=5` is the same in the code default, `.env.example`, local `.env`, and
+the benchmark.
 
 ## Development defaults and mock behavior
 
