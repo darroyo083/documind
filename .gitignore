@@ -55,3 +55,6 @@ backend/alembic/versions/*.pyc
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Evaluation benchmark generated reports
+backend/evaluation/results/
