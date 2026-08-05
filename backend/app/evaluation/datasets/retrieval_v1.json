@@ -190,7 +190,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_policy", "user_a_rental", "user_a_invoice"]
+      "forbidden_documents": ["user_b_policy", "user_a_rental", "user_a_invoice"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_direct_due",
@@ -202,7 +203,8 @@
       "expected_relevant_chunks": ["private_policy_premium_due"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_a_invoice", "user_b_policy"]
+      "forbidden_documents": ["user_a_invoice", "user_b_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_direct_paymethod",
@@ -214,7 +216,8 @@
       "expected_relevant_chunks": ["private_billing_payment"],
       "expected_relevant_documents": ["user_a_billing"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_subscription"]
+      "forbidden_documents": ["user_b_subscription"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_direct_deposit",
@@ -226,7 +229,8 @@
       "expected_relevant_chunks": ["private_housing_deposit"],
       "expected_relevant_documents": ["user_a_rental"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_rental"]
+      "forbidden_documents": ["user_b_rental"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_direct_notice",
@@ -238,7 +242,8 @@
       "expected_relevant_chunks": ["private_housing_notice"],
       "expected_relevant_documents": ["user_a_rental"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_rental", "user_a_policy"]
+      "forbidden_documents": ["user_b_rental", "user_a_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_para_cancel",
@@ -250,7 +255,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_policy"]
+      "forbidden_documents": ["user_b_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_para_renewal",
@@ -262,7 +268,8 @@
       "expected_relevant_chunks": ["private_policy_renewal"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "priv_para_dispute",
@@ -274,7 +281,8 @@
       "expected_relevant_chunks": ["private_billing_dispute"],
       "expected_relevant_documents": ["user_a_billing"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_multi_policy",
@@ -286,7 +294,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation", "private_policy_renewal"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "priv_multi_billing",
@@ -298,7 +307,8 @@
       "expected_relevant_chunks": ["private_billing_dispute", "private_billing_payment"],
       "expected_relevant_documents": ["user_a_billing"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "ref_direct_notice",
@@ -310,7 +320,8 @@
       "expected_relevant_chunks": ["reference_insurance_notice"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "ref_direct_grace",
@@ -322,7 +333,8 @@
       "expected_relevant_chunks": ["reference_insurance_grace"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "ref_direct_waiting",
@@ -334,7 +346,8 @@
       "expected_relevant_chunks": ["reference_insurance_waiting"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "ref_direct_deposit",
@@ -346,7 +359,8 @@
       "expected_relevant_chunks": ["reference_housing_deposit"],
       "expected_relevant_documents": ["reference_housing"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "ref_para_notice",
@@ -358,7 +372,8 @@
       "expected_relevant_chunks": ["reference_insurance_notice"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "ref_para_due",
@@ -370,7 +385,8 @@
       "expected_relevant_chunks": ["reference_invoice_due"],
       "expected_relevant_documents": ["reference_invoices"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "comb_priv_winner_cancel",
@@ -382,7 +398,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_policy"]
+      "forbidden_documents": ["user_b_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "comb_priv_winner_due",
@@ -394,7 +411,8 @@
       "expected_relevant_chunks": ["private_policy_premium_due"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_a_invoice"]
+      "forbidden_documents": ["user_a_invoice"],
+      "evaluation_split": "holdout"
     },
     {
       "id": "comb_priv_winner_renewal",
@@ -406,7 +424,8 @@
       "expected_relevant_chunks": ["private_policy_renewal"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "comb_ref_winner_grace",
@@ -418,7 +437,8 @@
       "expected_relevant_chunks": ["reference_insurance_grace"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "comb_ref_winner_notice",
@@ -430,7 +450,8 @@
       "expected_relevant_chunks": ["reference_insurance_notice"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "comb_ref_winner_deposit",
@@ -442,7 +463,8 @@
       "expected_relevant_chunks": ["reference_housing_deposit"],
       "expected_relevant_documents": ["reference_housing"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "comb_multi_notice",
@@ -454,7 +476,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation", "reference_insurance_notice"],
       "expected_relevant_documents": ["user_a_policy", "reference_insurance"],
       "expected_source_kinds": ["private", "reference"],
-      "forbidden_documents": ["user_b_policy"]
+      "forbidden_documents": ["user_b_policy"],
+      "evaluation_split": "holdout"
     },
     {
       "id": "comb_multi_deposit",
@@ -466,7 +489,8 @@
       "expected_relevant_chunks": ["private_housing_deposit", "reference_housing_deposit"],
       "expected_relevant_documents": ["user_a_rental", "reference_housing"],
       "expected_source_kinds": ["private", "reference"],
-      "forbidden_documents": ["user_b_rental"]
+      "forbidden_documents": ["user_b_rental"],
+      "evaluation_split": "dev"
     },
     {
       "id": "comb_multi_due",
@@ -478,7 +502,8 @@
       "expected_relevant_chunks": ["private_invoice_due", "reference_invoice_due"],
       "expected_relevant_documents": ["user_a_invoice", "reference_invoices"],
       "expected_source_kinds": ["private", "reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "cross_space_cancel",
@@ -490,7 +515,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_a_rental", "user_a_invoice", "user_a_housing_terms"]
+      "forbidden_documents": ["user_a_rental", "user_a_invoice", "user_a_housing_terms"],
+      "evaluation_split": "holdout"
     },
     {
       "id": "cross_space_due",
@@ -502,7 +528,8 @@
       "expected_relevant_chunks": ["private_policy_premium_due"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_a_invoice"]
+      "forbidden_documents": ["user_a_invoice"],
+      "evaluation_split": "dev"
     },
     {
       "id": "cross_user_cancel",
@@ -514,7 +541,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_policy"]
+      "forbidden_documents": ["user_b_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "cross_user_deposit",
@@ -526,7 +554,8 @@
       "expected_relevant_chunks": ["private_housing_deposit"],
       "expected_relevant_documents": ["user_a_rental"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_rental"]
+      "forbidden_documents": ["user_b_rental"],
+      "evaluation_split": "dev"
     },
     {
       "id": "cross_user_payment",
@@ -538,7 +567,8 @@
       "expected_relevant_chunks": ["private_billing_payment"],
       "expected_relevant_documents": ["user_a_billing"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_subscription"]
+      "forbidden_documents": ["user_b_subscription"],
+      "evaluation_split": "holdout"
     },
     {
       "id": "unanswerable_private",
@@ -550,7 +580,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_private_fee",
@@ -562,7 +593,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "unanswerable_private_org",
@@ -574,7 +606,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_reference",
@@ -586,7 +619,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_reference_duration",
@@ -598,7 +632,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "unanswerable_reference_rate",
@@ -610,7 +645,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_combined",
@@ -622,7 +658,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_combined_renewal",
@@ -634,7 +671,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev"
     },
     {
       "id": "unanswerable_combined_refund",
@@ -646,7 +684,8 @@
       "expected_relevant_chunks": [],
       "expected_relevant_documents": [],
       "expected_source_kinds": [],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "hard_neg_cancel",
@@ -658,7 +697,8 @@
       "expected_relevant_chunks": ["private_policy_cancellation"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": ["user_b_policy"]
+      "forbidden_documents": ["user_b_policy"],
+      "evaluation_split": "dev"
     },
     {
       "id": "hard_neg_deposit",
@@ -670,7 +710,8 @@
       "expected_relevant_chunks": ["private_housing_deposit"],
       "expected_relevant_documents": ["user_a_rental"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "semantic_decoy_grace",
@@ -682,7 +723,8 @@
       "expected_relevant_chunks": ["reference_insurance_grace"],
       "expected_relevant_documents": ["reference_insurance"],
       "expected_source_kinds": ["reference"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "holdout"
     },
     {
       "id": "semantic_decoy_cover",
@@ -694,7 +736,9 @@
       "expected_relevant_chunks": ["private_policy_renewal"],
       "expected_relevant_documents": ["user_a_policy"],
       "expected_source_kinds": ["private"],
-      "forbidden_documents": []
+      "forbidden_documents": [],
+      "evaluation_split": "dev",
+      "evaluation_split": "dev"
     }
   ]
 }

@@ -133,6 +133,7 @@ def validate_dataset(dataset: dict[str, Any]) -> None:
             page_documents[semantic_id] = doc_key
 
     seen_ids: set[str] = set()
+    splits_seen: dict[str, set[str]] = {"dev": set(), "holdout": set()}
     for index, query in enumerate(dataset["queries"]):
         prefix = f"query[{index}]"
         query_id = query.get("id")
@@ -142,6 +143,12 @@ def validate_dataset(dataset: dict[str, Any]) -> None:
         if query_id in seen_ids:
             errors.append(f"{prefix}: duplicate query id {query_id!r}")
         seen_ids.add(query_id)
+
+        split = query.get("evaluation_split")
+        if split not in {"dev", "holdout"}:
+            errors.append(f"{prefix} {query_id}: evaluation_split must be dev or holdout")
+        else:
+            splits_seen[split].add(query_id)
 
         scope = query.get("scope")
         if scope not in VALID_SCOPES:
@@ -236,8 +243,36 @@ def validate_dataset(dataset: dict[str, Any]) -> None:
                         "is not in requested space"
                     )
 
+    _validate_splits(dataset["queries"], errors)
     if errors:
         raise ValueError("Invalid evaluation dataset:\n- " + "\n- ".join(errors))
+
+
+def _validate_splits(queries: list[dict[str, Any]], errors: list[str]) -> None:
+    """A sufficiency experiment needs a deterministic dev/holdout split.
+
+    Each split must contain answerable and unanswerable queries and must
+    reasonably represent the private/reference/combined scopes.
+    """
+    by_split: dict[str, list[dict[str, Any]]] = {"dev": [], "holdout": []}
+    for query in queries:
+        split = query.get("evaluation_split")
+        if split in by_split:
+            by_split[split].append(query)
+
+    if not by_split["dev"] or not by_split["holdout"]:
+        errors.append("evaluation dataset must define both dev and holdout splits")
+        return
+
+    for split in ("dev", "holdout"):
+        group = by_split[split]
+        if not any(q["answerable"] for q in group):
+            errors.append(f"{split} split has no answerable queries")
+        if not any(not q["answerable"] for q in group):
+            errors.append(f"{split} split has no unanswerable queries")
+        scopes = {q["scope"] for q in group}
+        if "private" not in scopes or "reference" not in scopes or "combined" not in scopes:
+            errors.append(f"{split} split does not represent all scopes: {sorted(scopes)}")
 
 
 def dataset_summary(dataset: dict[str, Any]) -> dict[str, Any]:
@@ -248,6 +283,10 @@ def dataset_summary(dataset: dict[str, Any]) -> dict[str, Any]:
     reference_docs = sum(1 for doc in documents.values() if doc["kind"] == "reference")
     categories: dict[str, int] = {}
     scopes: dict[str, int] = {}
+    splits: dict[str, dict[str, int]] = {
+        "dev": {"answerable": 0, "unanswerable": 0},
+        "holdout": {"answerable": 0, "unanswerable": 0},
+    }
     answerable = 0
     relevant_chunks = 0
     for query in queries:
@@ -256,6 +295,10 @@ def dataset_summary(dataset: dict[str, Any]) -> dict[str, Any]:
         answerable += 1 if query["answerable"] else 0
         if query["answerable"]:
             relevant_chunks += len(query.get("expected_relevant_chunks") or [])
+        split = query.get("evaluation_split")
+        if split in splits:
+            key = "answerable" if query["answerable"] else "unanswerable"
+            splits[split][key] += 1
     return {
         "dataset_version": dataset["dataset_version"],
         "users": len(dataset["users"]),
@@ -269,4 +312,5 @@ def dataset_summary(dataset: dict[str, Any]) -> dict[str, Any]:
         "relevant_chunks": relevant_chunks,
         "categories": categories,
         "scopes": scopes,
+        "splits": splits,
     }
