@@ -1,0 +1,700 @@
+{
+  "dataset_version": "1",
+  "description": "Synthetic retrieval evaluation corpus for DocuMind. All content is fabricated for benchmarking only; it is not real legal, financial, or insurance advice. Pages carry stable semantic_ids used to map produced chunks to ground truth; semantic ids never appear in query text and are never part of the embedded text.",
+  "users": {
+    "user_a": {
+      "email": "eval-user-a@example.com",
+      "display_name": "eval-a",
+      "spaces": {
+        "user_a_insurance": {
+          "name": "A Insurance",
+          "documents": {
+            "user_a_policy": {
+              "filename": "a-policy.pdf",
+              "pages": [
+                {
+                  "semantic_id": "private_policy_cancellation",
+                  "text": "Northstar Comprehensive Insurance Policy for the property at 12 Lake Road. Cancellation requires 30 days written notice before the renewal date."
+                },
+                {
+                  "semantic_id": "private_policy_renewal",
+                  "text": "This policy renews automatically each year on 1 March. Coverage includes fire and theft up to 500000 Swiss francs."
+                },
+                {
+                  "semantic_id": "private_policy_premium_due",
+                  "text": "The annual premium of 1200 is due by 15 December each year."
+                },
+                {
+                  "semantic_id": "private_policy_exclusions",
+                  "text": "Exclusions include flood, earthquake, and intentional damage."
+                }
+              ]
+            },
+            "user_a_billing": {
+              "filename": "a-billing.pdf",
+              "pages": [
+                {
+                  "semantic_id": "private_billing_dispute",
+                  "text": "Northstar billing disputes must be submitted within 30 days of the statement date. Refunds are issued after review."
+                },
+                {
+                  "semantic_id": "private_billing_payment",
+                  "text": "Payments can be made by bank transfer or card. A late fee applies after 5 days."
+                }
+              ]
+            }
+          }
+        },
+        "user_a_housing": {
+          "name": "A Housing",
+          "documents": {
+            "user_a_rental": {
+              "filename": "a-rental.pdf",
+              "pages": [
+                {
+                  "semantic_id": "private_housing_deposit",
+                  "text": "The tenancy deposit of 1800 is protected and returned within 14 days of move out."
+                },
+                {
+                  "semantic_id": "private_housing_notice",
+                  "text": "Tenants must give 60 days notice before the end of the tenancy."
+                }
+              ]
+            },
+            "user_a_housing_terms": {
+              "filename": "a-housing-terms.pdf",
+              "pages": [
+                {
+                  "semantic_id": "private_housing_maintenance",
+                  "text": "Maintenance requests must be reported within 30 days of noticing the issue."
+                }
+              ]
+            }
+          }
+        },
+        "user_a_business": {
+          "name": "A Business",
+          "documents": {
+            "user_a_invoice": {
+              "filename": "a-invoice.pdf",
+              "pages": [
+                {
+                  "semantic_id": "private_invoice_due",
+                  "text": "Invoice INV-2048 of 800 is due by 30 June."
+                },
+                {
+                  "semantic_id": "private_invoice_terms",
+                  "text": "Payment terms are net 30 from the invoice date."
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "user_b": {
+      "email": "eval-user-b@example.com",
+      "display_name": "eval-b",
+      "spaces": {
+        "user_b_space": {
+          "name": "B Space",
+          "documents": {
+            "user_b_policy": {
+              "filename": "b-policy.pdf",
+              "pages": [
+                {
+                  "semantic_id": "user_b_policy_cancellation",
+                  "text": "Orion Health Plan. Cancellation requires 45 days written notice after the first year."
+                },
+                {
+                  "semantic_id": "user_b_policy_coverage",
+                  "text": "Coverage includes outpatient care and prescriptions."
+                }
+              ]
+            },
+            "user_b_rental": {
+              "filename": "b-rental.pdf",
+              "pages": [
+                {
+                  "semantic_id": "user_b_rental_deposit",
+                  "text": "The Orion rental requires a deposit of 2500 returned at move out."
+                }
+              ]
+            },
+            "user_b_subscription": {
+              "filename": "b-subscription.pdf",
+              "pages": [
+                {
+                  "semantic_id": "user_b_subscription_renewal",
+                  "text": "The Orion subscription renews monthly by card and can be paused anytime."
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "reference_documents": {
+    "reference_insurance": {
+      "title": "Insurance Terms Guide",
+      "filename": "insurance-terms.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_insurance_notice",
+          "text": "A notice period is the time required before a cancellation takes effect."
+        },
+        {
+          "semantic_id": "reference_insurance_grace",
+          "text": "A grace period is extra time after a payment due date before a late fee applies."
+        },
+        {
+          "semantic_id": "reference_insurance_waiting",
+          "text": "A waiting period is the time before coverage begins after enrollment."
+        }
+      ]
+    },
+    "reference_housing": {
+      "title": "Housing Terms Guide",
+      "filename": "housing-terms.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_housing_deposit",
+          "text": "A tenancy deposit is money held to cover damage beyond normal wear."
+        },
+        {
+          "semantic_id": "reference_housing_notice",
+          "text": "Rental notice periods vary by agreement type and local rules."
+        }
+      ]
+    },
+    "reference_invoices": {
+      "title": "Invoice Terms Guide",
+      "filename": "invoice-terms.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_invoice_due",
+          "text": "An invoice due date is the last day payment is accepted without penalty."
+        }
+      ]
+    }
+  },
+  "queries": [
+    {
+      "id": "priv_direct_cancel",
+      "category": "private_direct",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How much notice is required to cancel the policy?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_policy", "user_a_rental", "user_a_invoice"]
+    },
+    {
+      "id": "priv_direct_due",
+      "category": "private_direct",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "By what date is the annual premium due?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_premium_due"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_a_invoice", "user_b_policy"]
+    },
+    {
+      "id": "priv_direct_paymethod",
+      "category": "private_direct",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "Which payment methods does the policy accept?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_billing_payment"],
+      "expected_relevant_documents": ["user_a_billing"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_subscription"]
+    },
+    {
+      "id": "priv_direct_deposit",
+      "category": "private_direct",
+      "scope": "private",
+      "space": "user_a_housing",
+      "question": "How much is the rental deposit and when is it returned?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_housing_deposit"],
+      "expected_relevant_documents": ["user_a_rental"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_rental"]
+    },
+    {
+      "id": "priv_direct_notice",
+      "category": "private_direct",
+      "scope": "private",
+      "space": "user_a_housing",
+      "question": "How many days notice must a tenant give before leaving?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_housing_notice"],
+      "expected_relevant_documents": ["user_a_rental"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_rental", "user_a_policy"]
+    },
+    {
+      "id": "priv_para_cancel",
+      "category": "private_paraphrase",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "I want to end my coverage. What lead time is required?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_policy"]
+    },
+    {
+      "id": "priv_para_renewal",
+      "category": "private_paraphrase",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "Does my property insurance continue automatically year after year?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_renewal"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "priv_para_dispute",
+      "category": "private_paraphrase",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How long after getting my statement can I still raise a billing issue?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_billing_dispute"],
+      "expected_relevant_documents": ["user_a_billing"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "priv_multi_policy",
+      "category": "private_multi_chunk",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "Describe how my policy can be cancelled and how it renews.",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation", "private_policy_renewal"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "priv_multi_billing",
+      "category": "private_multi_chunk",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "What are the dispute and payment options for my account?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_billing_dispute", "private_billing_payment"],
+      "expected_relevant_documents": ["user_a_billing"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_direct_notice",
+      "category": "reference_direct",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "What does a notice period mean in insurance?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_notice"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_direct_grace",
+      "category": "reference_direct",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "What is a grace period?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_grace"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_direct_waiting",
+      "category": "reference_direct",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "What is a waiting period in insurance?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_waiting"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_direct_deposit",
+      "category": "reference_direct",
+      "scope": "reference",
+      "space": "user_a_housing",
+      "question": "What is a tenancy deposit?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_housing_deposit"],
+      "expected_relevant_documents": ["reference_housing"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_para_notice",
+      "category": "reference_paraphrase",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "How much lead time is normally needed before a cancellation becomes effective?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_notice"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "ref_para_due",
+      "category": "reference_paraphrase",
+      "scope": "reference",
+      "space": "user_a_business",
+      "question": "When is an invoice considered past due?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_invoice_due"],
+      "expected_relevant_documents": ["reference_invoices"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "comb_priv_winner_cancel",
+      "category": "combined_private_winner",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "What notice does my own policy require for cancellation?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_policy"]
+    },
+    {
+      "id": "comb_priv_winner_due",
+      "category": "combined_private_winner",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "When exactly is my premium due this year?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_premium_due"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_a_invoice"]
+    },
+    {
+      "id": "comb_priv_winner_renewal",
+      "category": "combined_private_winner",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "Will my home insurance renew on its own?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_renewal"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "comb_ref_winner_grace",
+      "category": "combined_reference_winner",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "Define the term grace period.",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_grace"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "comb_ref_winner_notice",
+      "category": "combined_reference_winner",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "Explain what a notice period means.",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_notice"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "comb_ref_winner_deposit",
+      "category": "combined_reference_winner",
+      "scope": "combined",
+      "space": "user_a_housing",
+      "question": "What does the term tenancy deposit mean?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_housing_deposit"],
+      "expected_relevant_documents": ["reference_housing"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "comb_multi_notice",
+      "category": "combined_multi_source",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "Compare the cancellation notice my policy requires with the general meaning of a notice period.",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation", "reference_insurance_notice"],
+      "expected_relevant_documents": ["user_a_policy", "reference_insurance"],
+      "expected_source_kinds": ["private", "reference"],
+      "forbidden_documents": ["user_b_policy"]
+    },
+    {
+      "id": "comb_multi_deposit",
+      "category": "combined_multi_source",
+      "scope": "combined",
+      "space": "user_a_housing",
+      "question": "What is a tenancy deposit and what does my rental agreement say about mine?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_housing_deposit", "reference_housing_deposit"],
+      "expected_relevant_documents": ["user_a_rental", "reference_housing"],
+      "expected_source_kinds": ["private", "reference"],
+      "forbidden_documents": ["user_b_rental"]
+    },
+    {
+      "id": "comb_multi_due",
+      "category": "combined_multi_source",
+      "scope": "combined",
+      "space": "user_a_business",
+      "question": "When is my invoice due and what does an invoice due date mean?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_invoice_due", "reference_invoice_due"],
+      "expected_relevant_documents": ["user_a_invoice", "reference_invoices"],
+      "expected_source_kinds": ["private", "reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "cross_space_cancel",
+      "category": "cross_space_decoy",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How many days notice does my insurance cancellation require?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_a_rental", "user_a_invoice", "user_a_housing_terms"]
+    },
+    {
+      "id": "cross_space_due",
+      "category": "cross_space_decoy",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "When is my payment due?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_premium_due"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_a_invoice"]
+    },
+    {
+      "id": "cross_user_cancel",
+      "category": "cross_user_decoy",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "What is the cancellation notice period for my plan?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_policy"]
+    },
+    {
+      "id": "cross_user_deposit",
+      "category": "cross_user_decoy",
+      "scope": "private",
+      "space": "user_a_housing",
+      "question": "When will my deposit be returned after I move out?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_housing_deposit"],
+      "expected_relevant_documents": ["user_a_rental"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_rental"]
+    },
+    {
+      "id": "cross_user_payment",
+      "category": "cross_user_decoy",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How can I pay my premium?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_billing_payment"],
+      "expected_relevant_documents": ["user_a_billing"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_subscription"]
+    },
+    {
+      "id": "unanswerable_private",
+      "category": "unanswerable_private",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "Does my policy cover water damage from flooding?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_private_fee",
+      "category": "unanswerable_private",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "What cancellation fee does Northstar charge for terminating the policy early?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_private_org",
+      "category": "unanswerable_private",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How do I contact Meridian Support to renew my plan?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_reference",
+      "category": "unanswerable_reference",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "What is a deductible?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_reference_duration",
+      "category": "unanswerable_reference",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "How many days is the standard grace period?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_reference_rate",
+      "category": "unanswerable_reference",
+      "scope": "reference",
+      "space": "user_a_business",
+      "question": "What is the average insurance premium quoted in the reference materials?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_combined",
+      "category": "unanswerable_combined",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "How many paid vacation days do I have left?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_combined_renewal",
+      "category": "unanswerable_combined",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "When does my subscription auto-renew this month?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "unanswerable_combined_refund",
+      "category": "unanswerable_combined",
+      "scope": "combined",
+      "space": "user_a_insurance",
+      "question": "How long does it take to receive a refund after I cancel my policy?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": []
+    },
+    {
+      "id": "hard_neg_cancel",
+      "category": "hard_negative",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "How much notice is required to cancel the policy?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_cancellation"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_b_policy"]
+    },
+    {
+      "id": "hard_neg_deposit",
+      "category": "hard_negative",
+      "scope": "private",
+      "space": "user_a_housing",
+      "question": "How quickly will my deposit be returned after I move out?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_housing_deposit"],
+      "expected_relevant_documents": ["user_a_rental"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "semantic_decoy_grace",
+      "category": "semantic_decoy",
+      "scope": "reference",
+      "space": "user_a_insurance",
+      "question": "Is there extra time to pay my premium without a penalty?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_insurance_grace"],
+      "expected_relevant_documents": ["reference_insurance"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": []
+    },
+    {
+      "id": "semantic_decoy_cover",
+      "category": "semantic_decoy",
+      "scope": "private",
+      "space": "user_a_insurance",
+      "question": "What does my plan actually cover?",
+      "answerable": true,
+      "expected_relevant_chunks": ["private_policy_renewal"],
+      "expected_relevant_documents": ["user_a_policy"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": []
+    }
+  ]
+}
