@@ -277,6 +277,78 @@ candidates; the same embedding model/dimension backs both stores.
   verification.
 - A reference library may legitimately be empty; the UI degrades gracefully.
 
+### Retrieval Evaluation (PoC 3C)
+
+DocuMind ships a reproducible retrieval benchmark that measures the current
+retrieval system **directly** (which chunks are retrieved) rather than judging
+answer generation.
+
+- Evaluation dataset: `backend/app/evaluation/datasets/retrieval_v1.json`
+  (version 1) — a synthetic corpus (2 users, 4 spaces, 8 private documents,
+  3 reference documents, 21 chunks) with explicit chunk/document ground truth,
+  hard negatives, cross-user and cross-space decoys, and 43 queries across
+  private/reference/combined scopes (34 answerable, 9 unanswerable). Semantic
+  page identifiers used for ground truth live outside the embedded text, so the
+  exact corpus text that FastEmbed embeds contains no benchmark markers.
+- Metrics: Chunk Hit@K, macro Recall@K, MRR, Document Hit@K, unanswerable
+  rejection rate, cross-user leakage, cross-space leakage, and combined source
+  coverage.
+- The evaluator exercises the production retrieval service; it does **not**
+  require an answer provider or any LLM. Deterministic evaluator unit tests use
+  mock embeddings and are not headline quality numbers.
+- Generated raw reports go to `backend/evaluation/results/` (gitignored); the
+  dataset is committed.
+
+Run the real local FastEmbed baseline:
+
+```bash
+cd backend
+docker compose up -d db
+docker compose run --rm backend python scripts/evaluate_retrieval.py
+```
+
+The default embedding provider is the local FastEmbed model
+`BAAI/bge-small-en-v1.5` (downloaded to the FastEmbed cache on first run). No
+paid LLM API is called. Results depend on the dataset version, embedding
+model, threshold, and top_k; they are a synthetic benchmark baseline, not a
+claim of production or general RAG quality.
+
+Synthetic baseline (dataset v1, BAAI/bge-small-en-v1.5, 384 dimensions,
+top_k=5, threshold 0.5):
+
+| Metric | Result |
+|---|---|
+| Chunk Hit@1 | 0.882 |
+| Chunk Hit@3 | 0.971 |
+| Chunk Hit@5 | 1.000 |
+| Recall@1 | 0.809 |
+| Recall@3 | 0.971 |
+| Recall@5 | 1.000 |
+| MRR | 0.929 |
+| Document Hit@5 | 1.000 |
+| Unanswerable rejection | 0 / 9 (0.000) |
+| Cross-user leakage | 0 / 13 |
+| Cross-space leakage | 0 / 6 |
+| Combined source coverage | 1.000 |
+
+Observed findings (measured, not tuned — production defaults unchanged):
+
+- The current similarity threshold (0.5) is permissive for unanswerable
+  queries: all 9 returned candidates. The threshold sweep shows rejection only
+  improves to 2/9 (22.2%) at 0.6 and 5/9 (55.6%) at 0.7, where answerable
+  Hit@5 collapses from 1.000 to 0.706. Unanswerable top scores (0.54–0.79)
+  overlap heavily with relevant scores (0.52–0.88), so **no threshold in the
+  swept range provides a good recall/rejection tradeoff** on this corpus. This
+  supersedes any earlier suggestion that ~0.55–0.65 might be worth exploring.
+- Weakest categories at Hit@1: combined private-winner (0.333), cross-space
+  decoy and semantic decoy (0.500) — embedding/proximity limitations, not
+  retrieval bugs. All 34 answerable queries retrieved their relevant chunk
+  within top 5.
+- Chunking limitation: the v1 corpus largely uses one synthetic chunk per page
+  (21 chunks / 21 pages), so it does not stress long-page splitting, overlap
+  boundaries, or facts spanning a chunk boundary. It is not a comprehensive
+  chunking-strategy benchmark.
+
 ## Development defaults and mock behavior
 
 The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
