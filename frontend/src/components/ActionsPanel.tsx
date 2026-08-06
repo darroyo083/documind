@@ -92,6 +92,13 @@ export default function ActionsPanel({
         <p className="mt-1 text-xs text-gray-400">
           The checklist will appear once it completes.
         </p>
+        <button
+          type="button"
+          onClick={onGenerate}
+          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        >
+          Retry
+        </button>
       </div>
     );
   }
