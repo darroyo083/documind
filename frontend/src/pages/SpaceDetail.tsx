@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import * as api from "../api";
 import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
+import ComparePanel from "../components/ComparePanel";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   private: "My documents",
@@ -10,7 +11,7 @@ const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   combined: "Both",
 };
 
-type Section = "overview" | "actions" | "ask";
+type Section = "overview" | "actions" | "compare" | "ask";
 
 type AnalysisView =
   | { kind: "loading" }
@@ -61,6 +62,7 @@ export default function SpaceDetail() {
   const [actionsView, setActionsView] = useState<ActionsView>({ kind: "loading" });
   const actionsDocRef = useRef<string | null>(null);
   const actionsTabRef = useRef<HTMLButtonElement>(null);
+  const compareTabRef = useRef<HTMLButtonElement>(null);
   const askTabRef = useRef<HTMLButtonElement>(null);
   const overviewTabRef = useRef<HTMLButtonElement>(null);
 
@@ -284,7 +286,7 @@ export default function SpaceDetail() {
     }
   }
 
-  const SECTION_ORDER: Section[] = ["overview", "actions", "ask"];
+  const SECTION_ORDER: Section[] = ["overview", "actions", "compare", "ask"];
 
   function handleSectionKeyDown(event: React.KeyboardEvent) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -298,7 +300,9 @@ export default function SpaceDetail() {
         ? overviewTabRef.current
         : next === "actions"
           ? actionsTabRef.current
-          : askTabRef.current;
+          : next === "compare"
+            ? compareTabRef.current
+            : askTabRef.current;
     target?.focus();
   }
 
@@ -467,6 +471,22 @@ export default function SpaceDetail() {
                     Actions
                   </button>
                   <button
+                    ref={compareTabRef}
+                    type="button"
+                    role="tab"
+                    id="section-tab-compare"
+                    aria-controls="section-panel-compare"
+                    aria-selected={section === "compare"}
+                    onClick={() => setSection("compare")}
+                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      section === "compare"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Compare
+                  </button>
+                  <button
                     ref={askTabRef}
                     type="button"
                     role="tab"
@@ -508,6 +528,14 @@ export default function SpaceDetail() {
                       onGenerate={handleGenerateActions}
                       onToggleStatus={handleToggleAction}
                     />
+                  </div>
+                ) : section === "compare" ? (
+                  <div
+                    role="tabpanel"
+                    id="section-panel-compare"
+                    aria-labelledby="section-tab-compare"
+                  >
+                    <ComparePanel key={id} spaceId={id as string} documents={documents} />
                   </div>
                 ) : (
                   <div

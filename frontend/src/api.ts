@@ -364,3 +364,108 @@ export function updateActionStatus(
     { method: "PATCH", body: { status } }
   );
 }
+
+/* Multi-document comparison */
+
+export interface ComparisonCitation {
+  document_id: string;
+  chunk_id: string;
+  page_number: number;
+  excerpt: string;
+}
+
+export interface ComparisonFinding {
+  document_id: string;
+  value: string | null;
+  not_identified: boolean;
+  sources: ComparisonCitation[];
+}
+
+export interface ComparisonDimension {
+  label: string;
+  findings: ComparisonFinding[];
+  synthesis: string | null;
+  sources: ComparisonCitation[];
+}
+
+export interface ComparisonKeyDifference {
+  title: string;
+  description: string;
+  sources: ComparisonCitation[];
+}
+
+export interface ComparisonCommonality {
+  title: string;
+  description: string;
+  sources: ComparisonCitation[];
+}
+
+export interface ComparisonMember {
+  document_id: string;
+  original_filename: string;
+  position: number;
+}
+
+export type ComparisonStatus = "processing" | "ready" | "failed";
+
+export interface DocumentComparison {
+  id: string;
+  status: ComparisonStatus;
+  focus: string | null;
+  title: string;
+  summary: string;
+  documents: ComparisonMember[];
+  dimensions: ComparisonDimension[];
+  key_differences: ComparisonKeyDifference[];
+  commonalities: ComparisonCommonality[];
+  provider: string;
+  model: string;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComparisonSummary {
+  id: string;
+  status: ComparisonStatus;
+  focus: string | null;
+  title: string;
+  documents: ComparisonMember[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateComparisonRequest {
+  document_ids: string[];
+  focus?: string | null;
+}
+
+export function createComparison(
+  spaceId: string,
+  body: CreateComparisonRequest
+): Promise<DocumentComparison> {
+  return request<DocumentComparison>(`/knowledge-spaces/${spaceId}/comparisons`, {
+    method: "POST",
+    body,
+  });
+}
+
+export function listComparisons(
+  spaceId: string,
+  signal?: AbortSignal
+): Promise<ComparisonSummary[]> {
+  return request<ComparisonSummary[]>(`/knowledge-spaces/${spaceId}/comparisons`, {
+    signal,
+  });
+}
+
+export function getComparison(
+  spaceId: string,
+  comparisonId: string,
+  signal?: AbortSignal
+): Promise<DocumentComparison> {
+  return request<DocumentComparison>(
+    `/knowledge-spaces/${spaceId}/comparisons/${comparisonId}`,
+    { signal }
+  );
+}
