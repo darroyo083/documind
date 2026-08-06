@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -48,6 +49,15 @@ class Settings(BaseSettings):
 
     deepseek_base_url: str = "https://api.deepseek.com"
     provider_timeout_seconds: float = 30.0
+
+    generation_stale_after_seconds: int = Field(
+        default=900,
+        gt=0,
+        description=(
+            "Processing lease timeout for generation flows; values <= 0 would make "
+            "every processing row immediately stale (unsafe duplicate generation)."
+        ),
+    )
 
     default_top_k: int = 5
     retrieval_max_top_k: int = 10

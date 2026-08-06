@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.application.analysis import load_ordered_chunks
 from app.application.documents import get_owned_document
+from app.application.generation_lease import claim_generation, complete_generation
 from app.config import settings
 from app.domain.actions import (
     ActionSetStatus,
@@ -230,76 +231,108 @@ async def generate_actions(
     if not chunks:
         raise ActionStateError("Document has no chunks to analyze")
 
-    existing = await _existing_set(db, document.id)
-    if existing is not None:
-        if existing.status == ActionSetStatus.PROCESSING.value:
-            raise ActionConflictError("Action extraction is already in progress for this document")
-        if existing.status == ActionSetStatus.READY.value:
-            return existing, False
-
+    document_id = document.id
     context = build_action_context(document, chunks, settings.action_max_context_chars)
     chunks_by_source_id = {chunk_source_id(chunk): chunk for chunk in chunks}
-    created = existing is None
 
-    if existing is not None:
-        action_set = existing
-        action_set.status = ActionSetStatus.PROCESSING.value
-        action_set.provider = settings.action_provider
-        action_set.model = provider.model_name
-        action_set.error_message = None
-    else:
+    existing = await _existing_set(db, document_id)
+    if existing is not None and existing.status == ActionSetStatus.READY.value:
+        return existing, False
+
+    if existing is None:
+        attempt_id = uuid.uuid4()
         action_set = DocumentActionSet(
-            document_id=document.id,
+            document_id=document_id,
             status=ActionSetStatus.PROCESSING.value,
             provider=settings.action_provider,
             model=provider.model_name,
+            processing_started_at=datetime.now(UTC),
+            processing_attempt_id=attempt_id,
         )
         db.add(action_set)
-    try:
-        await db.commit()
-        await db.refresh(action_set)
-    except IntegrityError:
-        await db.rollback()
-        raise ActionConflictError(
-            "Action extraction is already in progress for this document"
-        ) from None
+        try:
+            await db.commit()
+            await db.refresh(action_set)
+        except IntegrityError:
+            await db.rollback()
+            raise ActionConflictError(
+                "Action extraction is already in progress for this document"
+            ) from None
+        created = True
+    else:
+        claim = await claim_generation(
+            db,
+            DocumentActionSet,
+            existing.id,
+            provider=settings.action_provider,
+            model_name=provider.model_name,
+        )
+        if claim is None:
+            reloaded = await _existing_set(db, document_id)
+            if reloaded is not None and reloaded.status == ActionSetStatus.READY.value:
+                return reloaded, False
+            raise ActionConflictError("Action extraction is already in progress for this document")
+        attempt_id, _ = claim
+        action_set = existing
+        created = False
 
+    action_set_id = action_set.id
     try:
         provider_result = await provider.generate_actions(context)
         validated = validate_provider_actions(provider_result, chunks_by_source_id)
-        await db.execute(
-            delete(DocumentAction).where(DocumentAction.action_set_id == action_set.id)
-        )
-        await db.flush()
-        db.add_all(
-            [
-                DocumentAction(
-                    action_set_id=action_set.id,
-                    position=position,
-                    action_type=action.action_type.value,
-                    title=action.title,
-                    description=action.description,
-                    timing_text=action.timing_text,
-                    due_date=action.due_date,
-                    status=ActionStatus.PENDING.value,
-                    sources=[_citation_to_dict(citation) for citation in action.citations],
-                )
-                for position, action in enumerate(validated)
-            ]
-        )
-        action_set.status = ActionSetStatus.READY.value
-        action_set.error_message = None
-        await db.commit()
-        fresh = await _existing_set(db, document.id)
-        if fresh is None:
-            raise ActionStateError("Action set could not be reloaded")
-        return fresh, created
     except Exception as exc:
-        await db.rollback()
-        action_set.status = ActionSetStatus.FAILED.value
-        action_set.error_message = str(exc)
-        await db.commit()
+        if not await complete_generation(
+            db,
+            DocumentActionSet,
+            action_set_id,
+            attempt_id,
+            status=ActionSetStatus.FAILED.value,
+            values={"error_message": str(exc)},
+        ):
+            reloaded = await _existing_set(db, document_id)
+            if reloaded is not None and reloaded.status == ActionSetStatus.READY.value:
+                return reloaded, False
+            raise ActionConflictError(
+                "Action extraction is already in progress for this document"
+            ) from None
+        await db.refresh(action_set)
         raise exc
+
+    await db.execute(delete(DocumentAction).where(DocumentAction.action_set_id == action_set_id))
+    db.add_all(
+        [
+            DocumentAction(
+                action_set_id=action_set_id,
+                position=position,
+                action_type=action.action_type.value,
+                title=action.title,
+                description=action.description,
+                timing_text=action.timing_text,
+                due_date=action.due_date,
+                status=ActionStatus.PENDING.value,
+                sources=[_citation_to_dict(citation) for citation in action.citations],
+            )
+            for position, action in enumerate(validated)
+        ]
+    )
+    if not await complete_generation(
+        db,
+        DocumentActionSet,
+        action_set_id,
+        attempt_id,
+        status=ActionSetStatus.READY.value,
+        values={"error_message": None},
+    ):
+        reloaded = await _existing_set(db, document_id)
+        if reloaded is not None and reloaded.status == ActionSetStatus.READY.value:
+            return reloaded, False
+        raise ActionConflictError("Action extraction is already in progress for this document")
+
+    await db.refresh(action_set)
+    fresh = await _existing_set(db, document_id)
+    if fresh is None:
+        raise ActionStateError("Action set could not be reloaded")
+    return fresh, created
 
 
 async def get_document_action_set(

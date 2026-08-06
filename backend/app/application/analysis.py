@@ -1,10 +1,12 @@
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.documents import get_owned_document
+from app.application.generation_lease import claim_generation, complete_generation
 from app.config import settings
 from app.domain.analysis import (
     AnalysisCitation,
@@ -226,58 +228,94 @@ async def analyze_document(
     if not chunks:
         raise AnalysisStateError("Document has no chunks to analyze")
 
-    existing = await _existing_analysis(db, document.id)
-    if existing is not None:
-        if existing.status == DocumentAnalysisStatus.PROCESSING.value:
-            raise AnalysisConflictError("An analysis is already in progress for this document")
-        if existing.status == DocumentAnalysisStatus.READY.value:
-            return existing, False
-
+    document_id = document.id
     context = build_context(document, chunks, settings.analysis_max_context_chars)
     chunks_by_source_id = {chunk_source_id(chunk): chunk for chunk in chunks}
-    created = existing is None
 
-    if existing is not None:
-        analysis = existing
-        analysis.status = DocumentAnalysisStatus.PROCESSING.value
-        analysis.provider = settings.analysis_provider
-        analysis.model = provider.model_name
-        analysis.error_message = None
-    else:
+    existing = await _existing_analysis(db, document_id)
+    if existing is not None and existing.status == DocumentAnalysisStatus.READY.value:
+        return existing, False
+
+    if existing is None:
+        attempt_id = uuid.uuid4()
         analysis = DocumentAnalysis(
-            document_id=document.id,
+            document_id=document_id,
             status=DocumentAnalysisStatus.PROCESSING.value,
             provider=settings.analysis_provider,
             model=provider.model_name,
+            processing_started_at=datetime.now(UTC),
+            processing_attempt_id=attempt_id,
         )
         db.add(analysis)
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        raise AnalysisConflictError(
-            "An analysis is already in progress for this document"
-        ) from None
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            raise AnalysisConflictError(
+                "An analysis is already in progress for this document"
+            ) from None
+        created = True
+    else:
+        claim = await claim_generation(
+            db,
+            DocumentAnalysis,
+            existing.id,
+            provider=settings.analysis_provider,
+            model_name=provider.model_name,
+        )
+        if claim is None:
+            reloaded = await _existing_analysis(db, document_id)
+            if reloaded is not None and reloaded.status == DocumentAnalysisStatus.READY.value:
+                return reloaded, False
+            raise AnalysisConflictError("An analysis is already in progress for this document")
+        attempt_id, _ = claim
+        analysis = existing
+        created = False
 
+    analysis_id = analysis.id
     try:
         provider_result = await provider.analyze(context)
         trusted = validate_provider_analysis(provider_result, chunks_by_source_id)
-        analysis.document_type = trusted.document_type.value
-        analysis.normalized_title = trusted.normalized_title
-        analysis.summary = trusted.summary
-        analysis.important_dates = [_date_to_dict(item) for item in trusted.important_dates]
-        analysis.key_facts = [_fact_to_dict(item) for item in trusted.key_facts]
-        analysis.status = DocumentAnalysisStatus.READY.value
-        analysis.error_message = None
-        await db.commit()
-        await db.refresh(analysis)
-        return analysis, created
     except (ProviderError, AnalysisValidationError) as exc:
-        await db.rollback()
-        analysis.status = DocumentAnalysisStatus.FAILED.value
-        analysis.error_message = str(exc)
-        await db.commit()
+        if not await complete_generation(
+            db,
+            DocumentAnalysis,
+            analysis_id,
+            attempt_id,
+            status=DocumentAnalysisStatus.FAILED.value,
+            values={"error_message": str(exc)},
+        ):
+            reloaded = await _existing_analysis(db, document_id)
+            if reloaded is not None and reloaded.status == DocumentAnalysisStatus.READY.value:
+                return reloaded, False
+            raise AnalysisConflictError(
+                "An analysis is already in progress for this document"
+            ) from None
+        await db.refresh(analysis)
         raise exc
+
+    if not await complete_generation(
+        db,
+        DocumentAnalysis,
+        analysis_id,
+        attempt_id,
+        status=DocumentAnalysisStatus.READY.value,
+        values={
+            "document_type": trusted.document_type.value,
+            "normalized_title": trusted.normalized_title,
+            "summary": trusted.summary,
+            "important_dates": [_date_to_dict(item) for item in trusted.important_dates],
+            "key_facts": [_fact_to_dict(item) for item in trusted.key_facts],
+            "error_message": None,
+        },
+    ):
+        reloaded = await _existing_analysis(db, document_id)
+        if reloaded is not None and reloaded.status == DocumentAnalysisStatus.READY.value:
+            return reloaded, False
+        raise AnalysisConflictError("An analysis is already in progress for this document")
+
+    await db.refresh(analysis)
+    return analysis, created
 
 
 async def get_document_analysis(
