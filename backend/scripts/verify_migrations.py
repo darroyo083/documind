@@ -22,13 +22,15 @@ EXPECTED_TABLES = {
     "document_actions",
     "document_analyses",
     "document_chunks",
+    "document_comparison_documents",
+    "document_comparisons",
     "documents",
     "knowledge_spaces",
     "reference_document_chunks",
     "reference_documents",
     "users",
 }
-EXPECTED_HEAD = "008"
+EXPECTED_HEAD = "009"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -143,6 +145,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
         "'document_analyses', 'document_action_sets', 'document_actions', "
+        "'document_comparisons', 'document_comparison_documents', "
         "'reference_documents', 'reference_document_chunks')",
     )
     required_constraints = {
@@ -163,6 +166,14 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions_pkey",
         "document_actions_action_set_id_fkey",
         "uq_document_actions_position",
+        "document_comparisons_pkey",
+        "document_comparisons_knowledge_space_id_fkey",
+        "uq_document_comparisons_signature",
+        "document_comparison_documents_pkey",
+        "document_comparison_documents_comparison_id_fkey",
+        "document_comparison_documents_document_id_fkey",
+        "uq_document_comparison_documents_member",
+        "uq_document_comparison_documents_position",
         "reference_documents_pkey",
         "reference_documents_content_sha256_key",
         "reference_document_chunks_pkey",
@@ -182,6 +193,9 @@ async def verify_head_schema(database_url: URL) -> None:
         "'knowledge_spaces_user_id_fkey', 'documents_knowledge_space_id_fkey', "
         "'document_chunks_document_id_fkey', 'document_analyses_document_id_fkey', "
         "'document_action_sets_document_id_fkey', 'document_actions_action_set_id_fkey', "
+        "'document_comparisons_knowledge_space_id_fkey', "
+        "'document_comparison_documents_comparison_id_fkey', "
+        "'document_comparison_documents_document_id_fkey', "
         "'reference_document_chunks_reference_document_id_fkey')",
     )
     if delete_action != {"CASCADE"}:
@@ -199,6 +213,9 @@ async def verify_head_schema(database_url: URL) -> None:
         "ix_document_analyses_document_id",
         "ix_document_action_sets_document_id",
         "ix_document_actions_action_set_id",
+        "ix_document_comparisons_knowledge_space_id",
+        "ix_document_comparison_documents_comparison_id",
+        "ix_document_comparison_documents_document_id",
         "ix_reference_document_chunks_reference_document_id",
         "documents_storage_key_key",
         "documents_pkey",
@@ -206,6 +223,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_analyses_pkey",
         "document_action_sets_pkey",
         "document_actions_pkey",
+        "document_comparisons_pkey",
+        "document_comparison_documents_pkey",
         "reference_documents_pkey",
         "reference_documents_content_sha256_key",
         "reference_document_chunks_pkey",
@@ -213,6 +232,9 @@ async def verify_head_schema(database_url: URL) -> None:
         "uq_document_analyses_document_id",
         "uq_document_action_sets_document_id",
         "uq_document_actions_position",
+        "uq_document_comparisons_signature",
+        "uq_document_comparison_documents_member",
+        "uq_document_comparison_documents_position",
         "uq_reference_document_chunks_position",
         "knowledge_spaces_pkey",
         "users_email_key",
@@ -228,6 +250,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "FROM information_schema.columns WHERE table_schema = 'public' "
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
         "'document_analyses', 'document_action_sets', 'document_actions', "
+        "'document_comparisons', 'document_comparison_documents', "
         "'reference_documents', 'reference_document_chunks')",
     )
     required_columns = {
@@ -270,6 +293,22 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions.status": "character varying:NO",
         "document_actions.sources": "jsonb:NO",
         "document_actions.completed_at": "timestamp with time zone:YES",
+        "document_comparisons.id": "uuid:NO",
+        "document_comparisons.knowledge_space_id": "uuid:NO",
+        "document_comparisons.status": "character varying:NO",
+        "document_comparisons.comparison_signature": "character varying:NO",
+        "document_comparisons.focus": "text:YES",
+        "document_comparisons.title": "character varying:NO",
+        "document_comparisons.summary": "text:NO",
+        "document_comparisons.comparison_dimensions": "jsonb:NO",
+        "document_comparisons.key_differences": "jsonb:NO",
+        "document_comparisons.commonalities": "jsonb:NO",
+        "document_comparisons.processing_started_at": "timestamp with time zone:YES",
+        "document_comparisons.processing_attempt_id": "uuid:YES",
+        "document_comparison_documents.id": "uuid:NO",
+        "document_comparison_documents.comparison_id": "uuid:NO",
+        "document_comparison_documents.document_id": "uuid:NO",
+        "document_comparison_documents.position": "integer:NO",
         "reference_documents.id": "uuid:NO",
         "reference_documents.title": "character varying:NO",
         "reference_documents.original_filename": "character varying:NO",
@@ -315,6 +354,14 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_actions.status": "'pending'::character varying",
         "document_actions.updated_at": "now()",
         "document_actions.sources": "'[]'::jsonb",
+        "document_comparisons.created_at": "now()",
+        "document_comparisons.status": "'processing'::character varying",
+        "document_comparisons.title": "''::character varying",
+        "document_comparisons.summary": "''::text",
+        "document_comparisons.comparison_dimensions": "'[]'::jsonb",
+        "document_comparisons.key_differences": "'[]'::jsonb",
+        "document_comparisons.commonalities": "'[]'::jsonb",
+        "document_comparisons.updated_at": "now()",
         "reference_documents.created_at": "now()",
         "reference_documents.status": "'ready'::character varying",
         "reference_documents.updated_at": "now()",
