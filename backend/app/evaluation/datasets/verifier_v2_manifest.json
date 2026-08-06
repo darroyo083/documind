@@ -1,0 +1,22 @@
+{
+  "experiment_name": "poc_3f_b_verifier_v2_fresh_holdout",
+  "dataset_path": "app/evaluation/datasets/verifier_holdout_v2.json",
+  "dataset_name": "verifier_holdout_v2",
+  "dataset_version": "2",
+  "dataset_canonical_sha256": "93120deaad3096829faea25a1de938865f2fc26f4a38d2dfadbc370bb8da4055",
+  "dataset_split": "fresh_holdout",
+  "verifier_prompt_version": "1",
+  "verifier_provider": "deepseek",
+  "verifier_model": "deepseek-chat",
+  "embedding_provider": "local",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "embedding_dimension": 384,
+  "retrieval_top_k": 5,
+  "retrieval_threshold": 0.5,
+  "decision_schema_version": "1",
+  "frozen": true,
+  "query_count": 24,
+  "answerable_count": 12,
+  "unsupported_count": 12,
+  "expected_verifier_calls": 24
+}

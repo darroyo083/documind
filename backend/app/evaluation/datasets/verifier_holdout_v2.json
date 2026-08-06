@@ -1,0 +1,528 @@
+{
+  "dataset_version": "2",
+  "purpose": "Fresh verifier sufficiency holdout (v2) for the evidence verifier evaluation harness.",
+  "description": "An independently constructed synthetic corpus and 24-question holdout built AFTER the PoC 3F-A verifier prompt (version 1), decision schema, and provider/model configuration were frozen. It is intended for ONE-SHOT verifier evaluation only. No verifier outputs of any kind were observed while this dataset was being constructed; the design is grounded purely in retrieval ground truth and answerability intent. All content is fabricated for benchmarking only and is not real advice.",
+  "intended_use": "frozen one-shot verifier sufficiency holdout; NOT a model-selection or tuning dataset",
+  "created_after_verifier_prompt_version": "1",
+  "no_verifier_outputs_observed_during_construction": true,
+  "split": "fresh_holdout",
+  "retrieval_benchmark_config": {
+    "embedding_provider": "local",
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "embedding_dimension": 384,
+    "top_k": 5,
+    "threshold": 0.5
+  },
+  "users": {
+    "user_c": {
+      "email": "eval-user-c@example.com",
+      "display_name": "eval-c",
+      "spaces": {
+        "user_c_rentals": {
+          "name": "C Equipment Rentals",
+          "documents": {
+            "user_c_rental_agreement": {
+              "filename": "c-rental-agreement.pdf",
+              "pages": [
+                {
+                  "semantic_id": "rental_agreement_terms_main",
+                  "text": "BOULDER-BREAK EQUIPMENT RENTALS - RENTAL AGREEMENT\n\nThis agreement is between Boulder-Break Rentals and the customer for the hire of one RigRover compact excavator, serial number RR-2291, for a rental period of fourteen days starting on the delivery date. The equipment remains the property of Boulder-Break Rentals at all times and may not be sublet or assigned without written consent. The customer agrees to operate the equipment according to the manufacturer instructions and to use it only for the purpose stated in the booking.\n\nPayment for the rental is due in full before delivery. Accepted payment methods are bank transfer and corporate card. A damage deposit is payable at delivery; the deposit amount and the conditions for its return are described on the following page of this agreement.\n\nDelivery of the equipment is scheduled for the twelfth of May. A Boulder-Break representative will confirm the exact delivery window two days before the scheduled date. Return of the equipment is due on the last day of the rental period at the same site address where delivery took place.\n\nThe customer must hold liability insurance covering the equipment for the whole rental period and must provide proof of coverage at least seven days before delivery. If proof is not provided in time, the delivery date may be rescheduled. The customer is also responsible for any permits required by local rules to operate this class of equipment.\n\nThis agreement is governed by the Boulder-Break standard equipment rental terms guide. Nothing in this agreement limits any right that Boulder-Break Rentals has under applicable law."
+                },
+                {
+                  "semantic_id": "rental_agreement_handling",
+                  "text": "The customer is responsible for the routine care of the rented equipment, including daily checks, cleaning, and topping up fluids. Major repairs are arranged by Boulder-Break Rentals. Damage beyond normal wear and tear is assessed by Boulder-Break and charged to the customer up to the value of the equipment.\n\nReturning the equipment after the agreed return date incurs a late return penalty of twenty percent of the daily rate for each day the equipment remains outstanding. The late return penalty is charged on top of the daily rate for the extra days.\n\nA refundable damage deposit of eight hundred fifty is payable at delivery. The deposit is returned to the customer after the equipment is returned and inspected, less any assessed damage charges."
+                }
+              ]
+            },
+            "user_c_rental_rate_sheet": {
+              "filename": "c-rate-sheet.pdf",
+              "pages": [
+                {
+                  "semantic_id": "rental_rate_sheet_rates",
+                  "text": "Boulder-Break Rentals daily rate sheet. RigRover compact excavator: one hundred seventy-five per day. ApexLift boom lift: two hundred twenty per day. WhisperWatt generator: ninety per day. A daily damage waiver is available for the ApexLift boom lift for twelve per day. Weekly and monthly rates are available on request. Rates do not include fuel or delivery."
+                }
+              ]
+            }
+          }
+        },
+        "user_c_events": {
+          "name": "C Event Bookings",
+          "documents": {
+            "user_c_venue_contract": {
+              "filename": "c-venue-contract.pdf",
+              "pages": [
+                {
+                  "semantic_id": "venue_contract_booking",
+                  "text": "Festiva Events venue booking agreement for Riverside Hall. A booking fee of four hundred fifty is due at signing. A security deposit of six hundred is payable at signing and is returned after the event subject to an inspection. The balance is due fourteen days before the event date. The event may use the hall for up to six hours. Damaged stage equipment is replaced at the venue discretion."
+                }
+              ]
+            }
+          }
+        },
+        "user_c_logistics": {
+          "name": "C Shipping",
+          "documents": {
+            "user_c_freight_agreement": {
+              "filename": "c-freight-agreement.pdf",
+              "pages": [
+                {
+                  "semantic_id": "freight_agreement_terms",
+                  "text": "Corridor Freight transportation agreement. Standard freight shipments travel with a transit time of five to seven business days. A fuel surcharge of six percent applies to standard freight. Liability is limited to two thousand five hundred per shipment unless additional coverage is purchased. Proof of delivery is provided for every shipment."
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "user_d": {
+      "email": "eval-user-d@example.com",
+      "display_name": "eval-d",
+      "spaces": {
+        "user_d_fleet": {
+          "name": "D Fleet Service",
+          "documents": {
+            "user_d_fleet_agreement": {
+              "filename": "d-fleet-agreement.pdf",
+              "pages": [
+                {
+                  "semantic_id": "fleet_agreement_terms",
+                  "text": "Vantage Fleet vehicle service agreement covering a fleet of four service vehicles. The monthly service fee is four hundred eighty per vehicle. Scheduled maintenance visits take place monthly. On-site support is provided within eight business hours of a request. Returning a fleet vehicle after the agreed handover time incurs a late penalty of twenty-five percent of the daily service fee."
+                }
+              ]
+            },
+            "user_d_warranty_terms": {
+              "filename": "d-warranty-terms.pdf",
+              "pages": [
+                {
+                  "semantic_id": "warranty_terms_terms",
+                  "text": "Vantage equipment warranty terms. Parts are covered for twenty-four months and labour for twelve months. The warranty excludes damage caused by improper storage. A claim must be filed within thirty days of discovering the defect. Authorized repair centres must be used for all warranty work."
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "reference_documents": {
+    "reference_equipment": {
+      "title": "Equipment Rental Terms Guide",
+      "filename": "equipment-terms-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_equipment_deposit",
+          "text": "In equipment rental agreements, a damage deposit is money held by the rental company to cover damage beyond normal wear and tear. The deposit is usually returned when the equipment comes back in the same condition, minus any assessed damage charges."
+        },
+        {
+          "semantic_id": "reference_equipment_maintenance",
+          "text": "Routine care such as daily checks, cleaning, and fluid top-ups is normally the renter responsibility, while major repairs are arranged by the rental company. Late return penalties in equipment rentals are commonly charged as a percentage of the daily rate."
+        },
+        {
+          "semantic_id": "reference_equipment_transport",
+          "text": "Moving rented equipment to and from the site is usually the renter responsibility unless the agreement says otherwise. Towing and haulage of rented equipment are typically excluded from the base rental rate."
+        }
+      ]
+    },
+    "reference_events": {
+      "title": "Event Booking Terms Guide",
+      "filename": "event-terms-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_events_cancellation",
+          "text": "Cancellation policies define when a booking may be cancelled and whether cancellation fees apply. The amount of advance notice required varies by agreement and is normally stated in days."
+        },
+        {
+          "semantic_id": "reference_events_force_majeure",
+          "text": "A force majeure clause releases a party from its obligations when an outside event such as severe weather or official restrictions prevents performance. The refund timing for a cancelled event is set out in the individual agreement."
+        }
+      ]
+    },
+    "reference_shipping": {
+      "title": "Shipping Terms Guide",
+      "filename": "shipping-terms-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_shipping_transit",
+          "text": "Standard shipping transit time for domestic routes is three to five business days. Express service delivers the next business day. Transit time does not include customs clearance or delays caused by the shipper."
+        },
+        {
+          "semantic_id": "reference_shipping_liability",
+          "text": "Carriers frequently limit their liability to a fixed amount per kilogram of cargo rather than per shipment. Additional coverage may be purchased for higher-value goods. Fuel surcharges may apply to freight and are not included in the quoted rate."
+        }
+      ]
+    },
+    "reference_software": {
+      "title": "Software Maintenance Guide",
+      "filename": "software-maintenance-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "reference_software_maintenance",
+          "text": "A software maintenance agreement defines the level of support the vendor provides for a product after it is released. This guide explains the common parts of such an agreement, including the service level, the hours during which support is available, and how the vendor communicates changes.\n\nThe service level is the promised quality of support, and it is usually expressed as a response time and an availability target. Availability is the proportion of time the software is expected to be working, commonly stated as a percentage over a month. Response time is how long the vendor may take before the first reply to a support request arrives.\n\nStandard support plans cover requests submitted during business hours. A request logged during business hours on a working day receives a first response within four business hours. Requests submitted outside business hours are treated as logged at the start of the next business day.\n\nPatch windows are the scheduled periods when the vendor may apply maintenance updates to the software. The vendor must publish a patch window at least five business days in advance. No patch is applied during a patch window without prior notice to the customer. Changes that affect the customer interface are announced through the vendor release notes channel.\n\nUpgrades, documentation, and security fixes are usually included in the standard plan. Custom development work is outside the scope of a maintenance agreement unless the parties agree otherwise."
+        }
+      ]
+    }
+  },
+  "queries": [
+    {
+      "id": "v2_priv_deposit_direct",
+      "category": "answerable_private_direct",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "How much damage deposit do I owe when renting the compact excavator from Boulder-Break?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_agreement_handling"],
+      "expected_relevant_documents": ["user_c_rental_agreement"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_c_venue_contract", "user_c_freight_agreement"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "direct_value",
+      "notes": "Direct deposit amount query. Venue security deposit and freight terms are cross-space decoys."
+    },
+    {
+      "id": "v2_priv_late_return_para",
+      "category": "answerable_private_paraphrase",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What happens if I bring the excavator back a day late?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_agreement_handling"],
+      "expected_relevant_documents": ["user_c_rental_agreement"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_d_fleet_agreement", "user_d_warranty_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "paraphrase",
+      "notes": "Late-return penalty paraphrase. User D fleet agreement carries a similar late-penalty fact as a cross-user decoy."
+    },
+    {
+      "id": "v2_priv_daily_rate_numeric",
+      "category": "answerable_private_numeric",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What is the daily rate on my rate sheet for the RigRover excavator?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_rate_sheet_rates"],
+      "expected_relevant_documents": ["user_c_rental_rate_sheet"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_value",
+      "notes": "Explicit numeric value on the rate sheet."
+    },
+    {
+      "id": "v2_priv_delivery_maintenance_multi",
+      "category": "answerable_private_multi_chunk",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "When is the excavator scheduled for delivery, and who is responsible for the routine daily care of the equipment?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_agreement_terms_main", "rental_agreement_handling"],
+      "expected_relevant_documents": ["user_c_rental_agreement"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "multi_chunk_later_chunk",
+      "notes": "Delivery date sits in a later generated chunk of the long page; maintenance duty is on the second page."
+    },
+    {
+      "id": "v2_priv_restock_absent",
+      "category": "unsupported_related_topic",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What restocking fee does Boulder-Break charge when the excavator is returned early?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "related_topic_missing_attribute",
+      "notes": "Rental terms discuss returns and penalties but no restocking or early-return fee exists."
+    },
+    {
+      "id": "v2_priv_waiver_wrong_entity",
+      "category": "unsupported_wrong_fact",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What is the daily damage waiver cost for the WhisperWatt generator?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "related_entity_wrong_fact",
+      "notes": "Rate sheet lists a damage waiver only for the ApexLift boom lift, not the generator."
+    },
+    {
+      "id": "v2_priv_generator_monthly",
+      "category": "unsupported_numeric_mismatch",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What is the monthly rate for the WhisperWatt generator?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_mismatch",
+      "notes": "Rate sheet lists daily rates only; monthly rates are available on request, with no value stated."
+    },
+    {
+      "id": "v2_priv_delivery_time",
+      "category": "unsupported_semantic_distractor",
+      "scope": "private",
+      "space": "user_c_rentals",
+      "question": "What time of day will the excavator be delivered?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "semantic_distractor",
+      "notes": "Agreement gives a delivery date and a confirmation window but no time of day."
+    },
+    {
+      "id": "v2_ref_deposit_purpose",
+      "category": "answerable_reference_direct",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "What is the purpose of a damage deposit in an equipment rental?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_equipment_deposit"],
+      "expected_relevant_documents": ["reference_equipment"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "direct_fact",
+      "notes": "Reference equipment guide defines the deposit purpose."
+    },
+    {
+      "id": "v2_ref_force_majeure",
+      "category": "answerable_reference_paraphrase",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "If a venue has to call off an event because of a storm, what does the guide call that protection?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_events_force_majeure"],
+      "expected_relevant_documents": ["reference_events"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "paraphrase",
+      "notes": "Paraphrase of the force majeure definition."
+    },
+    {
+      "id": "v2_ref_transit_numeric",
+      "category": "answerable_reference_numeric",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "How many business days does standard domestic shipping take according to the shipping guide?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_shipping_transit"],
+      "expected_relevant_documents": ["reference_shipping"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_value",
+      "notes": "Guide states three to five business days for domestic routes."
+    },
+    {
+      "id": "v2_ref_support_response_later",
+      "category": "answerable_reference_later_chunk",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "Under the standard software maintenance plan, how quickly should a support request logged on a business day receive a first reply?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_software_maintenance"],
+      "expected_relevant_documents": ["reference_software"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "later_chunk_semantic",
+      "notes": "Evidence sits in a later generated chunk of the long software guide page; phrasing avoids the exact document wording."
+    },
+    {
+      "id": "v2_comb_daily_rate_and_deposit",
+      "category": "answerable_combined_multi_source",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "What is my daily rate for the RigRover excavator, and what does the reference guide say a damage deposit is meant to cover?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_rate_sheet_rates", "reference_equipment_deposit"],
+      "expected_relevant_documents": ["user_c_rental_rate_sheet", "reference_equipment"],
+      "expected_source_kinds": ["private", "reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "combined_multi_source",
+      "notes": "Requires one private chunk and one reference chunk to support the full answer."
+    },
+    {
+      "id": "v2_comb_deposit_amount",
+      "category": "answerable_combined_private_winner",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "How much damage deposit do I owe for the excavator rental?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_agreement_handling"],
+      "expected_relevant_documents": ["user_c_rental_agreement"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "private_winner",
+      "notes": "Reference deposit page is a tempting distractor; only the private agreement carries the amount."
+    },
+    {
+      "id": "v2_comb_deposit_purpose_ref",
+      "category": "answerable_combined_reference_winner",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "What purpose does a damage deposit serve in equipment rentals?",
+      "answerable": true,
+      "expected_relevant_chunks": ["reference_equipment_deposit"],
+      "expected_relevant_documents": ["reference_equipment"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "reference_winner",
+      "notes": "Reference guide defines the purpose; the private agreement only states an amount."
+    },
+    {
+      "id": "v2_comb_late_penalty",
+      "category": "answerable_combined_private_paraphrase",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "If the excavator comes back a day after the agreed return date, what does my contract say I owe?",
+      "answerable": true,
+      "expected_relevant_chunks": ["rental_agreement_handling"],
+      "expected_relevant_documents": ["user_c_rental_agreement"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "private_winner_paraphrase",
+      "notes": "Reference guide mentions late penalties generally; the specific twenty percent figure is private."
+    },
+    {
+      "id": "v2_comb_cancel_deposit",
+      "category": "unsupported_combined_near_miss",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "What happens to my damage deposit if I cancel the excavator rental two days before delivery?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "combined_scope_near_miss",
+      "notes": "Private and reference documents both discuss deposits; neither covers pre-delivery cancellation."
+    },
+    {
+      "id": "v2_comb_fuel_surcharge",
+      "category": "unsupported_cross_document",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "What is the fuel surcharge rate on my freight shipment?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "cross_document_confusion",
+      "notes": "The six percent fuel surcharge lives in a different user space (logistics) and is out of scope; the shipping guide mentions fuel surcharges but no rate."
+    },
+    {
+      "id": "v2_comb_towing",
+      "category": "unsupported_semantic_distractor",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "Is towing of the excavator covered by my rental agreement?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "semantic_distractor",
+      "notes": "Reference transport page says towing is typically excluded from the base rate; the private agreement is silent."
+    },
+    {
+      "id": "v2_comb_renewal_deadline",
+      "category": "unsupported_temporal_mismatch",
+      "scope": "combined",
+      "space": "user_c_rentals",
+      "question": "By what date must I renew my equipment rental for another term?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "temporal_mismatch",
+      "notes": "No renewal date exists in either the private or the reference documents."
+    },
+    {
+      "id": "v2_ref_late_penalty_percent",
+      "category": "unsupported_specificity_mismatch",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "What exact late return penalty percentage does the equipment guide state?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "specificity_mismatch",
+      "notes": "Guide says late return penalties are commonly a percentage of the daily rate without any number."
+    },
+    {
+      "id": "v2_ref_refund_deadline",
+      "category": "unsupported_temporal_mismatch",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "What is the exact deadline for issuing a refund on a cancelled event booking according to the guide?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "temporal_mismatch",
+      "notes": "Events guide says refund timing is set out in the individual agreement; no date is given."
+    },
+    {
+      "id": "v2_ref_liability_per_shipment",
+      "category": "unsupported_numeric_mismatch",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "What is the maximum liability amount per shipment in the shipping guide?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_mismatch",
+      "notes": "Shipping guide caps liability per kilogram, not per shipment."
+    },
+    {
+      "id": "v2_ref_equipment_replacement",
+      "category": "unsupported_cross_document",
+      "scope": "reference",
+      "space": "user_c_rentals",
+      "question": "What is the standard equipment replacement policy stated in the reference library?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "cross_document_confusion",
+      "notes": "Equipment guide covers maintenance and repairs but no replacement policy; the closest related fact sits in the events domain."
+    }
+  ]
+}
