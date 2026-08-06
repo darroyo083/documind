@@ -23,6 +23,7 @@ from app.infrastructure.database import Base
 if TYPE_CHECKING:
     from app.infrastructure.models.document_actions import DocumentActionSet
     from app.infrastructure.models.document_analysis import DocumentAnalysis
+    from app.infrastructure.models.document_comparison import DocumentComparisonDocument
 
 
 class DocumentStatus(StrEnum):
@@ -79,6 +80,11 @@ class Document(Base):
     action_set: Mapped["DocumentActionSet | None"] = relationship(
         back_populates="document",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    comparison_members: Mapped[list["DocumentComparisonDocument"]] = relationship(
+        back_populates="document",
         cascade="all, delete-orphan",
     )
 

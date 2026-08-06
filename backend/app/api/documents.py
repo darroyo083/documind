@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.comparisons import delete_comparisons_for_document
 from app.application.dependencies import (
     get_answer_provider,
     get_document_storage,
@@ -95,6 +96,7 @@ async def delete_document(
     document = await get_owned_document(db, space_id, document_id, current_user.id)
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    await delete_comparisons_for_document(db, document.id)
     await storage.delete(document.storage_key)
     await db.delete(document)
     await db.commit()

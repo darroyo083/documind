@@ -43,6 +43,32 @@ class Settings(BaseSettings):
     action_max_sources_per_item: int = 8
     action_excerpt_chars: int = 2000
 
+    comparison_provider: str = "mock"
+    comparison_model: str = "deepseek-chat"
+    comparison_max_context_chars: int = Field(
+        default=120000,
+        gt=0,
+        description=(
+            "Max total characters of selected-document content sent to the "
+            "comparison provider; values <= 0 would disable comparison generation."
+        ),
+    )
+    comparison_max_focus_length: int = Field(
+        default=500,
+        gt=0,
+        description="Max comparison-focus characters; values <= 0 would reject every focus.",
+    )
+    comparison_max_sources_per_item: int = Field(
+        default=8,
+        gt=0,
+        description="Max validated source citations per comparison item.",
+    )
+    comparison_excerpt_chars: int = Field(
+        default=2000,
+        gt=0,
+        description="Max characters of server-derived citation excerpts.",
+    )
+
     embedding_provider: str = "local"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimension: int = 384

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -7,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database import Base
 from app.infrastructure.models.user import User
+
+if TYPE_CHECKING:
+    from app.infrastructure.models.document_comparison import DocumentComparison
 
 
 class KnowledgeSpace(Base):
@@ -24,3 +28,8 @@ class KnowledgeSpace(Base):
     )
 
     user: Mapped[User] = relationship(backref="knowledge_spaces")
+
+    comparisons: Mapped[list["DocumentComparison"]] = relationship(
+        back_populates="space",
+        cascade="all, delete-orphan",
+    )

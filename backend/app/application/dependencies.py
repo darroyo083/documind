@@ -3,6 +3,7 @@ from functools import lru_cache
 from app.config import settings
 from app.domain.actions import DocumentActionProvider
 from app.domain.analysis import DocumentAnalysisProvider
+from app.domain.comparison import DocumentComparisonProvider
 from app.domain.errors import ProviderError
 from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider
 from app.infrastructure.action_providers import (
@@ -12,6 +13,10 @@ from app.infrastructure.action_providers import (
 from app.infrastructure.analysis_providers import (
     DeepSeekDocumentAnalysisProvider,
     DeterministicAnalysisProvider,
+)
+from app.infrastructure.comparison_providers import (
+    DeepSeekDocumentComparisonProvider,
+    DeterministicComparisonProvider,
 )
 from app.infrastructure.providers import (
     DeepSeekAnswerProvider,
@@ -76,3 +81,17 @@ def get_action_provider() -> DocumentActionProvider:
             timeout_seconds=settings.provider_timeout_seconds,
         )
     raise ProviderError("Unsupported document action provider configuration")
+
+
+@lru_cache
+def get_comparison_provider() -> DocumentComparisonProvider:
+    if settings.comparison_provider == "mock":
+        return DeterministicComparisonProvider()
+    if settings.comparison_provider == "deepseek":
+        return DeepSeekDocumentComparisonProvider(
+            api_key=settings.deepseek_api_key,
+            model_name=settings.comparison_model,
+            base_url=settings.deepseek_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    raise ProviderError("Unsupported document comparison provider configuration")

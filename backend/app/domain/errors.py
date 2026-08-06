@@ -60,3 +60,27 @@ class ActionContextTooLargeError(ActionError):
 
 class ActionValidationError(ActionError):
     pass
+
+
+class ComparisonError(Exception):
+    pass
+
+
+class ComparisonNotFoundError(ComparisonError):
+    pass
+
+
+class ComparisonConflictError(ComparisonError):
+    pass
+
+
+class ComparisonStateError(ComparisonError):
+    pass
+
+
+class ComparisonContextTooLargeError(ComparisonError):
+    pass
+
+
+class ComparisonValidationError(ComparisonError):
+    pass

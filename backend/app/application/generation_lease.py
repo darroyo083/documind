@@ -6,7 +6,11 @@ from sqlalchemy import and_, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.infrastructure.models import DocumentActionSet, DocumentAnalysis
+from app.infrastructure.models import (
+    DocumentActionSet,
+    DocumentAnalysis,
+    DocumentComparison,
+)
 
 PROCESSING = "processing"
 READY = "ready"
@@ -19,7 +23,7 @@ def stale_cutoff(now: datetime | None = None) -> datetime:
     return reference - timedelta(seconds=settings.generation_stale_after_seconds)
 
 
-async def claim_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet)](
+async def claim_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison)](
     db: AsyncSession,
     model: type[LeaseRow],
     row_id: uuid.UUID,
@@ -74,7 +78,7 @@ async def claim_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet)](
     return attempt_id, now
 
 
-async def complete_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet)](
+async def complete_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison)](
     db: AsyncSession,
     model: type[LeaseRow],
     row_id: uuid.UUID,
