@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -306,6 +307,7 @@ async def test_processing_analysis_returns_409(
             document_id=uuid.UUID(document["id"]),
             status="processing",
             provider="mock",
+            processing_started_at=datetime.now(UTC),
         )
     )
     await db_session.commit()
