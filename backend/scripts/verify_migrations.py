@@ -28,7 +28,7 @@ EXPECTED_TABLES = {
     "reference_documents",
     "users",
 }
-EXPECTED_HEAD = "007"
+EXPECTED_HEAD = "008"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -252,9 +252,13 @@ async def verify_head_schema(database_url: URL) -> None:
         "document_analyses.document_type": "character varying:NO",
         "document_analyses.important_dates": "jsonb:NO",
         "document_analyses.key_facts": "jsonb:NO",
+        "document_analyses.processing_started_at": "timestamp with time zone:YES",
+        "document_analyses.processing_attempt_id": "uuid:YES",
         "document_action_sets.id": "uuid:NO",
         "document_action_sets.document_id": "uuid:NO",
         "document_action_sets.status": "character varying:NO",
+        "document_action_sets.processing_started_at": "timestamp with time zone:YES",
+        "document_action_sets.processing_attempt_id": "uuid:YES",
         "document_actions.id": "uuid:NO",
         "document_actions.action_set_id": "uuid:NO",
         "document_actions.position": "integer:NO",
