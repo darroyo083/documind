@@ -23,7 +23,7 @@ from app.application.documents import ingest_document
 from app.application.reference import import_reference_document
 from app.application.retrieval import retrieve_chunks
 from app.config import settings
-from app.domain.rag import EmbeddingProvider, KnowledgeScope
+from app.domain.rag import EmbeddingProvider, KnowledgeScope, RetrievedChunk
 from app.evaluation import metrics
 from app.infrastructure.models import (
     Document,
@@ -81,6 +81,7 @@ class QueryResult:
     candidate_relevant: list[bool] = field(default_factory=list)
     candidate_forbidden: list[bool] = field(default_factory=list)
     candidate_contents: list[str] = field(default_factory=list)
+    candidate_chunks: list[RetrievedChunk] = field(default_factory=list)
     forbidden_retrieved: list[str] = field(default_factory=list)
     scope_violations: list[str] = field(default_factory=list)
     source_kinds_present: list[str] = field(default_factory=list)
@@ -323,6 +324,7 @@ async def run_query(
     candidate_relevant: list[bool] = []
     candidate_forbidden: list[bool] = []
     candidate_contents: list[str] = []
+    candidate_chunks: list[RetrievedChunk] = []
     kinds_present: set[str] = set()
 
     for rank, candidate in enumerate(candidates, start=1):
@@ -334,6 +336,7 @@ async def run_query(
         candidate_scores.append(round(candidate.score, 4))
         candidate_contents.append(candidate.content)
         kinds_present.add(candidate.source_kind)
+        candidate_chunks.append(candidate)
 
         is_relevant = False
         chunk_pages = corpus.chunk_to_pages.get(candidate.chunk_id, [])
@@ -372,6 +375,7 @@ async def run_query(
         candidate_relevant=candidate_relevant,
         candidate_forbidden=candidate_forbidden,
         candidate_contents=candidate_contents,
+        candidate_chunks=candidate_chunks,
         forbidden_retrieved=forbidden_retrieved,
         scope_violations=scope_violations,
         source_kinds_present=sorted(kinds_present),
