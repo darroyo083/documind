@@ -127,6 +127,10 @@ Key environment variables (see `.env.example`):
 | `ACTION_MODEL` | DeepSeek model used for action extraction | `deepseek-chat` |
 | `ACTION_MAX_CONTEXT_CHARS` | Max document characters sent to action extraction | `120000` |
 | `ACTION_MAX_ITEMS` | Max actions per document | `20` |
+| `COMPARISON_PROVIDER` | Document comparison provider (`deepseek`, `mock`) | `mock` |
+| `COMPARISON_MODEL` | DeepSeek model used for document comparison | `deepseek-chat` |
+| `COMPARISON_MAX_CONTEXT_CHARS` | Max total selected-document characters sent to comparison | `120000` |
+| `COMPARISON_MAX_FOCUS_LENGTH` | Max comparison-focus characters | `500` |
 
 ## Structured Document Intelligence (PoC 2.1)
 
@@ -443,6 +447,68 @@ Neither value was changed by PoC 3E. Tests pin `DEFAULT_SIMILARITY_THRESHOLD=0.2
 in `tests/conftest.py`, so the test suite exercises the code default.
 `top_k=5` is the same in the code default, `.env.example`, local `.env`, and
 the benchmark.
+
+### Multi-Document Comparison (PoC 4A)
+
+Select 2–4 ready private documents from one knowledge space and ask DocuMind to
+compare them side by side with grounded evidence:
+
+```text
+POST /knowledge-spaces/{space_id}/comparisons   {"document_ids": [...], "focus": "optional"}
+GET  /knowledge-spaces/{space_id}/comparisons
+GET  /knowledge-spaces/{space_id}/comparisons/{comparison_id}
+```
+
+- **Private, same-space, ready-only.** Every compared document must belong to
+  the authenticated user and the requested knowledge space, and must be
+  `ready`. 2–4 documents; duplicate or foreign document IDs are rejected with
+  the project's usual 404/422 behavior (never revealing which ID is foreign).
+- **Optional comparison focus.** A plain-text focus (≤ 500 characters) steers
+  which comparable dimensions matter; it never changes which documents are
+  compared. Whitespace is normalized; an empty focus is equivalent to no focus.
+- **Persistent comparisons.** Results are stored, so a generated comparison can
+  be reopened from history after a refresh without calling the provider again.
+  The same document set plus the same normalized focus is the same comparison
+  regardless of selection order (SHA-256 signature over sorted document UUIDs
+  and the normalized focus); a different focus is a different comparison.
+- **Structured output.** A short title, a concise summary, 1–8 comparison
+  dimensions (one finding per selected document, including an explicit
+  "not identified in this document" state), 0–6 key differences, and 0–6
+  commonalities. Every substantive finding carries source-validated evidence.
+- **Source-validated evidence.** The provider sees only the full stored chunks
+  of the selected documents (in page/chunk order, wrapped per document with
+  request-local `document_1...document_4` labels) plus the focus. It can never
+  supply page numbers, titles, document identities, or references to unselected
+  documents, other spaces, other users, or the reference corpus: any source ID
+  outside the supplied context fails the comparison. Provenance validation
+  proves *which* source the finding references; it is not a proof that the
+  provider's interpretation is logically entailed or globally true.
+- **No silent truncation.** If the combined selected-document context exceeds
+  `COMPARISON_MAX_CONTEXT_CHARS`, the request is rejected (422) before the
+  provider is called instead of pretending the comparison was comprehensive.
+- **Stale-generation recovery.** Comparison generation uses the same lease
+  architecture as analysis/actions (PoC 3B): a fresh in-progress request is a
+  `409`, a failed comparison can be retried, and a stale in-progress
+  comparison is reclaimed atomically with a new attempt token. Terminal writes
+  are compare-and-set guarded, so an old attempt can never overwrite a newer
+  one.
+- **Provider behavior.** The default `COMPARISON_PROVIDER=mock` is a
+  deterministic development provider (shown as "Development comparison") used
+  to prove the flow, schemas, persistence, UI, and citations — not comparison
+  quality. Set `COMPARISON_PROVIDER=deepseek` with `DEEPSEEK_API_KEY` for the
+  DeepSeek adapter; it reuses the existing DeepSeek configuration and never
+  makes real calls during tests.
+
+### PoC 4A limitations
+
+- Private documents in the same knowledge space only; no reference-library
+  documents in comparisons yet, and no cross-space or cross-user comparison.
+- Text-based PDFs only (as the current product supports); no OCR.
+- Comparison is source-grounded but not truth-proof; findings are AI-generated
+  interpretations with evidence, not legal, tax, or financial advice.
+- The mock provider is development-only.
+- Ready comparisons are idempotent; there is no "force regenerate" in this PoC.
+- Migration head: `009`.
 
 ## Development defaults and mock behavior
 
