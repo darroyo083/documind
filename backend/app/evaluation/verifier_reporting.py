@@ -56,6 +56,14 @@ METHODOLOGY = {
         "verifier provider is NOT called. There is nothing to verify without "
         "evidence, and this matches the existing no-context Q&A behavior."
     ),
+    "v2_holdout_contract": (
+        "The fresh v2 holdout is a one-shot evaluation dataset. It may only be "
+        "run under the exact frozen inputs recorded in its manifest (dataset "
+        "canonical content checksum, verifier prompt version, provider/model, "
+        "embedding config, retrieval top_k/threshold) with explicit "
+        "confirmation. Any other use is a regression/comparison run, not a "
+        "pristine holdout."
+    ),
     "verifier_call_semantics": (
         "One external verifier call per query that retrieved at least one "
         "candidate. Under the real benchmark retrieval configuration (local "
@@ -133,28 +141,40 @@ def build_verifier_json_report(
     runtime_seconds: float | None,
     git_commit: str | None,
     evaluation: VerifierEvaluation,
+    dataset_canonical_sha256: str | None = None,
+    frozen_v2_holdout: bool = False,
 ) -> dict[str, Any]:
     """Assemble the machine-readable verifier report."""
+    benchmark: dict[str, Any] = {
+        "kind": "evidence_verifier",
+        "dataset_version": dataset_version,
+        "embedding_provider": embedding_provider,
+        "embedding_model": embedding_model,
+        "embedding_dimension": embedding_dimension,
+        "top_k": top_k,
+        "similarity_threshold": threshold,
+        "verifier_provider": verifier_provider,
+        "verifier_model": verifier_model,
+        "verifier_prompt_version": verifier_prompt_version,
+        "verifier_calls": evaluation.verifier_calls,
+        "run_mode": run_mode(embedding_provider, verifier_provider),
+        "external_api": external_api,
+        "corpus": corpus_counts,
+        "runtime_seconds": round(runtime_seconds, 2) if runtime_seconds is not None else None,
+        "git_commit": git_commit,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+    if dataset_canonical_sha256 is not None:
+        benchmark["dataset_canonical_sha256"] = dataset_canonical_sha256
+    if frozen_v2_holdout:
+        benchmark["frozen_v2_holdout"] = True
+        benchmark["one_shot_semantics"] = (
+            "Fresh v2 semantic evaluation is intended as a one-shot holdout. "
+            "It must not be repeated as if it were a new pristine experiment; "
+            "re-running under different inputs turns v2 into a regression set."
+        )
     return {
-        "benchmark": {
-            "kind": "evidence_verifier",
-            "dataset_version": dataset_version,
-            "embedding_provider": embedding_provider,
-            "embedding_model": embedding_model,
-            "embedding_dimension": embedding_dimension,
-            "top_k": top_k,
-            "similarity_threshold": threshold,
-            "verifier_provider": verifier_provider,
-            "verifier_model": verifier_model,
-            "verifier_prompt_version": verifier_prompt_version,
-            "verifier_calls": evaluation.verifier_calls,
-            "run_mode": run_mode(embedding_provider, verifier_provider),
-            "external_api": external_api,
-            "corpus": corpus_counts,
-            "runtime_seconds": round(runtime_seconds, 2) if runtime_seconds is not None else None,
-            "git_commit": git_commit,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
+        "benchmark": benchmark,
         "methodology": METHODOLOGY,
         "metrics": evaluation.metrics,
         "invalid_outputs": [_invalid_outcome_dict(o) for o in evaluation.invalid_outputs],
@@ -230,6 +250,11 @@ def render_verifier_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Verifier calls: {benchmark['verifier_calls']}")
     lines.append(f"- Run mode: {benchmark['run_mode']}")
     lines.append(f"- External API calls: {benchmark['external_api']}")
+    if benchmark.get("dataset_canonical_sha256"):
+        lines.append(f"- Dataset canonical SHA-256: {benchmark['dataset_canonical_sha256']}")
+    if benchmark.get("frozen_v2_holdout"):
+        lines.append("- Frozen v2 holdout: **one-shot** (confirmed)")
+        lines.append(f"- One-shot semantics: {benchmark['one_shot_semantics']}")
     corpus = benchmark["corpus"]
     lines.append(
         f"- Corpus: {corpus.get('private_documents', '?')} private docs, "
@@ -265,6 +290,7 @@ def render_verifier_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Split labels: {methodology.get('split_labels')}")
     lines.append(f"- Regression set: {methodology.get('regression_set')}")
     lines.append(f"- No v2 holdout: {methodology.get('no_v2_holdout')}")
+    lines.append(f"- V2 holdout contract: {methodology.get('v2_holdout_contract')}")
     lines.append(f"- Decision contract: {methodology.get('decision_contract')}")
     lines.append(f"- Zero evidence: {methodology.get('zero_evidence')}")
     lines.append(f"- Verifier call semantics: {methodology.get('verifier_call_semantics')}")
