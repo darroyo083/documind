@@ -315,7 +315,8 @@ class DeepSeekDocumentComparisonProvider:
             "value must be null when that document does not state the fact, and "
             "not_identified must be true then; distinguish 'not identified in the "
             "supplied context' from 'does not exist' and never claim a document "
-            "lacks a term merely because it is not stated. "
+            "lacks a term merely because it is not stated. When not_identified is "
+            "true, source_ids for that finding MUST be an empty list. "
             'key_differences is a list of {"title", "description", "source_ids"}; '
             "each difference must cite source IDs from at least two different "
             "documents. commonalities is a list of "
