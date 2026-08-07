@@ -288,6 +288,7 @@ class DeepSeekDocumentComparisonProvider:
         model_name: str,
         base_url: str,
         timeout_seconds: float,
+        stream: bool | None = None,
     ):
         if not api_key:
             raise ProviderError("DeepSeek API key is not configured")
@@ -295,6 +296,7 @@ class DeepSeekDocumentComparisonProvider:
         self._model_name = model_name
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.stream = stream
 
     @property
     def model_name(self) -> str:
@@ -339,6 +341,8 @@ class DeepSeekDocumentComparisonProvider:
             "temperature": 0,
             "max_tokens": 4000,
         }
+        if self.stream is not None:
+            payload["stream"] = self.stream
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(
@@ -484,3 +488,24 @@ class DeepSeekDocumentComparisonProvider:
                 )
             )
         return result
+
+
+class OpenCodeGoDocumentComparisonProvider(DeepSeekDocumentComparisonProvider):
+    """OpenCode Go comparison transport using DeepSeek V4 Flash."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str = "deepseek-v4-flash",
+        base_url: str = "https://opencode.ai/zen/go/v1",
+        timeout_seconds: float = 30.0,
+    ):
+        if not api_key:
+            raise ProviderError("OpenCode Go API key is not configured")
+        super().__init__(
+            api_key=api_key,
+            model_name=model_name,
+            base_url=base_url,
+            timeout_seconds=timeout_seconds,
+            stream=False,
+        )

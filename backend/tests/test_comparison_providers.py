@@ -4,6 +4,8 @@ import uuid
 import httpx
 import pytest
 
+from app.application.dependencies import get_comparison_provider
+from app.config import Settings, settings
 from app.domain.analysis import AnalysisSource
 from app.domain.comparison import (
     ComparisonDocumentContext,
@@ -14,6 +16,7 @@ from app.domain.errors import ProviderError
 from app.infrastructure.comparison_providers import (
     DeepSeekDocumentComparisonProvider,
     DeterministicComparisonProvider,
+    OpenCodeGoDocumentComparisonProvider,
 )
 
 BASE_URL = "https://api.deepseek.com"
@@ -205,6 +208,77 @@ async def test_deepseek_parses_valid_structured_comparison(monkeypatch):
     assert result.dimensions[0].findings[0].document_ref == "document_1"
     assert result.key_differences[0].title == "Support window differs"
     assert result.commonalities[0].title == "Both are service agreements"
+
+
+@pytest.mark.asyncio
+async def test_opencode_go_transport_contract(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://opencode.ai/zen/go/v1/chat/completions"
+        assert request.headers["Authorization"] == "Bearer test-key"
+        body = json.loads(request.content)
+        assert body["model"] == "deepseek-v4-flash"
+        assert body["temperature"] == 0
+        assert body["response_format"] == {"type": "json_object"}
+        assert body["stream"] is False
+        assert "Authorization" not in body
+        return wrap_content(json.dumps(deepseek_result()))
+
+    transport = httpx.MockTransport(handler)
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: original_client(transport=transport, *args, **kwargs),
+    )
+    provider = OpenCodeGoDocumentComparisonProvider(api_key="test-key")
+    result = await provider.compare(context())
+    assert result.title == "Service Agreement Comparison"
+    assert provider.model_name == "deepseek-v4-flash"
+
+
+def test_opencode_go_requires_its_own_key():
+    with pytest.raises(ProviderError, match="OpenCode Go"):
+        OpenCodeGoDocumentComparisonProvider(api_key="")
+
+
+@pytest.mark.asyncio
+async def test_deepseek_transport_defaults_remain_unchanged(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        assert str(request.url) == "https://api.deepseek.com/chat/completions"
+        assert body["model"] == "deepseek-chat"
+        assert "stream" not in body
+        return wrap_content(json.dumps(deepseek_result()))
+
+    provider = provider_with_transport(monkeypatch, handler)
+    await provider.compare(context())
+
+
+def test_opencode_go_configuration_fields_are_explicit():
+    configured = Settings(
+        _env_file=None,
+        comparison_provider="opencode-go",
+        comparison_model="deepseek-v4-flash",
+        opencode_go_api_key="test-key",
+    )
+    assert configured.opencode_go_api_key == "test-key"
+    assert configured.opencode_go_base_url == "https://opencode.ai/zen/go/v1"
+    assert configured.deepseek_api_key == ""
+
+
+def test_opencode_go_provider_selection(monkeypatch):
+    monkeypatch.setattr(settings, "comparison_provider", "opencode-go")
+    monkeypatch.setattr(settings, "comparison_model", "deepseek-v4-flash")
+    monkeypatch.setattr(settings, "opencode_go_api_key", "test-key")
+    monkeypatch.setattr(settings, "opencode_go_base_url", "https://opencode.ai/zen/go/v1")
+    get_comparison_provider.cache_clear()
+    try:
+        provider = get_comparison_provider()
+        assert isinstance(provider, OpenCodeGoDocumentComparisonProvider)
+        assert provider.model_name == "deepseek-v4-flash"
+        assert provider.base_url == "https://opencode.ai/zen/go/v1"
+    finally:
+        get_comparison_provider.cache_clear()
 
 
 @pytest.mark.asyncio

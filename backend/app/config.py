@@ -45,6 +45,8 @@ class Settings(BaseSettings):
 
     comparison_provider: str = "mock"
     comparison_model: str = "deepseek-chat"
+    opencode_go_api_key: str = ""
+    opencode_go_base_url: str = "https://opencode.ai/zen/go/v1"
     comparison_max_context_chars: int = Field(
         default=120000,
         gt=0,

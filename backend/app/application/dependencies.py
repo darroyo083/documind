@@ -17,6 +17,7 @@ from app.infrastructure.analysis_providers import (
 from app.infrastructure.comparison_providers import (
     DeepSeekDocumentComparisonProvider,
     DeterministicComparisonProvider,
+    OpenCodeGoDocumentComparisonProvider,
 )
 from app.infrastructure.providers import (
     DeepSeekAnswerProvider,
@@ -92,6 +93,13 @@ def get_comparison_provider() -> DocumentComparisonProvider:
             api_key=settings.deepseek_api_key,
             model_name=settings.comparison_model,
             base_url=settings.deepseek_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    if settings.comparison_provider == "opencode-go":
+        return OpenCodeGoDocumentComparisonProvider(
+            api_key=settings.opencode_go_api_key,
+            model_name=settings.comparison_model,
+            base_url=settings.opencode_go_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )
     raise ProviderError("Unsupported document comparison provider configuration")

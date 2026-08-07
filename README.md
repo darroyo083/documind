@@ -108,6 +108,8 @@ Key environment variables (see `.env.example`):
 | `GENERATION_PROVIDER` | Generation provider (`deepseek`, `mock`) | `mock` |
 | `DEEPSEEK_API_KEY` | DeepSeek API key; required when generation uses DeepSeek | empty |
 | `DEEPSEEK_MODEL` | DeepSeek chat model | `deepseek-chat` |
+| `OPENCODE_GO_API_KEY` | Dedicated OpenCode Go key; never shared with DeepSeek settings | empty |
+| `OPENCODE_GO_BASE_URL` | OpenCode Go OpenAI-compatible base URL | `https://opencode.ai/zen/go/v1` |
 | `EMBEDDING_PROVIDER` | Embedding provider (`local`, `mock`) | `local` |
 | `EMBEDDING_MODEL` | Local embedding model | `BAAI/bge-small-en-v1.5` |
 | `EMBEDDING_DIMENSION` | Local embedding vector dimension | `384` |
@@ -127,8 +129,8 @@ Key environment variables (see `.env.example`):
 | `ACTION_MODEL` | DeepSeek model used for action extraction | `deepseek-chat` |
 | `ACTION_MAX_CONTEXT_CHARS` | Max document characters sent to action extraction | `120000` |
 | `ACTION_MAX_ITEMS` | Max actions per document | `20` |
-| `COMPARISON_PROVIDER` | Document comparison provider (`deepseek`, `mock`) | `mock` |
-| `COMPARISON_MODEL` | DeepSeek model used for document comparison | `deepseek-chat` |
+| `COMPARISON_PROVIDER` | Document comparison provider (`deepseek`, `opencode-go`, `mock`) | `mock` |
+| `COMPARISON_MODEL` | Model used for document comparison | `deepseek-chat` |
 | `COMPARISON_MAX_CONTEXT_CHARS` | Max total selected-document characters sent to comparison | `120000` |
 | `COMPARISON_MAX_FOCUS_LENGTH` | Max comparison-focus characters | `500` |
 
@@ -496,8 +498,9 @@ GET  /knowledge-spaces/{space_id}/comparisons/{comparison_id}
   deterministic development provider (shown as "Development comparison") used
   to prove the flow, schemas, persistence, UI, and citations — not comparison
   quality. Set `COMPARISON_PROVIDER=deepseek` with `DEEPSEEK_API_KEY` for the
-  DeepSeek adapter; it reuses the existing DeepSeek configuration and never
-  makes real calls during tests.
+  existing DeepSeek adapter. Set `COMPARISON_PROVIDER=opencode-go`,
+  `COMPARISON_MODEL=deepseek-v4-flash`, and `OPENCODE_GO_API_KEY` for the
+  explicit OpenCode Go adapter. Tests never make real provider calls.
 
 ### PoC 4A limitations
 

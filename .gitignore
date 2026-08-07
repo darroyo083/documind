@@ -58,3 +58,4 @@ htmlcov/
 
 # Evaluation benchmark generated reports
 backend/evaluation/results/
+backend/experiments/comparison_quality/results/
