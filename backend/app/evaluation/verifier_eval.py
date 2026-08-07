@@ -97,6 +97,15 @@ class VerifierEvaluation:
     verifier_calls: int = 0
 
 
+class VerifierProviderAbortError(RuntimeError):
+    """Fail-fast external-provider error carrying results captured before the failure."""
+
+    def __init__(self, query_id: str, evaluation: VerifierEvaluation):
+        super().__init__(f"verifier provider failed for query {query_id}")
+        self.query_id = query_id
+        self.evaluation = evaluation
+
+
 def _error_kind(error: VerifierOutputError) -> str:
     if isinstance(error, UnknownEvidenceSourceError):
         return "evidence_source_validation"
@@ -109,6 +118,8 @@ async def run_verifier_evaluation(
     results: Sequence[QueryResult],
     verifier: EvidenceVerifier,
     split_by_id: dict[str, str],
+    *,
+    stop_on_provider_error: bool = False,
 ) -> VerifierEvaluation:
     """Run the verifier over every retrieval result and validate outputs.
 
@@ -167,6 +178,10 @@ async def run_verifier_evaluation(
                     error=str(error),
                 )
             )
+            if stop_on_provider_error and isinstance(error, VerifierProviderError):
+                raise VerifierProviderAbortError(
+                    result.id, _build_evaluation(outcomes, verifier_calls)
+                ) from error
             continue
         outcomes.append(
             VerifierOutcome(
@@ -185,6 +200,10 @@ async def run_verifier_evaluation(
             )
         )
 
+    return _build_evaluation(outcomes, verifier_calls)
+
+
+def _build_evaluation(outcomes: list[VerifierOutcome], verifier_calls: int) -> VerifierEvaluation:
     invalid_outputs = [o for o in outcomes if o.invalid]
     evidence_validation_failures = [
         o for o in outcomes if o.error_kind == "evidence_source_validation"

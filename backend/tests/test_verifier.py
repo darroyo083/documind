@@ -733,6 +733,32 @@ class TestEvaluationFlow:
         assert evaluation.verifier_calls == 2
         assert evaluation.metrics["overall"]["query_count"] == 4
 
+    async def test_frozen_run_stops_on_first_provider_error(self):
+        calls = []
+
+        class FailingVerifier:
+            model_name = "failing"
+
+            async def verify(self, question, evidence):
+                calls.append(question)
+                raise verifier.VerifierProviderError("controlled provider failure")
+
+        results = [
+            _result("q1", True, "first", [_chunk("s1")], split="fresh_holdout"),
+            _result("q2", True, "second", [_chunk("s2")], split="fresh_holdout"),
+        ]
+        with pytest.raises(verifier_eval.VerifierProviderAbortError) as captured:
+            await verifier_eval.run_verifier_evaluation(
+                results,
+                FailingVerifier(),
+                {"q1": "fresh_holdout", "q2": "fresh_holdout"},
+                stop_on_provider_error=True,
+            )
+        assert calls == ["first"]
+        assert captured.value.query_id == "q1"
+        assert captured.value.evaluation.verifier_calls == 1
+        assert len(captured.value.evaluation.invalid_outputs) == 1
+
 
 # ---------------------------------------------------------------------------
 # DEV / regression labeling

@@ -525,9 +525,17 @@ async def main() -> int:
                     f"MRR={retrieval.metrics['overall'].get('mrr')}"
                 )
 
-                evaluation = await verifier_eval.run_verifier_evaluation(
-                    retrieval.results, verifier, split_by_id
-                )
+                provider_abort = None
+                try:
+                    evaluation = await verifier_eval.run_verifier_evaluation(
+                        retrieval.results,
+                        verifier,
+                        split_by_id,
+                        stop_on_provider_error=bool(dataset_is_v3 and args.run_frozen_v3),
+                    )
+                except verifier_eval.VerifierProviderAbortError as exc:
+                    provider_abort = exc
+                    evaluation = exc.evaluation
                 runtime_seconds = time.perf_counter() - started
                 report = verifier_reporting.build_verifier_json_report(
                     dataset_version=dataset_data["dataset_version"],
@@ -552,6 +560,13 @@ async def main() -> int:
                     frozen_v2_holdout=bool(dataset_is_v2 and args.run_frozen_v2),
                     frozen_holdout_version="3" if dataset_is_v3 and args.run_frozen_v3 else None,
                 )
+                if provider_abort is not None:
+                    report["benchmark"]["partial_failure"] = {
+                        "first_failing_query": provider_abort.query_id,
+                        "attempted_calls": evaluation.verifier_calls,
+                        "successful_calls": evaluation.verifier_calls - 1,
+                        "failure_type": "provider_error",
+                    }
 
         args.output_dir.mkdir(parents=True, exist_ok=True)
         json_path = args.output_dir / "verifier_report.json"
@@ -589,6 +604,11 @@ async def main() -> int:
         print("Reports:")
         print(f"  {json_path}")
         print(f"  {md_path}")
+
+        if provider_abort is not None:
+            print("Frozen v3 stopped after the first provider failure; no later query was called.")
+            print(f"First failing query: {provider_abort.query_id}")
+            return 3
 
         failures = runner.hard_invariants(retrieval.results)
         if failures:
