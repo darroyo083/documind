@@ -1,0 +1,538 @@
+{
+  "dataset_version": "3",
+  "purpose": "Fresh verifier sufficiency holdout for the frozen OpenCode Go DeepSeek V4 Flash contract.",
+  "description": "An independently constructed synthetic corpus and 24-question one-shot holdout authored only after the OpenCode Go transport, deepseek-v4-flash model, verifier prompt version 1, and decision schema were fixed. No v3 content was used in the compatibility smoke and no semantic verifier output was observed during construction.",
+  "intended_use": "frozen one-shot verifier sufficiency holdout; not model selection or tuning",
+  "created_after_verifier_prompt_version": "1",
+  "no_verifier_outputs_observed_during_construction": true,
+  "split": "fresh_holdout",
+  "retrieval_benchmark_config": {
+    "embedding_provider": "local",
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "embedding_dimension": 384,
+    "top_k": 5,
+    "threshold": 0.5
+  },
+  "users": {
+    "user_e": {
+      "email": "eval-user-e@example.com",
+      "display_name": "eval-e",
+      "spaces": {
+        "user_e_coworking": {
+          "name": "E Coworking Membership",
+          "documents": {
+            "user_e_membership_terms": {
+              "filename": "e-coworking-membership.pdf",
+              "pages": [
+                {
+                  "semantic_id": "cw_membership_access_payment",
+                  "text": "LANTERN YARD COWORKING MEMBERSHIP\n\nThe Cedar Desk membership begins on 1 September and costs three hundred twenty per month. Payment is collected on the first business day of each month by bank debit. The membership covers one named member and a fixed desk in the second-floor shared workspace. It does not include postal forwarding or use of the recording booth.\n\nThe member may enter the workspace from 6:00 in the morning until 10:00 at night every day, including weekends. The access card is personal and may not be lent to another person. The staffed reception desk operates only from 8:30 until 17:30 on weekdays, but staffed reception hours do not limit card access.\n\nA member who loses an access card must notify reception promptly so the card can be disabled. Replacement-card pricing is not set out in these membership terms. Internet service and ordinary electricity use are included in the monthly membership charge. Printing, lockers, and refreshments are charged separately when used."
+                },
+                {
+                  "semantic_id": "cw_membership_exit_guests",
+                  "text": "A member may end the Cedar Desk membership by giving forty-five calendar days written notice. Notice must be sent through the member portal; telling a host in person does not start the notice period. Fees continue through the end of the notice period.\n\nThe membership includes four guest hours per calendar month. Guests must sign in and remain accompanied by the member. Unused guest hours do not roll into the next month. Meeting-room reservations are separate from guest access and are billed according to the booking screen.\n\nA bicycle locker may be added for eighteen per month when one is available. The locker charge is monthly and the document does not quote an annual locker price. Items left after membership ends are held for fourteen days before disposal."
+                }
+              ]
+            },
+            "user_e_membership_invoice": {
+              "filename": "e-membership-invoice.pdf",
+              "pages": [
+                {
+                  "semantic_id": "cw_invoice_august",
+                  "text": "LANTERN YARD COWORKING - INITIAL INVOICE\nInvoice date: 21 August. Payment due: 28 August. Cedar Desk first-month membership: three hundred twenty. One-time account setup: seventy-five. Refundable access-card deposit: forty. Total due: four hundred thirty-five. This invoice does not state a late-payment penalty or a replacement-card charge."
+                }
+              ]
+            }
+          }
+        },
+        "user_e_studio": {
+          "name": "E Photography Studio",
+          "documents": {
+            "user_e_studio_booking": {
+              "filename": "e-studio-booking.pdf",
+              "pages": [
+                {
+                  "semantic_id": "studio_booking_terms",
+                  "text": "HARBOR GLASS STUDIO BOOKING\nThe daylight studio is reserved for 14 October from 09:00 to 15:00. The booking price is six hundred and includes basic lighting stands. The balance is due seven days before the session. Cancellation with at least seventy-two hours notice receives a credit; later cancellation receives no credit. Overtime is ninety-five per hour. A key-card security hold of sixty is released after the studio is checked."
+                }
+              ]
+            }
+          }
+        },
+        "user_e_laboratory": {
+          "name": "E Calibration Records",
+          "documents": {
+            "user_e_calibration_log": {
+              "filename": "e-calibration-log.pdf",
+              "pages": [
+                {
+                  "semantic_id": "lab_calibration_schedule",
+                  "text": "NORTH QUAY INSTRUMENT CALIBRATION LOG\nThermal probe TQ-18 is checked every one hundred eighty days. Its last completed calibration was 21 April and the next scheduled calibration is 18 October. Scale NQ-44 is checked annually and is next due on 6 December. Certificates are filed in the laboratory archive after each completed check. The record contains no repair pricing or warranty period."
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "user_f": {
+      "email": "eval-user-f@example.com",
+      "display_name": "eval-f",
+      "spaces": {
+        "user_f_workspace": {
+          "name": "F Workspace Records",
+          "documents": {
+            "user_f_workspace_terms": {
+              "filename": "f-workspace-terms.pdf",
+              "pages": [
+                {
+                  "semantic_id": "other_workspace_membership",
+                  "text": "MAPLE ARCH WORKSPACE FLEX MEMBERSHIP\nThe Flex membership costs three hundred forty per month. Members may enter from 7:00 until 21:00. Ending the plan requires thirty days notice. A bicycle locker costs twenty-two per month and six guest hours are included. These terms apply only to Maple Arch members."
+                }
+              ]
+            },
+            "user_f_equipment_log": {
+              "filename": "f-equipment-log.pdf",
+              "pages": [
+                {
+                  "semantic_id": "other_calibration_schedule",
+                  "text": "MAPLE ARCH EQUIPMENT LOG\nSound meter MA-9 is calibrated quarterly. Its next appointment is 22 October. A replacement sensor costs one hundred ten. This record belongs to Maple Arch Workspace."
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "reference_documents": {
+    "reference_coworking_operations": {
+      "title": "Coworking Operations Handbook",
+      "filename": "coworking-operations-handbook.pdf",
+      "pages": [
+        {
+          "semantic_id": "ref_cw_guest_practice",
+          "text": "Coworking guest policies commonly require visitors to sign in and remain with a host member. Each operator decides whether guest access is measured in visits, hours, or day passes. Unused allowances may expire, but the handbook does not prescribe a universal quantity."
+        },
+        {
+          "semantic_id": "ref_cw_notice_practice",
+          "text": "Membership termination normally requires written notice. The notice period and accepted delivery method are determined by the individual membership agreement; there is no standard notice length for every coworking operator."
+        }
+      ]
+    },
+    "reference_parking_permits": {
+      "title": "Shared Facility Parking Permit Guide",
+      "filename": "parking-permit-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "ref_parking_display",
+          "text": "A physical parking permit should be displayed on the lower passenger side of the windscreen with its serial number visible from outside. Digital permits are linked to the registered plate and do not need a windscreen card. A permit applies only to the vehicle recorded in the facility system."
+        },
+        {
+          "semantic_id": "ref_parking_replacement",
+          "text": "Lost physical permits should be reported to the facility operator before a replacement is requested. Operators may charge a replacement fee, but this guide does not set a standard amount. Temporary parking permission may be issued while a replacement request is reviewed."
+        }
+      ]
+    },
+    "reference_catering_planning": {
+      "title": "Catering Service Planning Guide",
+      "filename": "catering-planning-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "ref_catering_headcount",
+          "text": "For a staffed catering service, the organizer should confirm the final guest count five business days before service. Dietary requirements should be submitted with the final count. Later increases depend on ingredient and staffing availability. The guide does not define a cancellation deadline or refund percentage."
+        },
+        {
+          "semantic_id": "ref_catering_service_window",
+          "text": "The service window is the period during which food is presented and staff remain on site. Setup and clearing time are normally scheduled outside that window. Exact staffing levels and overtime charges belong in the individual quotation."
+        }
+      ]
+    },
+    "reference_training_certification": {
+      "title": "Technical Training Certification Rules",
+      "filename": "training-certification-rules.pdf",
+      "pages": [
+        {
+          "semantic_id": "ref_training_renewal",
+          "text": "TECHNICAL TRAINING CERTIFICATION RULES\n\nThe certification programme records completion of practical instruction for routine equipment checks. Participants attend an instructor-led session and complete a supervised exercise. The training provider keeps attendance records and issues a digital certificate after the exercise is accepted. Certificates identify the participant, course title, issue date, and certification number.\n\nCourse materials may be consulted during normal workplace tasks, but certification does not authorize work outside the participant's assigned role. Employers remain responsible for deciding which tasks a person may perform. Replacement copies of a certificate can be downloaded from the participant portal.\n\nThe programme reviews course content each year. Content review does not automatically cancel certificates already issued. A participant should update contact details in the portal so notices reach the correct address. The rules do not state a waiting period for repeating an unsuccessful assessment.\n\nA technical training certificate remains current for twenty-four months from its issue date. Renewal requires a refresher exercise completed before the certificate expires. The provider sends a reminder sixty days before expiry, but the participant remains responsible for renewing on time."
+        }
+      ]
+    },
+    "reference_printing_proofs": {
+      "title": "Commercial Printing Proof Guide",
+      "filename": "printing-proof-guide.pdf",
+      "pages": [
+        {
+          "semantic_id": "ref_print_proof_approval",
+          "text": "A production proof lets the customer review layout, wording, and image placement before a commercial print run begins. Production should start only after the customer approves the proof. Approval confirms content and placement; it does not guarantee an exact numerical colour difference between screens and printed stock."
+        },
+        {
+          "semantic_id": "ref_print_delivery",
+          "text": "A printing quotation should state the expected dispatch or delivery window. The general guide does not promise a universal turnaround time because stock, finishing, and quantity affect scheduling."
+        }
+      ]
+    }
+  },
+  "queries": [
+    {
+      "id": "v3_priv_membership_price",
+      "category": "answerable_private_direct",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "What monthly amount does my Cedar Desk membership cost?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_membership_access_payment"],
+      "expected_relevant_documents": ["user_e_membership_terms"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_f_workspace_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "direct_numeric_fact",
+      "notes": "Direct private membership price with a cross-user price decoy."
+    },
+    {
+      "id": "v3_priv_exit_notice",
+      "category": "answerable_private_paraphrase",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "How far ahead must I tell Lantern Yard in writing that I am leaving?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_membership_exit_guests"],
+      "expected_relevant_documents": ["user_e_membership_terms"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_f_workspace_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "lexical_mismatch_notice",
+      "notes": "Paraphrases termination and notice while a cross-user agreement has a different period."
+    },
+    {
+      "id": "v3_priv_invoice_due",
+      "category": "answerable_private_numeric",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "On what date is the initial Lantern Yard invoice due?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_invoice_august"],
+      "expected_relevant_documents": ["user_e_membership_invoice"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "date_fact",
+      "notes": "Explicit invoice deadline."
+    },
+    {
+      "id": "v3_priv_access_and_guests",
+      "category": "answerable_private_multi_chunk",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "During which hours can I enter the coworking space, and how much guest access comes with my membership?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_membership_access_payment", "cw_membership_exit_guests"],
+      "expected_relevant_documents": ["user_e_membership_terms"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": ["user_f_workspace_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "multi_page_private",
+      "notes": "Requires access hours from page one and guest allowance from page two."
+    },
+    {
+      "id": "v3_priv_locker_annual",
+      "category": "unsupported_numeric_mismatch",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "What annual price is quoted for a bicycle locker?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": ["user_f_workspace_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "period_specificity_numeric",
+      "notes": "Only a monthly locker charge is stated; annual arithmetic is not a quoted annual price."
+    },
+    {
+      "id": "v3_priv_replacement_card_fee",
+      "category": "unsupported_wrong_fact",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "How much does Lantern Yard charge to replace a lost access card?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "nearby_numbers_wrong_attribute",
+      "notes": "The documents provide a card deposit and setup charge but explicitly omit replacement pricing."
+    },
+    {
+      "id": "v3_priv_late_payment_penalty",
+      "category": "unsupported_related_topic",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "What penalty applies if I pay the initial coworking invoice after 28 August?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "related_topic_missing_attribute",
+      "notes": "The due date is present but no late-payment consequence is stated."
+    },
+    {
+      "id": "v3_priv_meeting_room_allowance",
+      "category": "unsupported_semantic_distractor",
+      "scope": "private",
+      "space": "user_e_coworking",
+      "question": "How many meeting-room hours are included each month?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "wrong_entitlement_type",
+      "notes": "Four guest hours are included, while meeting rooms are separately billed."
+    },
+    {
+      "id": "v3_ref_catering_count",
+      "category": "answerable_reference_numeric",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "How many business days before catering service should the organizer confirm the final guest count?",
+      "answerable": true,
+      "expected_relevant_chunks": ["ref_catering_headcount"],
+      "expected_relevant_documents": ["reference_catering_planning"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_deadline",
+      "notes": "Reference-supported deadline."
+    },
+    {
+      "id": "v3_ref_parking_location",
+      "category": "answerable_reference_paraphrase",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "Where on a car should the physical facility parking card be placed?",
+      "answerable": true,
+      "expected_relevant_chunks": ["ref_parking_display"],
+      "expected_relevant_documents": ["reference_parking_permits"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "paraphrase_object_location",
+      "notes": "Uses parking card wording for the physical permit."
+    },
+    {
+      "id": "v3_ref_training_validity",
+      "category": "answerable_reference_later_chunk",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "For how long after issue does the technical training certificate remain current?",
+      "answerable": true,
+      "expected_relevant_chunks": ["ref_training_renewal"],
+      "expected_relevant_documents": ["reference_training_certification"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "later_production_chunk",
+      "notes": "The validity period appears late in a deliberately long reference page."
+    },
+    {
+      "id": "v3_ref_printing_proof",
+      "category": "answerable_reference_direct",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "What must happen to a production proof before the commercial print run starts?",
+      "answerable": true,
+      "expected_relevant_chunks": ["ref_print_proof_approval"],
+      "expected_relevant_documents": ["reference_printing_proofs"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "direct_process_fact",
+      "notes": "Reference guide requires customer approval."
+    },
+    {
+      "id": "v3_ref_parking_fee",
+      "category": "unsupported_specificity_mismatch",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "What exact fee does the parking guide set for replacing a lost physical permit?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "specificity_mismatch",
+      "notes": "The guide says a fee may apply but gives no amount."
+    },
+    {
+      "id": "v3_ref_catering_cancel",
+      "category": "unsupported_temporal_mismatch",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "What cancellation deadline does the catering planning guide require?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "temporal_missing_fact",
+      "notes": "The final headcount deadline is present, but cancellation timing is explicitly absent."
+    },
+    {
+      "id": "v3_ref_colour_tolerance",
+      "category": "unsupported_numeric_mismatch",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "What numerical colour-difference tolerance does proof approval guarantee?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "numeric_attribute_absent",
+      "notes": "The proof guide explicitly declines an exact numerical colour guarantee."
+    },
+    {
+      "id": "v3_ref_retake_wait",
+      "category": "unsupported_related_topic",
+      "scope": "reference",
+      "space": "user_e_coworking",
+      "question": "How long must someone wait before repeating an unsuccessful technical training assessment?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "related_process_missing_interval",
+      "notes": "The rules discuss certification and explicitly omit a retake waiting period."
+    },
+    {
+      "id": "v3_comb_deposit_and_display",
+      "category": "answerable_combined_multi_source",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "What access-card deposit is on my initial invoice, and where does the facility guide say to display a physical parking permit?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_invoice_august", "ref_parking_display"],
+      "expected_relevant_documents": ["user_e_membership_invoice", "reference_parking_permits"],
+      "expected_source_kinds": ["private", "reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "combined_multi_source",
+      "notes": "Requires one private invoice fact and one reference parking fact."
+    },
+    {
+      "id": "v3_comb_notice_private",
+      "category": "answerable_combined_private_winner",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "Exactly how much written notice does my Lantern Yard agreement require before I leave?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_membership_exit_guests"],
+      "expected_relevant_documents": ["user_e_membership_terms"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "private_specific_over_generic_reference",
+      "notes": "The reference handbook says periods vary; only the private terms give forty-five days."
+    },
+    {
+      "id": "v3_comb_headcount_reference",
+      "category": "answerable_combined_reference_winner",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "According to the planning guide, when should a catering organizer provide the final headcount?",
+      "answerable": true,
+      "expected_relevant_chunks": ["ref_catering_headcount"],
+      "expected_relevant_documents": ["reference_catering_planning"],
+      "expected_source_kinds": ["reference"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "reference_winner",
+      "notes": "Private coworking records contain invoice deadlines but no catering headcount rule."
+    },
+    {
+      "id": "v3_comb_guest_private",
+      "category": "answerable_combined_private_paraphrase",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "What visitor allowance does my own Cedar Desk plan include each month?",
+      "answerable": true,
+      "expected_relevant_chunks": ["cw_membership_exit_guests"],
+      "expected_relevant_documents": ["user_e_membership_terms"],
+      "expected_source_kinds": ["private"],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "private_paraphrase_with_generic_reference",
+      "notes": "The generic handbook discusses guest allowances but has no quantity."
+    },
+    {
+      "id": "v3_comb_locker_year",
+      "category": "unsupported_combined_near_miss",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "What annual bicycle-locker fee is specified for my Cedar Desk plan?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": ["user_f_workspace_terms"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "combined_numeric_period_near_miss",
+      "notes": "Private terms provide only a monthly fee; references add no annual figure."
+    },
+    {
+      "id": "v3_comb_permit_replacement",
+      "category": "unsupported_semantic_distractor",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "How much will I pay to replace a lost facility parking permit?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": [],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "nearby_private_number_reference_omission",
+      "notes": "The private invoice has an access-card deposit while the parking guide omits the replacement amount."
+    },
+    {
+      "id": "v3_comb_certificate_date",
+      "category": "unsupported_cross_document",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "On what date does my own technical training certificate expire?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": ["user_e_calibration_log", "user_f_equipment_log"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "cross_document_date_confusion",
+      "notes": "The reference gives a generic duration, but no private certificate or issue date exists in this space."
+    },
+    {
+      "id": "v3_comb_event_cancellation",
+      "category": "unsupported_temporal_mismatch",
+      "scope": "combined",
+      "space": "user_e_coworking",
+      "question": "When is the last day I can cancel catering for my Lantern Yard launch event and receive a refund?",
+      "answerable": false,
+      "expected_relevant_chunks": [],
+      "expected_relevant_documents": [],
+      "expected_source_kinds": [],
+      "forbidden_documents": ["user_e_studio_booking"],
+      "evaluation_split": "fresh_holdout",
+      "difficulty": "combined_specific_event_near_miss",
+      "notes": "The catering reference has headcount timing but no cancellation/refund rule; no private catering booking exists."
+    }
+  ]
+}

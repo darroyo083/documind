@@ -143,6 +143,7 @@ def build_verifier_json_report(
     evaluation: VerifierEvaluation,
     dataset_canonical_sha256: str | None = None,
     frozen_v2_holdout: bool = False,
+    frozen_holdout_version: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the machine-readable verifier report."""
     benchmark: dict[str, Any] = {
@@ -172,6 +173,12 @@ def build_verifier_json_report(
             "Fresh v2 semantic evaluation is intended as a one-shot holdout. "
             "It must not be repeated as if it were a new pristine experiment; "
             "re-running under different inputs turns v2 into a regression set."
+        )
+    if frozen_holdout_version:
+        benchmark["frozen_holdout_version"] = frozen_holdout_version
+        benchmark["one_shot_semantics"] = (
+            f"Fresh v{frozen_holdout_version} semantic evaluation is a one-shot holdout. "
+            "It must not be repeated or tuned after observing its results."
         )
     return {
         "benchmark": benchmark,

@@ -18,12 +18,14 @@ from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from app.evaluation.dataset import VALID_SCOPES
 
 V2_DATASET_VERSION = "2"
+V3_DATASET_VERSION = "3"
 V2_SPLIT = "fresh_holdout"
 V2_QUERY_COUNT = 24
 V2_ANSWERABLE_COUNT = 12
@@ -31,6 +33,7 @@ V2_UNSUPPORTED_COUNT = 12
 V2_SCOPE_COUNTS = {"private": 8, "reference": 8, "combined": 8}
 V2_ANSWERABLE_PER_SCOPE = 4
 V2_UNSUPPORTED_PER_SCOPE = 4
+V3_FORBIDDEN_MARKERS = ("EVAL_FACT", "HOLDOUT", "GOLD", "ANSWERABLE", "SUPPORTED")
 
 FORBIDDEN_MARKERS = ("EVAL_FACT_", "HOLDOUT_", "GOLD_")
 
@@ -121,6 +124,37 @@ def load_verifier_holdout_dataset(path: str | Path) -> dict[str, Any]:
         dataset = json.load(handle)
     validate_verifier_holdout_dataset(dataset)
     return dataset
+
+
+def load_verifier_holdout_v3_dataset(path: str | Path) -> dict[str, Any]:
+    """Load the fresh v3 dataset and run the shared strict holdout validation."""
+    with open(path, encoding="utf-8") as handle:
+        dataset = json.load(handle)
+    validate_verifier_holdout_v3_dataset(dataset)
+    return dataset
+
+
+def validate_verifier_holdout_v3_dataset(dataset: dict[str, Any]) -> None:
+    """Validate v3 with the proven v2 structural contract and v3 version identity."""
+    if dataset.get("dataset_version") != V3_DATASET_VERSION:
+        raise ValueError(f"dataset_version must be {V3_DATASET_VERSION!r}")
+    structural_copy = deepcopy(dataset)
+    structural_copy["dataset_version"] = V2_DATASET_VERSION
+    try:
+        validate_verifier_holdout_dataset(structural_copy)
+    except ValueError as exc:
+        raise ValueError(str(exc).replace("v2 verifier", "v3 verifier")) from exc
+    semantic_ids = [
+        page["semantic_id"]
+        for document in collect_documents(dataset).values()
+        for page in document["pages"]
+    ]
+    if len(semantic_ids) != len(set(semantic_ids)):
+        raise ValueError("Invalid v3 verifier holdout dataset: duplicate semantic id")
+    embedded_text = _embedded_text(dataset)
+    for marker in V3_FORBIDDEN_MARKERS:
+        if any(marker in text for text in embedded_text):
+            raise ValueError(f"Invalid v3 verifier holdout dataset: forbidden marker {marker!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -401,6 +435,14 @@ def _validate_page(
 
 def _check_markers(dataset: dict[str, Any], errors: list[str]) -> None:
     """Reject evaluation marker tokens in any embedded text or question."""
+    texts = _embedded_text(dataset)
+    for marker in FORBIDDEN_MARKERS:
+        for text in texts:
+            if marker in text:
+                errors.append(f"forbidden marker {marker!r} found in embedded content")
+
+
+def _embedded_text(dataset: dict[str, Any]) -> list[str]:
     texts: list[str] = []
     for user in dataset["users"].values():
         for space in user.get("spaces", {}).values():
@@ -412,10 +454,7 @@ def _check_markers(dataset: dict[str, Any], errors: list[str]) -> None:
             texts.append(page.get("text", ""))
     for query in dataset["queries"]:
         texts.append(query.get("question", ""))
-    for marker in FORBIDDEN_MARKERS:
-        for text in texts:
-            if marker in text:
-                errors.append(f"forbidden marker {marker!r} found in embedded content")
+    return texts
 
 
 # ---------------------------------------------------------------------------

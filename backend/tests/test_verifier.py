@@ -560,6 +560,45 @@ class TestDeepSeekAdapter:
             await adapter.verify("q", [_evidence("s1")])
 
 
+class TestOpenCodeGoAdapter:
+    async def test_transport_contract_and_source_validation(self, monkeypatch):
+        captured = {}
+
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"supported": true, "reason": "sufficient_evidence", '
+                                    '"evidence_source_ids": ["synthetic:1"]}'
+                                )
+                            }
+                        }
+                    ]
+                }
+
+        async def fake_post(self, url, *, headers, json):
+            captured.update(url=url, headers=headers, json=json)
+            return Response()
+
+        monkeypatch.setattr("httpx.AsyncClient.post", fake_post)
+        adapter = verifier_providers.OpenCodeGoVerifierAdapter(api_key="test-key")
+        decision = await adapter.verify("When does the library open?", [_evidence("synthetic:1")])
+
+        assert captured["url"] == "https://opencode.ai/zen/go/v1/chat/completions"
+        assert captured["headers"]["Authorization"] == "Bearer test-key"
+        assert captured["json"]["model"] == "deepseek-v4-flash"
+        assert captured["json"]["temperature"] == 0
+        assert captured["json"]["response_format"] == {"type": "json_object"}
+        assert captured["json"]["stream"] is False
+        assert decision.evidence_source_ids == ["synthetic:1"]
+
+
 # ---------------------------------------------------------------------------
 # Evaluation flow, metrics integration, source-id enforcement
 # ---------------------------------------------------------------------------
@@ -843,6 +882,7 @@ class TestExternalApiGate:
 
     def test_explicit_opt_in_accepts_external_provider(self):
         verifier_providers.ensure_external_api_opt_in("deepseek", True)
+        verifier_providers.ensure_external_api_opt_in("opencode-go", True)
 
     def test_build_deepseek_requires_api_key(self, monkeypatch):
         monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
@@ -855,6 +895,19 @@ class TestExternalApiGate:
         assert name == "deepseek"
         assert external is True
         assert adapter.model_name == "deepseek-chat"
+
+    def test_build_opencode_go_requires_its_own_api_key(self, monkeypatch):
+        monkeypatch.delenv("OPENCODE_GO_API_KEY", raising=False)
+        monkeypatch.setenv("DEEPSEEK_API_KEY", "must-not-be-reused")
+        with pytest.raises(SystemExit, match="OPENCODE_GO_API_KEY"):
+            verifier_providers.build_verifier_provider("opencode-go")
+
+    def test_build_opencode_go_with_api_key(self, monkeypatch):
+        monkeypatch.setenv("OPENCODE_GO_API_KEY", "test-key")
+        adapter, name, external = verifier_providers.build_verifier_provider("opencode-go")
+        assert name == "opencode-go"
+        assert external is True
+        assert adapter.model_name == "deepseek-v4-flash"
 
     def test_build_mock_uses_no_external_api(self):
         adapter, name, external = verifier_providers.build_verifier_provider("mock")
@@ -889,6 +942,8 @@ class TestCli:
         args = module.parse_args(["--provider", "deepseek", "--allow-external-api"])
         assert args.provider == "deepseek"
         assert args.allow_external_api is True
+        args = module.parse_args(["--provider", "opencode-go", "--allow-external-api"])
+        assert args.provider == "opencode-go"
 
     def test_cli_real_benchmark_mode_parses_explicitly(self):
         module = _load_cli_module()

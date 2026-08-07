@@ -4,15 +4,15 @@
   validation, metrics, reporting, source-id enforcement, and supported /
   unsupported paths. Its metrics have NO semantic meaning; it is not a quality
   benchmark.
-- ``DeepSeekVerifierAdapter``: evaluation-only adapter for an
+- ``DeepSeekVerifierAdapter`` and ``OpenCodeGoVerifierAdapter``: evaluation-only adapters for
   OpenAI-compatible chat-completions endpoint. It lives entirely under
   evaluation code, is never imported by production, uses temperature 0,
   requests strict structured JSON, and instructs the model to use only the
   supplied evidence.
 
 Default execution performs ZERO network/model calls. External execution
-requires an explicit opt-in (``--allow-external-api``) plus a
-``DEEPSEEK_API_KEY``. This module never prints API keys.
+requires an explicit opt-in (``--allow-external-api``) plus the provider's
+dedicated API key. This module never prints API keys.
 """
 
 from __future__ import annotations
@@ -36,7 +36,10 @@ from app.evaluation.verifier_prompt import build_verifier_messages
 
 DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-EXTERNAL_PROVIDERS = frozenset({"deepseek"})
+DEFAULT_OPENCODE_GO_MODEL = "deepseek-v4-flash"
+DEFAULT_OPENCODE_GO_BASE_URL = "https://opencode.ai/zen/go/v1"
+OPENCODE_GO_CHAT_ENDPOINT = "/chat/completions"
+EXTERNAL_PROVIDERS = frozenset({"deepseek", "opencode-go"})
 
 
 def _default_mock_decision(question: str, evidence: Sequence[EvidenceItem]) -> VerificationDecision:
@@ -183,6 +186,19 @@ class DeepSeekVerifierAdapter:
         return validate_decision(raw, allowed)
 
 
+class OpenCodeGoVerifierAdapter(DeepSeekVerifierAdapter):
+    """Evaluation-only OpenCode Go verifier using DeepSeek V4 Flash."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = DEFAULT_OPENCODE_GO_MODEL,
+        base_url: str = DEFAULT_OPENCODE_GO_BASE_URL,
+        timeout: float = 60.0,
+    ):
+        super().__init__(api_key=api_key, model=model, base_url=base_url, timeout=timeout)
+
+
 # ---------------------------------------------------------------------------
 # External-API safety gate and provider construction
 # ---------------------------------------------------------------------------
@@ -205,8 +221,7 @@ def build_verifier_provider(provider: str, model: str | None = None) -> tuple[An
     """Instantiate the requested verifier provider (never executes a model call).
 
     Returns ``(verifier, provider_name, external_api_used)``. External
-    providers require the ``DEEPSEEK_API_KEY`` environment variable; keys are
-    never printed.
+    providers require their dedicated environment variable; keys are never printed.
     """
     if provider == "mock":
         return MockEvidenceVerifier(), "mock", False
@@ -221,6 +236,19 @@ def build_verifier_provider(provider: str, model: str | None = None) -> tuple[An
         return (
             DeepSeekVerifierAdapter(api_key=api_key, model=selected_model),
             "deepseek",
+            True,
+        )
+    if provider == "opencode-go":
+        api_key = os.environ.get("OPENCODE_GO_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'opencode-go' requires the OPENCODE_GO_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        selected_model = model or DEFAULT_OPENCODE_GO_MODEL
+        return (
+            OpenCodeGoVerifierAdapter(api_key=api_key, model=selected_model),
+            "opencode-go",
             True,
         )
     raise SystemExit(f"Unknown verifier provider {provider!r}")

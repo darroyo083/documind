@@ -72,6 +72,7 @@ Never present mock-retrieval results as verifier quality.
 import argparse
 import asyncio
 import json
+import os
 import re
 import subprocess
 import sys
@@ -99,6 +100,7 @@ from app.evaluation import (  # noqa: E402
     verifier_dataset,
     verifier_eval,
     verifier_manifest,
+    verifier_manifest_v3,
     verifier_preflight,
     verifier_prompt,
     verifier_providers,
@@ -127,9 +129,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--provider",
-        choices=["mock", "deepseek"],
+        choices=["mock", "deepseek", "opencode-go"],
         default="mock",
         help="Verifier provider. Default 'mock' performs zero network calls.",
+    )
+    parser.add_argument(
+        "--run-frozen-v3",
+        action="store_true",
+        help="Explicit confirmation for the one-shot OpenCode Go v3 holdout.",
     )
     parser.add_argument(
         "--allow-external-api",
@@ -139,8 +146,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--verifier-model",
         default=None,
-        help="External verifier model (e.g. deepseek-chat). Explicit selection; "
-        "the frozen v2 holdout requires exactly the manifest model.",
+        help=(
+            "External verifier model (e.g. deepseek-chat or deepseek-v4-flash). "
+            "Explicit selection; the frozen v2 holdout requires exactly the manifest model."
+        ),
     )
     parser.add_argument(
         "--embedding-provider",
@@ -270,8 +279,11 @@ def load_dataset_data(path: str | Path) -> tuple[dict, bool]:
     with open(path, encoding="utf-8") as handle:
         data = json.load(handle)
     is_v2 = data.get("dataset_version") == verifier_dataset.V2_DATASET_VERSION
+    is_v3 = data.get("dataset_version") == verifier_dataset.V3_DATASET_VERSION
     if is_v2:
         verifier_dataset.validate_verifier_holdout_dataset(data)
+    elif is_v3:
+        verifier_dataset.validate_verifier_holdout_v3_dataset(data)
     else:
         dataset.validate_dataset(data)
     return data, is_v2
@@ -314,6 +326,44 @@ def enforce_frozen_v2_contract(args, dataset_is_v2: bool) -> bool:
     )
     if violations:
         print("FROZEN V2 CONTRACT VIOLATIONS (refusing to run; no external call was made):")
+        for violation in violations:
+            print(f"  - {violation}")
+        return False
+    args.verifier_model = effective_model
+    return True
+
+
+def enforce_frozen_v3_contract(args, dataset_is_v3: bool) -> bool:
+    """Apply the frozen v3 contract before provider construction or HTTP."""
+    if args.run_frozen_v3 and not dataset_is_v3:
+        print("--run-frozen-v3 requires the verifier holdout v3 dataset.")
+        return False
+    external_requested = args.provider in verifier_providers.EXTERNAL_PROVIDERS
+    if not (dataset_is_v3 and (external_requested or args.run_frozen_v3)):
+        return True
+
+    manifest = verifier_manifest_v3.load_manifest()
+    top_k, threshold = effective_retrieval_config(args)
+    effective_model = args.verifier_model or manifest.verifier_model
+    violations = verifier_manifest_v3.frozen_contract_violations(
+        manifest,
+        dataset_path=args.dataset,
+        prompt_version=verifier_prompt.VERIFIER_PROMPT_VERSION,
+        verifier_provider=args.provider,
+        verifier_model=effective_model,
+        verifier_base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
+        verifier_endpoint=verifier_providers.OPENCODE_GO_CHAT_ENDPOINT,
+        embedding_provider=args.embedding_provider,
+        embedding_model=args.embedding_model,
+        embedding_dimension=settings.embedding_dimension,
+        top_k=top_k,
+        threshold=threshold,
+        allow_external_api=args.allow_external_api,
+        confirm_frozen_v3=args.run_frozen_v3,
+        api_key_available=bool(os.environ.get("OPENCODE_GO_API_KEY", "").strip()),
+    )
+    if violations:
+        print("FROZEN V3 CONTRACT VIOLATIONS (refusing to run; no external call was made):")
         for violation in violations:
             print(f"  - {violation}")
         return False
@@ -377,14 +427,15 @@ async def run_preflight(args, dataset_data: dict, source_url) -> int:
             await drop_disposable_database(source_url, database_name)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.output_dir / "verifier_v2_preflight.json"
-    md_path = args.output_dir / "verifier_v2_preflight.md"
+    version = dataset_data["dataset_version"]
+    json_path = args.output_dir / f"verifier_v{version}_preflight.json"
+    md_path = args.output_dir / f"verifier_v{version}_preflight.md"
     verifier_preflight.write_preflight_report(report, json_path)
     md_path.write_text(verifier_preflight.render_preflight_markdown(report), encoding="utf-8")
 
     security = eligibility["security"]
     print("")
-    print("Verifier v2 retrieval preflight (no verifier invoked)")
+    print(f"Verifier v{version} retrieval preflight (no verifier invoked)")
     print("Run mode: retrieval_preflight")
     print(f"Dataset canonical SHA-256: {report['benchmark']['dataset_canonical_sha256']}")
     print(
@@ -424,11 +475,14 @@ async def main() -> int:
     assert_safe_database_server(source_url)
 
     dataset_data, dataset_is_v2 = load_dataset_data(args.dataset)
+    dataset_is_v3 = dataset_data.get("dataset_version") == verifier_dataset.V3_DATASET_VERSION
 
     if args.retrieval_preflight:
         return await run_preflight(args, dataset_data, source_url)
 
     if not enforce_frozen_v2_contract(args, dataset_is_v2):
+        return 2
+    if not enforce_frozen_v3_contract(args, dataset_is_v3):
         return 2
 
     verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
@@ -492,10 +546,11 @@ async def main() -> int:
                     evaluation=evaluation,
                     dataset_canonical_sha256=(
                         verifier_dataset.canonical_dataset_digest(args.dataset)
-                        if dataset_is_v2
+                        if dataset_is_v2 or dataset_is_v3
                         else None
                     ),
                     frozen_v2_holdout=bool(dataset_is_v2 and args.run_frozen_v2),
+                    frozen_holdout_version="3" if dataset_is_v3 and args.run_frozen_v3 else None,
                 )
 
         args.output_dir.mkdir(parents=True, exist_ok=True)
