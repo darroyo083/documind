@@ -79,8 +79,8 @@ Reason codes (use exactly one):
    supplied EVIDENCE section. When supported is true you MUST list at least one
    source_id that contains the supporting information. When supported is false
    you MUST return an empty list.
- 7. Never invent source ids. Only use the source_id strings shown in the
-    EVIDENCE section."""
+7. Never invent source ids. Only use the source_id strings shown in the
+   EVIDENCE section."""
 
 SYSTEM_PROMPT_V2 = """\
 You are an evidence sufficiency verifier for a document question-answering system.
