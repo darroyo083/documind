@@ -43,6 +43,7 @@ from typing import Any
 from app.evaluation import sufficiency_metrics
 from app.evaluation.runner import QueryResult
 from app.evaluation.verifier import (
+    DEFAULT_SCHEMA_VERSION,
     EvidenceVerifier,
     ReasonCode,
     UnknownEvidenceSourceError,
@@ -51,6 +52,7 @@ from app.evaluation.verifier import (
     decision_to_dict,
     validate_decision,
 )
+from app.evaluation.verifier_dev_cases import case_evidence_items
 from app.evaluation.verifier_payload import build_evidence_items
 
 REGRESSION_LABEL = "regression"
@@ -120,6 +122,7 @@ async def run_verifier_evaluation(
     split_by_id: dict[str, str],
     *,
     stop_on_provider_error: bool = False,
+    schema_version: str = DEFAULT_SCHEMA_VERSION,
 ) -> VerifierEvaluation:
     """Run the verifier over every retrieval result and validate outputs.
 
@@ -158,7 +161,9 @@ async def run_verifier_evaluation(
         verifier_calls += 1
         try:
             decision = await verifier.verify(result.question, evidence)
-            decision = validate_decision(decision_to_dict(decision), allowed)
+            decision = validate_decision(
+                decision_to_dict(decision), allowed, schema_version=schema_version
+            )
         except VerifierOutputError as error:
             outcomes.append(
                 VerifierOutcome(
@@ -191,6 +196,95 @@ async def run_verifier_evaluation(
                 category=result.category,
                 answerable=result.answerable,
                 question=result.question,
+                supported=decision.supported,
+                reason=decision.reason,
+                evidence_source_ids=decision.evidence_source_ids,
+                evidence_count=len(evidence),
+                evidence_ids=[item.source_id for item in evidence],
+                invalid=False,
+            )
+        )
+
+    return _build_evaluation(outcomes, verifier_calls)
+
+
+async def run_direct_cases_evaluation(
+    cases: Sequence[dict[str, Any]],
+    verifier: EvidenceVerifier,
+    *,
+    stop_on_provider_error: bool = False,
+    schema_version: str = DEFAULT_SCHEMA_VERSION,
+) -> VerifierEvaluation:
+    """Run the verifier over direct-drive dev cases (evidence provided inline).
+
+    Same semantics as :func:`run_verifier_evaluation` with no retrieval:
+    zero-evidence cases short-circuit to unsupported without a provider call,
+    invalid outputs are captured per case, and ``verifier_calls`` counts only
+    provider invocations. Evaluation labels from the case (``category``,
+    ``expected_supported``) are used for scoring only and never enter the
+    model payload.
+    """
+    outcomes: list[VerifierOutcome] = []
+    verifier_calls = 0
+    for case in sorted(cases, key=lambda c: c["id"]):
+        evidence = case_evidence_items(case)
+        allowed = {item.source_id for item in evidence}
+        if not evidence:
+            outcomes.append(
+                VerifierOutcome(
+                    query_id=case["id"],
+                    split=split_label("dev"),
+                    scope="private",
+                    category=case["category"],
+                    answerable=case["expected_supported"],
+                    question=case["question"],
+                    supported=False,
+                    reason=ReasonCode.INSUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[],
+                    evidence_count=0,
+                    evidence_ids=[],
+                    invalid=False,
+                )
+            )
+            continue
+        verifier_calls += 1
+        try:
+            decision = await verifier.verify(case["question"], evidence)
+            decision = validate_decision(
+                decision_to_dict(decision), allowed, schema_version=schema_version
+            )
+        except VerifierOutputError as error:
+            outcomes.append(
+                VerifierOutcome(
+                    query_id=case["id"],
+                    split=split_label("dev"),
+                    scope="private",
+                    category=case["category"],
+                    answerable=case["expected_supported"],
+                    question=case["question"],
+                    supported=None,
+                    reason=None,
+                    evidence_source_ids=[],
+                    evidence_count=len(evidence),
+                    evidence_ids=[item.source_id for item in evidence],
+                    invalid=True,
+                    error_kind=_error_kind(error),
+                    error=str(error),
+                )
+            )
+            if stop_on_provider_error and isinstance(error, VerifierProviderError):
+                raise VerifierProviderAbortError(
+                    case["id"], _build_evaluation(outcomes, verifier_calls)
+                ) from error
+            continue
+        outcomes.append(
+            VerifierOutcome(
+                query_id=case["id"],
+                split=split_label("dev"),
+                scope="private",
+                category=case["category"],
+                answerable=case["expected_supported"],
+                question=case["question"],
                 supported=decision.supported,
                 reason=decision.reason,
                 evidence_source_ids=decision.evidence_source_ids,

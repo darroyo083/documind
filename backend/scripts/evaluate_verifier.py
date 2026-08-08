@@ -58,13 +58,28 @@ Run modes:
    disagrees with the frozen manifest, or when --allow-external-api or
    --run-frozen-v2 is missing.
 
-4. Retrieval preflight (no verifier at all) -- certifies v2 retrieval
-   eligibility without invoking any verifier (zero verifier calls):
+ 4. Retrieval preflight (no verifier at all) -- certifies v2 retrieval
+    eligibility without invoking any verifier (zero verifier calls):
 
        python scripts/evaluate_verifier.py \
            --dataset app/evaluation/datasets/verifier_holdout_v2.json \
            --embedding-provider local \
            --retrieval-preflight
+
+ 5. Direct-drive verifier-contract dev cases (no retrieval, evidence inline):
+
+       python scripts/evaluate_verifier.py \
+           --direct-cases experiments/verifier_contract/dev_cases.json \
+           --provider opencode-go \
+           --allow-external-api \
+           --case-ids dev_near_annual_storage,dev_inject_override \
+           --output-name verifier_dev_report
+
+    Prompt/schema versions default to v2 (the hardened minimal contract);
+    frozen v2/v3 datasets derive their effective versions from the manifest
+    and refuse explicit conflicting CLI values (--prompt-version /
+    --schema-version). --query-ids selects a targeted subset of dataset
+    queries without extra verifier calls; --output-name names the report.
 
 Never present mock-retrieval results as verifier quality.
 """
@@ -97,7 +112,9 @@ from app.config import settings  # noqa: E402
 from app.evaluation import (  # noqa: E402
     dataset,
     runner,
+    verifier,
     verifier_dataset,
+    verifier_dev_cases,
     verifier_eval,
     verifier_manifest,
     verifier_manifest_v3,
@@ -190,6 +207,43 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Explicit confirmation that this is the one-shot frozen v2 holdout "
         "evaluation. Required (with --allow-external-api) for the external v2 run.",
+    )
+    parser.add_argument(
+        "--direct-cases",
+        type=Path,
+        default=None,
+        help="Run verifier-level dev cases WITHOUT retrieval (evidence provided "
+        "inline). Path to a dev dataset like experiments/verifier_contract/dev_cases.json.",
+    )
+    parser.add_argument(
+        "--case-ids",
+        default=None,
+        help="Comma-separated subset of dev case ids to run in --direct-cases mode.",
+    )
+    parser.add_argument(
+        "--query-ids",
+        default=None,
+        help="Comma-separated subset of dataset query ids to run (queries outside "
+        "the subset are skipped without calling the verifier).",
+    )
+    parser.add_argument(
+        "--prompt-version",
+        choices=["1", "2"],
+        default=None,
+        help="Verifier prompt version. Default: '2' for dev/direct runs; frozen "
+        "v2/v3 datasets derive the effective version from their manifest.",
+    )
+    parser.add_argument(
+        "--schema-version",
+        choices=["1", "2"],
+        default=None,
+        help="Verifier decision schema version. Default: '2' for dev/direct runs; "
+        "frozen v2/v3 datasets derive the effective version from their manifest.",
+    )
+    parser.add_argument(
+        "--output-name",
+        default="verifier_report",
+        help="Report file name without extension (writes <name>.json and <name>.md).",
     )
     return parser.parse_args(argv)
 
@@ -297,11 +351,22 @@ def effective_retrieval_config(args) -> tuple[int, float]:
     return top_k, threshold
 
 
+def parse_id_list(value: str | None) -> list[str] | None:
+    """Parse a comma-separated id list argument; None stays None."""
+    if value is None:
+        return None
+    return [part.strip() for part in value.split(",") if part.strip()]
+
+
 def enforce_frozen_v2_contract(args, dataset_is_v2: bool) -> bool:
     """Run the frozen-v2 gate. Returns True when the gate was applied and passed.
 
     Prints violations and returns False when the gate was applied and failed.
     When the run is not a v2 external run, returns True without checking.
+
+    Effective prompt/schema versions are derived from the manifest (same
+    pattern as ``effective_model``); the gate refuses only on explicit
+    conflicting CLI values.
     """
     external_requested = args.provider in verifier_providers.EXTERNAL_PROVIDERS
     if not (dataset_is_v2 and (external_requested or args.run_frozen_v2)):
@@ -310,10 +375,13 @@ def enforce_frozen_v2_contract(args, dataset_is_v2: bool) -> bool:
     manifest = verifier_manifest.load_manifest()
     top_k, threshold = effective_retrieval_config(args)
     effective_model = args.verifier_model or manifest.verifier_model
+    effective_prompt = args.prompt_version or manifest.verifier_prompt_version
+    effective_schema = args.schema_version or manifest.decision_schema_version
     violations = verifier_manifest.frozen_contract_violations(
         manifest,
         dataset_path=args.dataset,
-        prompt_version=verifier_prompt.VERIFIER_PROMPT_VERSION,
+        prompt_version=effective_prompt,
+        schema_version=effective_schema,
         verifier_provider=args.provider,
         verifier_model=effective_model,
         embedding_provider=args.embedding_provider,
@@ -330,6 +398,8 @@ def enforce_frozen_v2_contract(args, dataset_is_v2: bool) -> bool:
             print(f"  - {violation}")
         return False
     args.verifier_model = effective_model
+    args.prompt_version = effective_prompt
+    args.schema_version = effective_schema
     return True
 
 
@@ -345,10 +415,13 @@ def enforce_frozen_v3_contract(args, dataset_is_v3: bool) -> bool:
     manifest = verifier_manifest_v3.load_manifest()
     top_k, threshold = effective_retrieval_config(args)
     effective_model = args.verifier_model or manifest.verifier_model
+    effective_prompt = args.prompt_version or manifest.verifier_prompt_version
+    effective_schema = args.schema_version or manifest.decision_schema_version
     violations = verifier_manifest_v3.frozen_contract_violations(
         manifest,
         dataset_path=args.dataset,
-        prompt_version=verifier_prompt.VERIFIER_PROMPT_VERSION,
+        prompt_version=effective_prompt,
+        schema_version=effective_schema,
         verifier_provider=args.provider,
         verifier_model=effective_model,
         verifier_base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
@@ -368,6 +441,8 @@ def enforce_frozen_v3_contract(args, dataset_is_v3: bool) -> bool:
             print(f"  - {violation}")
         return False
     args.verifier_model = effective_model
+    args.prompt_version = effective_prompt
+    args.schema_version = effective_schema
     return True
 
 
@@ -469,8 +544,101 @@ async def run_preflight(args, dataset_data: dict, source_url) -> int:
     return 0 if eligibility["eligible_to_freeze"] else 1
 
 
+async def run_direct_cases(args) -> int:
+    """Direct-drive verifier-level evaluation: no retrieval, evidence inline."""
+    dataset_data = verifier_dev_cases.load_dev_cases(args.direct_cases)
+    cases = dataset_data["cases"]
+    case_ids = parse_id_list(args.case_ids)
+    if case_ids:
+        wanted = set(case_ids)
+        unknown = sorted(wanted - {case["id"] for case in cases})
+        if unknown:
+            print(f"Unknown dev case id(s): {unknown}")
+            return 2
+        cases = [case for case in cases if case["id"] in wanted]
+
+    verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
+    prompt_version = args.prompt_version or verifier_prompt.DEFAULT_PROMPT_VERSION
+    schema_version = args.schema_version or verifier.DEFAULT_SCHEMA_VERSION
+    verifier_instance, provider_name, external_api = verifier_providers.build_verifier_provider(
+        args.provider,
+        args.verifier_model,
+        prompt_version=prompt_version,
+        schema_version=schema_version,
+    )
+
+    started = time.perf_counter()
+    evaluation = await verifier_eval.run_direct_cases_evaluation(
+        cases,
+        verifier_instance,
+        schema_version=schema_version,
+    )
+    runtime_seconds = time.perf_counter() - started
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    total_evidence = sum(len(case["evidence"]) for case in cases)
+    report = verifier_reporting.build_verifier_json_report(
+        dataset_version=dataset_data["dataset_version"],
+        embedding_provider="direct",
+        embedding_model="inline-evidence",
+        embedding_dimension=0,
+        top_k=0,
+        threshold=0.0,
+        verifier_provider=provider_name,
+        verifier_model=verifier_instance.model_name,
+        verifier_prompt_version=prompt_version,
+        decision_schema_version=schema_version,
+        external_api=external_api,
+        corpus_counts={"chunks": total_evidence},
+        runtime_seconds=runtime_seconds,
+        git_commit=git_commit(),
+        evaluation=evaluation,
+    )
+    json_path = args.output_dir / f"{args.output_name}.json"
+    md_path = args.output_dir / f"{args.output_name}.md"
+    verifier_reporting.write_json_report(report, json_path)
+    md_path.write_text(verifier_reporting.render_verifier_markdown(report), encoding="utf-8")
+
+    print("")
+    print("Verifier contract dev evaluation (direct cases, no retrieval)")
+    print(f"Dataset: {args.direct_cases}")
+    print(f"Cases: {len(cases)}")
+    print(f"Provider: {provider_name} (external_api={external_api})")
+    print(f"Verifier prompt version: {prompt_version}")
+    print(f"Decision schema version: {schema_version}")
+    print(f"Verifier calls: {evaluation.verifier_calls}")
+    valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
+    print(f"Valid verifier outputs: {valid_count}/{len(evaluation.outcomes)}")
+    print(f"Invalid outputs: {len(evaluation.invalid_outputs)}")
+    print(
+        f"Evidence-source validation failures: {len(evaluation.evidence_validation_failures)}"
+    )
+    provider_failures = sum(
+        1 for outcome in evaluation.invalid_outputs if outcome.error_kind == "provider_error"
+    )
+    print(f"Provider failures: {provider_failures}")
+    print(f"False supports: {len(evaluation.false_supports)}")
+    print(f"False rejections: {len(evaluation.false_rejections)}")
+    overall = report["metrics"].get("overall", {})
+    if overall:
+        print(
+            f"Dev metrics: accuracy={overall.get('accuracy')} "
+            f"retention={overall.get('answerable_retention')} "
+            f"detection={overall.get('unsupported_detection')} "
+            f"balanced_accuracy={overall.get('balanced_accuracy')}"
+        )
+    print("Reports:")
+    print(f"  {json_path}")
+    print(f"  {md_path}")
+    return 0
+
+
 async def main() -> int:
     args = parse_args()
+
+    if args.direct_cases:
+        return await run_direct_cases(args)
+
     source_url = make_url(settings.database_url)
     assert_safe_database_server(source_url)
 
@@ -485,9 +653,15 @@ async def main() -> int:
     if not enforce_frozen_v3_contract(args, dataset_is_v3):
         return 2
 
+    prompt_version = args.prompt_version or verifier_prompt.DEFAULT_PROMPT_VERSION
+    schema_version = args.schema_version or verifier.DEFAULT_SCHEMA_VERSION
+
     verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
-    verifier, provider_name, external_api = verifier_providers.build_verifier_provider(
-        args.provider, args.verifier_model
+    verifier_instance, provider_name, external_api = verifier_providers.build_verifier_provider(
+        args.provider,
+        args.verifier_model,
+        prompt_version=prompt_version,
+        schema_version=schema_version,
     )
 
     started = time.perf_counter()
@@ -527,11 +701,22 @@ async def main() -> int:
 
                 provider_abort = None
                 try:
+                    results = retrieval.results
+                    query_ids = parse_id_list(args.query_ids)
+                    if query_ids:
+                        wanted = set(query_ids)
+                        available = {result.id for result in results}
+                        unknown = sorted(wanted - available)
+                        if unknown:
+                            print(f"Unknown dataset query id(s): {unknown}")
+                            return 2
+                        results = [result for result in results if result.id in wanted]
                     evaluation = await verifier_eval.run_verifier_evaluation(
-                        retrieval.results,
-                        verifier,
+                        results,
+                        verifier_instance,
                         split_by_id,
                         stop_on_provider_error=bool(dataset_is_v3 and args.run_frozen_v3),
+                        schema_version=schema_version,
                     )
                 except verifier_eval.VerifierProviderAbortError as exc:
                     provider_abort = exc
@@ -545,8 +730,9 @@ async def main() -> int:
                     top_k=top_k,
                     threshold=threshold,
                     verifier_provider=provider_name,
-                    verifier_model=verifier.model_name,
-                    verifier_prompt_version=verifier_prompt.VERIFIER_PROMPT_VERSION,
+                    verifier_model=verifier_instance.model_name,
+                    verifier_prompt_version=prompt_version,
+                    decision_schema_version=schema_version,
                     external_api=external_api,
                     corpus_counts=corpus.counts,
                     runtime_seconds=runtime_seconds,
@@ -569,8 +755,8 @@ async def main() -> int:
                     }
 
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        json_path = args.output_dir / "verifier_report.json"
-        md_path = args.output_dir / "verifier_report.md"
+        json_path = args.output_dir / f"{args.output_name}.json"
+        md_path = args.output_dir / f"{args.output_name}.md"
         verifier_reporting.write_json_report(report, json_path)
         md_path.write_text(verifier_reporting.render_verifier_markdown(report), encoding="utf-8")
 
@@ -579,7 +765,8 @@ async def main() -> int:
         mode = verifier_reporting.run_mode(args.embedding_provider, provider_name)
         print(f"Run mode: {mode}")
         print(f"Provider: {provider_name} (external_api={external_api})")
-        print(f"Verifier prompt version: {verifier_prompt.VERIFIER_PROMPT_VERSION}")
+        print(f"Verifier prompt version: {prompt_version}")
+        print(f"Decision schema version: {schema_version}")
         print(f"Verifier calls (queries with >=1 candidate): {evaluation.verifier_calls}")
         overall = report["metrics"].get("overall", {})
         dev = report["metrics"].get("split:dev", {})
