@@ -63,6 +63,7 @@ def frozen_contract_violations(
     *,
     dataset_path: str | Path,
     prompt_version: str,
+    schema_version: str | None = None,
     verifier_provider: str,
     verifier_model: str,
     verifier_base_url: str,
@@ -76,7 +77,13 @@ def frozen_contract_violations(
     confirm_frozen_v3: bool,
     api_key_available: bool,
 ) -> list[str]:
-    """Return every frozen-contract violation without performing network I/O."""
+    """Return every frozen-contract violation without performing network I/O.
+
+    ``schema_version`` is compared only when explicitly provided (``None``
+    skips the comparison): the CLI derives the effective decision schema
+    version from the manifest itself, so the gate refuses only on explicit
+    conflicting CLI values.
+    """
     failures: list[str] = []
     if not manifest.frozen:
         failures.append("manifest is not marked frozen")
@@ -101,6 +108,11 @@ def frozen_contract_violations(
     for actual, expected, label in comparisons:
         if actual != expected:
             failures.append(f"{label} mismatch: manifest={expected} requested={actual}")
+    if schema_version is not None and schema_version != manifest.decision_schema_version:
+        failures.append(
+            f"decision schema version mismatch: manifest={manifest.decision_schema_version} "
+            f"requested={schema_version}"
+        )
     if not allow_external_api:
         failures.append("external API opt-in missing: pass --allow-external-api")
     if not confirm_frozen_v3:

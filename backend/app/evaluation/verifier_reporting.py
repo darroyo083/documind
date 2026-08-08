@@ -144,6 +144,7 @@ def build_verifier_json_report(
     dataset_canonical_sha256: str | None = None,
     frozen_v2_holdout: bool = False,
     frozen_holdout_version: str | None = None,
+    decision_schema_version: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the machine-readable verifier report."""
     benchmark: dict[str, Any] = {
@@ -165,6 +166,8 @@ def build_verifier_json_report(
         "git_commit": git_commit,
         "timestamp": datetime.now(UTC).isoformat(),
     }
+    if decision_schema_version is not None:
+        benchmark["decision_schema_version"] = decision_schema_version
     if dataset_canonical_sha256 is not None:
         benchmark["dataset_canonical_sha256"] = dataset_canonical_sha256
     if frozen_v2_holdout:

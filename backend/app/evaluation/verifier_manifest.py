@@ -84,6 +84,7 @@ def frozen_contract_violations(
     *,
     dataset_path: str | Path,
     prompt_version: str,
+    schema_version: str | None = None,
     verifier_provider: str,
     verifier_model: str,
     embedding_provider: str,
@@ -98,6 +99,11 @@ def frozen_contract_violations(
 
     This is the single gate a real v2 external run must pass BEFORE any network
     or model call. Each entry is a human-readable failure description.
+
+    ``schema_version`` is compared only when explicitly provided (``None``
+    skips the comparison): the CLI derives the effective decision schema
+    version from the manifest itself, so the gate refuses only on explicit
+    conflicting CLI values.
     """
     failures: list[str] = []
 
@@ -115,6 +121,12 @@ def frozen_contract_violations(
         failures.append(
             f"verifier prompt version mismatch: manifest={manifest.verifier_prompt_version} "
             f"live={prompt_version}"
+        )
+
+    if schema_version is not None and schema_version != manifest.decision_schema_version:
+        failures.append(
+            f"decision schema version mismatch: manifest={manifest.decision_schema_version} "
+            f"requested={schema_version}"
         )
 
     if verifier_provider != manifest.verifier_provider:

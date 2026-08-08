@@ -29,6 +29,11 @@ REASON_CODES = frozenset(
     }
 )
 
+DEFAULT_SCHEMA_VERSION = "2"
+SCHEMA_VERSIONS = ("1", "2")
+
+_V2_ALLOWED_KEYS = frozenset({"supported", "evidence_source_ids", "reason"})
+
 
 class ReasonCode(StrEnum):
     SUFFICIENT_EVIDENCE = "sufficient_evidence"
@@ -111,9 +116,24 @@ def decision_to_dict(decision: VerificationDecision) -> dict[str, Any]:
     }
 
 
+def server_reason(supported: bool) -> str:
+    """Server-derived two-value reason for a v2 decision.
+
+    The model never supplies the reason under schema v2; the server fills it
+    from ``supported`` alone. ``supported=true`` maps to
+    ``sufficient_evidence`` and ``supported=false`` to ``insufficient_evidence``.
+    """
+    return (
+        ReasonCode.SUFFICIENT_EVIDENCE.value
+        if supported
+        else ReasonCode.INSUFFICIENT_EVIDENCE.value
+    )
+
+
 def validate_decision(
     raw: dict[str, Any],
     allowed_source_ids: set[str],
+    schema_version: str = DEFAULT_SCHEMA_VERSION,
 ) -> VerificationDecision:
     """Strictly validate a parsed verifier output against the decision schema.
 
@@ -131,11 +151,35 @@ def validate_decision(
       unsupported decision does not cite sources; any id returned with
       supported=false is rejected.
 
+    Schema versions:
+
+    - ``"1"``: the frozen v1 contract (byte-identical historical behavior).
+      The model supplies ``reason`` directly.
+    - ``"2"`` (default): the minimal model contract
+      ``{"supported": bool, "evidence_source_ids": [str]}``. The ``reason``
+      field is server-derived via :func:`server_reason`; a ``reason`` key is
+      tolerated only when it carries a valid :data:`REASON_CODES` value (it is
+      still overridden by the server-derived value). Any other unknown field
+      is rejected.
+
     Raises:
         MalformedVerifierOutputError: schema violation or non-object output.
         UnknownEvidenceSourceError: a source id is not in the supplied evidence.
         MissingSupportingSourceError: supported=true with no supporting ids.
+        ValueError: unknown ``schema_version``.
     """
+    if schema_version == "1":
+        return _validate_decision_v1(raw, allowed_source_ids)
+    if schema_version == "2":
+        return _validate_decision_v2(raw, allowed_source_ids)
+    raise ValueError(f"unknown decision schema version {schema_version!r}")
+
+
+def _validate_decision_v1(
+    raw: dict[str, Any],
+    allowed_source_ids: set[str],
+) -> VerificationDecision:
+    """Frozen v1 decision validation (byte-identical historical behavior)."""
     if not isinstance(raw, dict):
         raise MalformedVerifierOutputError("verifier output must be a JSON object")
     if "supported" not in raw:
@@ -175,5 +219,68 @@ def validate_decision(
     return VerificationDecision(
         supported=raw["supported"],
         reason=raw["reason"],
+        evidence_source_ids=normalized,
+    )
+
+
+def _validate_decision_v2(
+    raw: dict[str, Any],
+    allowed_source_ids: set[str],
+) -> VerificationDecision:
+    """Minimal model contract validation (schema v2, default).
+
+    The model output schema is exactly ``{"supported": bool,
+    "evidence_source_ids": [str]}``. Unknown extra fields are rejected. A
+    ``reason`` key is tolerated only when it holds a valid
+    :data:`REASON_CODES` value (the round-trip of a previously derived
+    decision); the returned decision ALWAYS carries the server-derived
+    two-value reason from :func:`server_reason`.
+    """
+    if not isinstance(raw, dict):
+        raise MalformedVerifierOutputError("verifier output must be a JSON object")
+    unknown = sorted(set(raw) - _V2_ALLOWED_KEYS)
+    if unknown:
+        raise MalformedVerifierOutputError(
+            f"verifier output has unknown field(s): {unknown}"
+        )
+    if "supported" not in raw:
+        raise MalformedVerifierOutputError("verifier output is missing 'supported'")
+    if not isinstance(raw["supported"], bool):
+        raise MalformedVerifierOutputError("'supported' must be a boolean")
+    if "evidence_source_ids" not in raw:
+        raise MalformedVerifierOutputError("verifier output is missing 'evidence_source_ids'")
+
+    reason = raw.get("reason")
+    if reason is not None and (not isinstance(reason, str) or reason not in REASON_CODES):
+        raise MalformedVerifierOutputError(
+            f"'reason' must be one of {sorted(REASON_CODES)}; got {reason!r}"
+        )
+
+    ids = raw["evidence_source_ids"]
+    if not isinstance(ids, list):
+        raise MalformedVerifierOutputError("'evidence_source_ids' must be a list")
+    normalized: list[str] = []
+    for source_id in ids:
+        if not isinstance(source_id, str):
+            raise MalformedVerifierOutputError("'evidence_source_ids' entries must be strings")
+        if source_id not in allowed_source_ids:
+            raise UnknownEvidenceSourceError(
+                f"evidence_source_id {source_id!r} is not present in the supplied evidence"
+            )
+        if source_id not in normalized:
+            normalized.append(source_id)
+
+    if raw["supported"] and not normalized:
+        raise MissingSupportingSourceError(
+            "supported=true requires at least one evidence_source_id"
+        )
+    if not raw["supported"] and normalized:
+        raise MalformedVerifierOutputError(
+            "supported=false requires evidence_source_ids to be empty"
+        )
+
+    return VerificationDecision(
+        supported=raw["supported"],
+        reason=server_reason(raw["supported"]),
         evidence_source_ids=normalized,
     )

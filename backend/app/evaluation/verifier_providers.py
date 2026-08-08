@@ -25,6 +25,7 @@ from typing import Any
 import httpx
 
 from app.evaluation.verifier import (
+    DEFAULT_SCHEMA_VERSION,
     EvidenceItem,
     MalformedVerifierOutputError,
     ReasonCode,
@@ -32,7 +33,7 @@ from app.evaluation.verifier import (
     VerifierProviderError,
     validate_decision,
 )
-from app.evaluation.verifier_prompt import build_verifier_messages
+from app.evaluation.verifier_prompt import DEFAULT_PROMPT_VERSION, build_verifier_messages
 
 DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
@@ -121,12 +122,15 @@ def parse_decision_from_api_response(api_payload: dict[str, Any]) -> dict[str, A
 
 
 def build_chat_request(
-    question: str, evidence: Sequence[EvidenceItem], model: str
+    question: str,
+    evidence: Sequence[EvidenceItem],
+    model: str,
+    prompt_version: str = DEFAULT_PROMPT_VERSION,
 ) -> dict[str, Any]:
     """Request payload: temperature 0, strict structured JSON, stream off."""
     return {
         "model": model,
-        "messages": build_verifier_messages(question, evidence),
+        "messages": build_verifier_messages(question, evidence, prompt_version=prompt_version),
         "temperature": 0,
         "response_format": {"type": "json_object"},
         "stream": False,
@@ -145,11 +149,15 @@ class DeepSeekVerifierAdapter:
         model: str = DEFAULT_DEEPSEEK_MODEL,
         base_url: str = DEFAULT_DEEPSEEK_BASE_URL,
         timeout: float = 60.0,
+        prompt_version: str = DEFAULT_PROMPT_VERSION,
+        schema_version: str = DEFAULT_SCHEMA_VERSION,
     ):
         self._api_key = api_key
         self._model = model
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._prompt_version = prompt_version
+        self._schema_version = schema_version
         self._model_name = model
 
     @property
@@ -165,7 +173,9 @@ class DeepSeekVerifierAdapter:
         decision is accepted.
         """
         allowed = {item.source_id for item in evidence}
-        payload = build_chat_request(question, evidence, self._model)
+        payload = build_chat_request(
+            question, evidence, self._model, prompt_version=self._prompt_version
+        )
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 response = await client.post(
@@ -183,7 +193,7 @@ class DeepSeekVerifierAdapter:
         except ValueError as exc:
             raise VerifierProviderError("verifier API returned an unreadable response") from exc
         raw = parse_decision_from_api_response(api_payload)
-        return validate_decision(raw, allowed)
+        return validate_decision(raw, allowed, schema_version=self._schema_version)
 
 
 class OpenCodeGoVerifierAdapter(DeepSeekVerifierAdapter):
@@ -195,8 +205,17 @@ class OpenCodeGoVerifierAdapter(DeepSeekVerifierAdapter):
         model: str = DEFAULT_OPENCODE_GO_MODEL,
         base_url: str = DEFAULT_OPENCODE_GO_BASE_URL,
         timeout: float = 60.0,
+        prompt_version: str = DEFAULT_PROMPT_VERSION,
+        schema_version: str = DEFAULT_SCHEMA_VERSION,
     ):
-        super().__init__(api_key=api_key, model=model, base_url=base_url, timeout=timeout)
+        super().__init__(
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            timeout=timeout,
+            prompt_version=prompt_version,
+            schema_version=schema_version,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +236,12 @@ def ensure_external_api_opt_in(provider: str, allow_external_api: bool) -> None:
         )
 
 
-def build_verifier_provider(provider: str, model: str | None = None) -> tuple[Any, str, bool]:
+def build_verifier_provider(
+    provider: str,
+    model: str | None = None,
+    prompt_version: str = DEFAULT_PROMPT_VERSION,
+    schema_version: str = DEFAULT_SCHEMA_VERSION,
+) -> tuple[Any, str, bool]:
     """Instantiate the requested verifier provider (never executes a model call).
 
     Returns ``(verifier, provider_name, external_api_used)``. External
@@ -234,7 +258,12 @@ def build_verifier_provider(provider: str, model: str | None = None) -> tuple[An
             )
         selected_model = model or DEFAULT_DEEPSEEK_MODEL
         return (
-            DeepSeekVerifierAdapter(api_key=api_key, model=selected_model),
+            DeepSeekVerifierAdapter(
+                api_key=api_key,
+                model=selected_model,
+                prompt_version=prompt_version,
+                schema_version=schema_version,
+            ),
             "deepseek",
             True,
         )
@@ -247,7 +276,12 @@ def build_verifier_provider(provider: str, model: str | None = None) -> tuple[An
             )
         selected_model = model or DEFAULT_OPENCODE_GO_MODEL
         return (
-            OpenCodeGoVerifierAdapter(api_key=api_key, model=selected_model),
+            OpenCodeGoVerifierAdapter(
+                api_key=api_key,
+                model=selected_model,
+                prompt_version=prompt_version,
+                schema_version=schema_version,
+            ),
             "opencode-go",
             True,
         )
