@@ -610,9 +610,7 @@ async def run_direct_cases(args) -> int:
     valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
     print(f"Valid verifier outputs: {valid_count}/{len(evaluation.outcomes)}")
     print(f"Invalid outputs: {len(evaluation.invalid_outputs)}")
-    print(
-        f"Evidence-source validation failures: {len(evaluation.evidence_validation_failures)}"
-    )
+    print(f"Evidence-source validation failures: {len(evaluation.evidence_validation_failures)}")
     provider_failures = sum(
         1 for outcome in evaluation.invalid_outputs if outcome.error_kind == "provider_error"
     )

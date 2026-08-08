@@ -151,9 +151,7 @@ class TestSchemaV2:
 
     def test_v2_unsupported_with_ids_rejected(self):
         with pytest.raises(verifier.MalformedVerifierOutputError):
-            verifier.validate_decision(
-                {"supported": False, "evidence_source_ids": ["s1"]}, {"s1"}
-            )
+            verifier.validate_decision({"supported": False, "evidence_source_ids": ["s1"]}, {"s1"})
 
     def test_v2_duplicates_normalized_first_occurrence_wins(self):
         decision = verifier.validate_decision(
@@ -238,9 +236,7 @@ class TestV1ValidatorByteIdentical:
             )
 
     def test_v1_rejects_invalid_reason_code(self):
-        with pytest.raises(
-            verifier.MalformedVerifierOutputError, match="'reason' must be one of"
-        ):
+        with pytest.raises(verifier.MalformedVerifierOutputError, match="'reason' must be one of"):
             verifier.validate_decision(
                 {"supported": True, "reason": "nope", "evidence_source_ids": ["s1"]},
                 {"s1"},
@@ -501,9 +497,7 @@ class TestDirectHarness:
 
         dataset = verifier_dev_cases.load_dev_cases(DEV_CASES_PATH)
         injection = next(c for c in dataset["cases"] if c["id"] == "dev_inject_override")
-        asyncio.run(
-            verifier_eval.run_direct_cases_evaluation([injection], RecordingVerifier())
-        )
+        asyncio.run(verifier_eval.run_direct_cases_evaluation([injection], RecordingVerifier()))
         assert captured["question"] == injection["question"]
         for item in captured["evidence"]:
             assert set(vars(item)) == {

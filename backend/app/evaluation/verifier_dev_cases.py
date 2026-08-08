@@ -71,9 +71,10 @@ def validate_dev_cases(dataset: dict[str, Any]) -> None:
         case_id = case.get("id")
         if not isinstance(case_id, str) or not case_id:
             errors.append(f"{prefix}: missing id")
-        elif case_id in seen_ids:
-            errors.append(f"{prefix}: duplicate case id {case_id!r}")
-        seen_ids.add(case_id)
+        else:
+            if case_id in seen_ids:
+                errors.append(f"{prefix}: duplicate case id {case_id!r}")
+            seen_ids.add(case_id)
 
         if not isinstance(case.get("category"), str) or not case["category"]:
             errors.append(f"{prefix}: category must be a non-empty string")

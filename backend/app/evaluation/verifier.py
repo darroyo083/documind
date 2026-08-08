@@ -240,9 +240,7 @@ def _validate_decision_v2(
         raise MalformedVerifierOutputError("verifier output must be a JSON object")
     unknown = sorted(set(raw) - _V2_ALLOWED_KEYS)
     if unknown:
-        raise MalformedVerifierOutputError(
-            f"verifier output has unknown field(s): {unknown}"
-        )
+        raise MalformedVerifierOutputError(f"verifier output has unknown field(s): {unknown}")
     if "supported" not in raw:
         raise MalformedVerifierOutputError("verifier output is missing 'supported'")
     if not isinstance(raw["supported"], bool):
