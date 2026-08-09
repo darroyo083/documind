@@ -243,10 +243,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--prompt-version",
-        choices=["1", "2"],
+        choices=["1", "2", "3"],
         default=None,
         help="Verifier prompt version. Default: '2' for dev/direct runs; frozen "
-        "v2/v3 datasets derive the effective version from their manifest.",
+        "v2/v3 datasets derive the effective version from their manifest. "
+        "'3' is the untrusted-evidence-boundary prompt (opt-in; not yet default).",
     )
     parser.add_argument(
         "--schema-version",
