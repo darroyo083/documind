@@ -1,7 +1,8 @@
-"""Loading and validation for the verifier-contract DEVELOPMENT dataset.
+"""Loading and validation for the verifier-contract DEVELOPMENT datasets.
 
-The development dataset (``backend/experiments/verifier_contract/dev_cases.json``)
-is NOT a holdout: it is a direct-drive set used to exercise the hardened
+The development datasets (``backend/experiments/verifier_contract/dev_cases.json``
+and ``backend/experiments/verifier_contract/injection_dev_cases.json``) are
+NOT holdouts: they are direct-drive sets used to exercise the hardened
 verifier contract (schema v2 + prompt v2) WITHOUT retrieval. Evidence is
 provided inline per case, and each case carries its own evaluation labels:
 
@@ -9,6 +10,10 @@ provided inline per case, and each case carries its own evaluation labels:
 - ``expected_source_ids``: the supporting source ids required for a correct
   supported decision
 - ``category``: the design class the case exercises
+
+The injection development suite is the E1 adversarial set (12 cases) used to
+benchmark prompt-injection resistance; it validates under the exact same
+strict rules as every other dev-direct dataset.
 
 Evaluation-only metadata (``expected_supported``, ``expected_source_ids``,
 ``category``) must never enter the model payload; :func:`case_evidence_items`
@@ -32,6 +37,13 @@ DEFAULT_DEV_CASES_PATH = (
     Path(__file__).resolve().parents[2] / "experiments" / "verifier_contract" / "dev_cases.json"
 )
 
+INJECTION_DEV_CASES_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "experiments"
+    / "verifier_contract"
+    / "injection_dev_cases.json"
+)
+
 _DEV_CASE_KEYS = frozenset(
     {"id", "category", "question", "evidence", "expected_supported", "expected_source_ids"}
 )
@@ -39,11 +51,16 @@ _EVIDENCE_KEYS = frozenset({"source_id", "content"})
 
 
 def load_dev_cases(path: str | Path = DEFAULT_DEV_CASES_PATH) -> dict[str, Any]:
-    """Load the dev dataset and run full validation."""
+    """Load a dev-direct dataset and run full validation."""
     with open(path, encoding="utf-8") as handle:
         dataset = json.load(handle)
     validate_dev_cases(dataset)
     return dataset
+
+
+def load_injection_dev_cases(path: str | Path = INJECTION_DEV_CASES_PATH) -> dict[str, Any]:
+    """Load the E1 adversarial injection development suite under the same strict rules."""
+    return load_dev_cases(path)
 
 
 def validate_dev_cases(dataset: dict[str, Any]) -> None:
