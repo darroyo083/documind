@@ -81,6 +81,21 @@ Run modes:
     --schema-version). --query-ids selects a targeted subset of dataset
     queries without extra verifier calls; --output-name names the report.
 
+    Direct-cases safety semantics:
+    - A real provider/transport failure (HTTP/network error, unreadable
+      response envelope) mapped to VerifierProviderError STOPS the run
+      immediately (stop_on_provider_error=True): the partial evaluation is
+      persisted as a JSON+MD report with a ``partial_failure`` block and the
+      command exits with code 3. No later case is called after the failure.
+    - Ordinary invalid model outputs (missing field, wrong type, unknown
+      source id, supported/evidence inconsistencies) are MEASUREMENTS: they
+      are recorded as invalid, consume exactly one call, are never repaired
+      or retried, and execution continues with the next case.
+    - --expected-verifier-calls N (optional) exits with code 2 after the run
+      when evaluation.verifier_calls != N. Zero-evidence short-circuit cases
+      never count as calls. Never hardcoded: the orchestrator passes 14 and 8
+      per invocation.
+
 Never present mock-retrieval results as verifier quality.
 """
 
@@ -244,6 +259,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--output-name",
         default="verifier_report",
         help="Report file name without extension (writes <name>.json and <name>.md).",
+    )
+    parser.add_argument(
+        "--expected-verifier-calls",
+        type=int,
+        default=None,
+        help="Direct-cases only: expected external verifier call count. After the run, "
+        "exit with code 2 when evaluation.verifier_calls differs. Zero-evidence "
+        "short-circuit cases never count as calls (verifier_calls semantics exclude "
+        "them), so pass the number of cases that actually invoke the provider. "
+        "Optional: when omitted no count check runs.",
     )
     return parser.parse_args(argv)
 
@@ -545,7 +570,15 @@ async def run_preflight(args, dataset_data: dict, source_url) -> int:
 
 
 async def run_direct_cases(args) -> int:
-    """Direct-drive verifier-level evaluation: no retrieval, evidence inline."""
+    """Direct-drive verifier-level evaluation: no retrieval, evidence inline.
+
+    Provider/transport failures (``VerifierProviderError``) abort the run via
+    ``stop_on_provider_error=True``; the partial evaluation is persisted with
+    a ``partial_failure`` block and the function returns 3. Invalid semantic
+    outputs never abort: they are recorded and execution continues. An
+    optional ``--expected-verifier-calls`` mismatch returns 2 after the report
+    is persisted.
+    """
     dataset_data = verifier_dev_cases.load_dev_cases(args.direct_cases)
     cases = dataset_data["cases"]
     case_ids = parse_id_list(args.case_ids)
@@ -568,11 +601,17 @@ async def run_direct_cases(args) -> int:
     )
 
     started = time.perf_counter()
-    evaluation = await verifier_eval.run_direct_cases_evaluation(
-        cases,
-        verifier_instance,
-        schema_version=schema_version,
-    )
+    provider_abort = None
+    try:
+        evaluation = await verifier_eval.run_direct_cases_evaluation(
+            cases,
+            verifier_instance,
+            stop_on_provider_error=True,
+            schema_version=schema_version,
+        )
+    except verifier_eval.VerifierProviderAbortError as exc:
+        provider_abort = exc
+        evaluation = exc.evaluation
     runtime_seconds = time.perf_counter() - started
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -594,6 +633,15 @@ async def run_direct_cases(args) -> int:
         git_commit=git_commit(),
         evaluation=evaluation,
     )
+    if provider_abort is not None:
+        report["benchmark"]["partial_failure"] = {
+            "first_failing_query": provider_abort.query_id,
+            "attempted_calls": evaluation.verifier_calls,
+            "successful_calls": evaluation.verifier_calls - 1,
+            "failure_type": "provider_error",
+            "planned_cases": len(cases),
+            "unexecuted_cases": len(cases) - evaluation.verifier_calls,
+        }
     json_path = args.output_dir / f"{args.output_name}.json"
     md_path = args.output_dir / f"{args.output_name}.md"
     verifier_reporting.write_json_report(report, json_path)
@@ -628,6 +676,26 @@ async def run_direct_cases(args) -> int:
     print("Reports:")
     print(f"  {json_path}")
     print(f"  {md_path}")
+
+    if provider_abort is not None:
+        print("Direct cases stopped after the first provider failure; no later case was called.")
+        print(f"First failing case: {provider_abort.query_id}")
+        print(
+            f"Partial run: {evaluation.verifier_calls} attempted, "
+            f"{evaluation.verifier_calls - 1} successful, "
+            f"{len(cases) - evaluation.verifier_calls} unexecuted "
+            f"(of {len(cases)} planned). The partial report above was persisted."
+        )
+        return 3
+
+    expected_calls = args.expected_verifier_calls
+    if expected_calls is not None and evaluation.verifier_calls != expected_calls:
+        print(
+            f"Expected verifier call count mismatch: "
+            f"expected {expected_calls}, observed {evaluation.verifier_calls}. "
+            f"Zero-evidence short-circuit cases never count as calls."
+        )
+        return 2
     return 0
 
 

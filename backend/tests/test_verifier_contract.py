@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -576,6 +577,231 @@ class TestDirectHarness:
 
 
 # ---------------------------------------------------------------------------
+# Direct-cases hardening: provider failure stops, invalid outputs continue
+# ---------------------------------------------------------------------------
+
+
+def _direct_case(case_id: str, *, supported: bool = False) -> dict:
+    return {
+        "id": case_id,
+        "category": "unsupported_wrong_fact" if not supported else "answerable_private_direct",
+        "question": f"question for {case_id}",
+        "evidence": [
+            {
+                "source_id": f"chunk_{case_id}",
+                "content": f"fabricated evidence content for {case_id}",
+            }
+        ],
+        "expected_supported": supported,
+        "expected_source_ids": [f"chunk_{case_id}"] if supported else [],
+    }
+
+
+def _unsupported_decision(question, evidence):
+    from app.evaluation.verifier import ReasonCode, VerificationDecision
+
+    return VerificationDecision(
+        supported=False,
+        reason=ReasonCode.INSUFFICIENT_EVIDENCE.value,
+        evidence_source_ids=[],
+    )
+
+
+class TestDirectHarnessAbortStop:
+    def test_provider_failure_on_case_n_stops_immediately(self):
+        from app.evaluation import verifier
+        from app.evaluation.verifier import ReasonCode, VerificationDecision
+
+        calls: list[str] = []
+
+        class FailingAtIndexVerifier:
+            model_name = "failing-at-index"
+
+            def __init__(self, fail_at):
+                self.fail_at = fail_at
+
+            async def verify(self, question, evidence):
+                calls.append(question)
+                if len(calls) == self.fail_at:
+                    raise verifier.VerifierProviderError("controlled transport failure")
+                return VerificationDecision(
+                    supported=False,
+                    reason=ReasonCode.INSUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[],
+                )
+
+        cases = [_direct_case(f"e{index}") for index in range(1, 6)]
+        with pytest.raises(verifier_eval.VerifierProviderAbortError) as captured:
+            asyncio.run(
+                verifier_eval.run_direct_cases_evaluation(
+                    cases, FailingAtIndexVerifier(fail_at=3), stop_on_provider_error=True
+                )
+            )
+        assert len(calls) == 3
+        assert captured.value.query_id == "e3"
+        partial = captured.value.evaluation
+        assert partial.verifier_calls == 3
+        assert len(partial.outcomes) == 3
+        assert len(partial.invalid_outputs) == 1
+        assert partial.invalid_outputs[0].error_kind == "provider_error"
+        assert partial.invalid_outputs[0].query_id == "e3"
+
+    def test_no_later_case_is_called_after_failure(self):
+        from app.evaluation import verifier
+        from app.evaluation.verifier import ReasonCode, VerificationDecision
+
+        calls: list[str] = []
+
+        class FailingAtIndexVerifier:
+            model_name = "failing-at-index"
+
+            def __init__(self, fail_at):
+                self.fail_at = fail_at
+
+            async def verify(self, question, evidence):
+                calls.append(question)
+                if len(calls) == self.fail_at:
+                    raise verifier.VerifierProviderError("boom")
+                return VerificationDecision(
+                    supported=False,
+                    reason=ReasonCode.INSUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[],
+                )
+
+        cases = [_direct_case(f"f{index}") for index in range(1, 8)]
+        with pytest.raises(verifier_eval.VerifierProviderAbortError):
+            asyncio.run(
+                verifier_eval.run_direct_cases_evaluation(
+                    cases, FailingAtIndexVerifier(fail_at=2), stop_on_provider_error=True
+                )
+            )
+        assert len(calls) == 2
+        assert [calls[0], calls[1]] == [
+            cases[0]["question"],
+            cases[1]["question"],
+        ]
+
+    def test_without_stop_flag_provider_error_is_recorded_and_run_continues(self):
+        from app.evaluation import verifier
+
+        calls: list[str] = []
+
+        class FailingAtIndexVerifier:
+            model_name = "failing-at-index"
+
+            def __init__(self, fail_at):
+                self.fail_at = fail_at
+
+            async def verify(self, question, evidence):
+                calls.append(question)
+                if len(calls) == self.fail_at:
+                    raise verifier.VerifierProviderError("boom")
+                return _unsupported_decision(question, evidence)
+
+        cases = [_direct_case(f"g{index}") for index in range(1, 5)]
+        evaluation = asyncio.run(
+            verifier_eval.run_direct_cases_evaluation(
+                cases, FailingAtIndexVerifier(fail_at=2), stop_on_provider_error=False
+            )
+        )
+        assert len(calls) == 4
+        assert evaluation.verifier_calls == 4
+        assert len(evaluation.invalid_outputs) == 1
+        assert evaluation.invalid_outputs[0].error_kind == "provider_error"
+
+
+class TestDirectHarnessInvalidContinues:
+    def test_invalid_decisions_are_measurements_and_execution_continues(self):
+        from app.evaluation.verifier import ReasonCode, VerificationDecision
+        from app.evaluation.verifier_providers import MockEvidenceVerifier
+
+        cases = [
+            _direct_case("m1", supported=True),
+            _direct_case("m2", supported=True),
+            _direct_case("m3", supported=False),
+            _direct_case("m4", supported=False),
+            _direct_case("m5", supported=True),
+        ]
+        calls: list[str] = []
+
+        def mixed(question, evidence):
+            calls.append(question)
+            if question.startswith("question for m2"):
+                return VerificationDecision(
+                    supported=True,
+                    reason=ReasonCode.SUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=["ghost-id"],
+                )
+            if question.startswith("question for m4"):
+                return VerificationDecision(
+                    supported="yes",  # type: ignore[arg-type]
+                    reason=ReasonCode.SUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[],
+                )
+            if question.startswith("question for m1") or question.startswith("question for m5"):
+                return VerificationDecision(
+                    supported=True,
+                    reason=ReasonCode.SUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[f"chunk_{question.split()[-1]}"],
+                )
+            return _unsupported_decision(question, evidence)
+
+        evaluation = asyncio.run(
+            verifier_eval.run_direct_cases_evaluation(
+                cases, MockEvidenceVerifier(decision_fn=mixed)
+            )
+        )
+        assert len(calls) == len(cases)
+        assert evaluation.verifier_calls == len(cases)
+        assert len(evaluation.invalid_outputs) == 2
+        kinds = {outcome.error_kind for outcome in evaluation.invalid_outputs}
+        assert kinds == {"evidence_source_validation", "malformed_output"}
+        assert len(evaluation.outcomes) == len(cases)
+        assert evaluation.metrics["overall"]["query_count"] == 3
+        assert evaluation.metrics["overall"]["accuracy"] == 1.0
+        assert len(evaluation.false_supports) == 0
+        assert len(evaluation.false_rejections) == 0
+
+    def test_all_dev_cases_attempted_when_only_some_are_invalid(self):
+        from app.evaluation.verifier import ReasonCode, VerificationDecision
+        from app.evaluation.verifier_providers import MockEvidenceVerifier
+
+        dataset = verifier_dev_cases.load_dev_cases(DEV_CASES_PATH)
+        bad_ids = {"dev_inject_override", "dev_near_annual_storage"}
+        calls: list[str] = []
+
+        def mostly_good(question, evidence):
+            calls.append(question)
+            case = next(c for c in dataset["cases"] if c["question"] == question)
+            if case["id"] in bad_ids:
+                return VerificationDecision(
+                    supported=True,
+                    reason=ReasonCode.SUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=["ghost-id"],
+                )
+            if case["expected_supported"]:
+                return VerificationDecision(
+                    supported=True,
+                    reason=ReasonCode.SUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=case["expected_source_ids"],
+                )
+            return _unsupported_decision(question, evidence)
+
+        evaluation = asyncio.run(
+            verifier_eval.run_direct_cases_evaluation(
+                dataset["cases"], MockEvidenceVerifier(decision_fn=mostly_good)
+            )
+        )
+        assert len(calls) == len(dataset["cases"]) == 14
+        assert evaluation.verifier_calls == 14
+        assert len(evaluation.invalid_outputs) == 2
+        assert {o.query_id for o in evaluation.invalid_outputs} == bad_ids
+        valid_ids = {o.query_id for o in evaluation.outcomes if not o.invalid}
+        assert len(valid_ids) == 12
+        assert evaluation.metrics["overall"]["query_count"] == 12
+
+
+# ---------------------------------------------------------------------------
 # Frozen-manifest gate extension
 # ---------------------------------------------------------------------------
 
@@ -785,3 +1011,121 @@ class TestCliWiring:
         )
         with pytest.raises(SystemExit, match="allow-external-api"):
             asyncio.run(module.main())
+
+
+# ---------------------------------------------------------------------------
+# CLI hardening: expected call count (item 3) and partial-failure persistence (item 4)
+# ---------------------------------------------------------------------------
+
+
+class TestCliExpectedCalls:
+    def _run_direct(self, module, tmp_path, monkeypatch, *, expected=None):
+        argv = [
+            "--direct-cases",
+            str(DEV_CASES_PATH),
+            "--output-dir",
+            str(tmp_path),
+            "--output-name",
+            "report",
+        ]
+        if expected is not None:
+            argv += ["--expected-verifier-calls", str(expected)]
+        args = module.parse_args(argv)
+        monkeypatch.setattr(
+            module.verifier_providers,
+            "build_verifier_provider",
+            lambda *a, **k: (module.verifier_providers.MockEvidenceVerifier(), "mock", False),
+        )
+        return asyncio.run(module.run_direct_cases(args))
+
+    def test_flag_parses_as_optional_int(self):
+        module = _load_cli_module()
+        args = module.parse_args(["--expected-verifier-calls", "14"])
+        assert args.expected_verifier_calls == 14
+        args = module.parse_args([])
+        assert args.expected_verifier_calls is None
+
+    def test_correct_expected_count_passes(self, tmp_path, monkeypatch):
+        module = _load_cli_module()
+        code = self._run_direct(module, tmp_path, monkeypatch, expected=14)
+        assert code == 0
+
+    def test_wrong_expected_count_fails_with_code_2(self, tmp_path, monkeypatch):
+        module = _load_cli_module()
+        code = self._run_direct(module, tmp_path, monkeypatch, expected=13)
+        assert code == 2
+
+    def test_flag_is_optional_and_backward_compatible(self, tmp_path, monkeypatch):
+        module = _load_cli_module()
+        code = self._run_direct(module, tmp_path, monkeypatch)
+        assert code == 0
+
+
+class TestCliPartialFailure:
+    def test_provider_failure_persists_partial_report_and_exits_3(self, tmp_path, monkeypatch):
+        from app.evaluation import verifier
+        from app.evaluation.verifier import ReasonCode, VerificationDecision
+
+        module = _load_cli_module()
+        case_ids = [
+            "dev_abs_locker_key_fee",
+            "dev_abs_training_retake",
+            "dev_hi_my_cert_date",
+            "dev_inject_override",
+            "dev_near_annual_storage",
+            "dev_near_late_fee",
+        ]
+        sorted_ids = sorted(case_ids)
+        fail_at = 5
+        calls: list[str] = []
+
+        class AbortingVerifier:
+            model_name = "aborting"
+
+            async def verify(self, question, evidence):
+                calls.append(question)
+                if len(calls) == fail_at:
+                    raise verifier.VerifierProviderError("controlled transport failure")
+                return VerificationDecision(
+                    supported=False,
+                    reason=ReasonCode.INSUFFICIENT_EVIDENCE.value,
+                    evidence_source_ids=[],
+                )
+
+        monkeypatch.setattr(
+            module.verifier_providers,
+            "build_verifier_provider",
+            lambda *a, **k: (AbortingVerifier(), "mock", False),
+        )
+        args = module.parse_args(
+            [
+                "--direct-cases",
+                str(DEV_CASES_PATH),
+                "--case-ids",
+                ",".join(case_ids),
+                "--output-dir",
+                str(tmp_path),
+                "--output-name",
+                "report",
+            ]
+        )
+        code = asyncio.run(module.run_direct_cases(args))
+        assert code == 3
+        assert len(calls) == fail_at
+
+        json_path = tmp_path / "report.json"
+        assert json_path.is_file()
+        report = json.loads(json_path.read_text(encoding="utf-8"))
+        partial = report["benchmark"]["partial_failure"]
+        assert partial["first_failing_query"] == sorted_ids[fail_at - 1]
+        assert partial["attempted_calls"] == fail_at
+        assert partial["successful_calls"] == fail_at - 1
+        assert partial["failure_type"] == "provider_error"
+        assert partial["planned_cases"] == len(case_ids)
+        assert partial["unexecuted_cases"] == len(case_ids) - fail_at
+        assert (tmp_path / "report.md").is_file()
+        assert report["benchmark"]["verifier_calls"] == fail_at
+        invalid = report["invalid_outputs"]
+        assert len(invalid) == 1
+        assert invalid[0]["query_id"] == sorted_ids[fail_at - 1]
+        assert invalid[0]["error_kind"] == "provider_error"
