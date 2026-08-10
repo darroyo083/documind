@@ -136,6 +136,7 @@ from app.evaluation import (  # noqa: E402
     verifier_manifest_v3,
     verifier_preflight,
     verifier_prompt,
+    verifier_proof_eval,
     verifier_providers,
     verifier_reporting,
 )
@@ -282,6 +283,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "short-circuit cases never count as calls (verifier_calls semantics exclude "
         "them), so pass the number of cases that actually invoke the provider. "
         "Optional: when omitted no count check runs.",
+    )
+    parser.add_argument(
+        "--e1c-architecture",
+        "--proof-architecture",
+        choices=["P1", "P2"],
+        default=None,
+        dest="e1c_architecture",
+        help="E1c verifiable-sufficiency spike mode (requires --direct-cases). "
+        "P1 = one-pass exact-proof control; P2 = two-pass with an isolated "
+        "sufficiency judge. Experimental proof prompts only; frozen v2/v3 "
+        "modes and prompt/schema/framing flags are rejected in this mode.",
+    )
+    parser.add_argument(
+        "--max-calls",
+        type=int,
+        default=None,
+        help="E1c mode only: maximum planned provider call budget. The run "
+        "hard-fails BEFORE any inference when planned calls (cases x 1 for "
+        "P1, x 2 for P2) exceed this budget. No hardcoded default.",
     )
     return parser.parse_args(argv)
 
@@ -718,8 +738,198 @@ async def run_direct_cases(args) -> int:
     return 0
 
 
+async def run_e1c(args) -> int:
+    """E1c verifiable-sufficiency spike mode (--e1c-architecture P1|P2).
+
+    Runs the proof contract over direct-drive dev cases only. Frozen v2/v3
+    modes are rejected here; the experimental proof prompts never mix with
+    the frozen prompt/schema/framing registry. The call ledger hard-fails
+    BEFORE any inference when planned calls exceed --max-calls (no global
+    hardcoded budget). Provider/transport failures abort the run with a
+    persisted partial report (exit 3); --expected-verifier-calls mismatches
+    exit 2 after the report is persisted.
+    """
+    architecture = args.e1c_architecture
+    if not args.direct_cases:
+        print(
+            "--e1c-architecture requires --direct-cases (dev suites only; "
+            "frozen v2/v3 holdouts cannot run in proof mode)."
+        )
+        return 2
+    for flag, label in (
+        (args.run_frozen_v2, "--run-frozen-v2"),
+        (args.run_frozen_v3, "--run-frozen-v3"),
+    ):
+        if flag:
+            print(
+                f"{label} is incompatible with --e1c-architecture (frozen "
+                "manifest gates reject proof mode)."
+            )
+            return 2
+    for value, label in (
+        (args.prompt_version, "--prompt-version"),
+        (args.schema_version, "--schema-version"),
+        (args.framing_version, "--framing-version"),
+    ):
+        if value is not None and value != "1":
+            print(
+                f"{label} is not supported in --e1c-architecture mode "
+                "(experimental proof prompts replace prompt/schema/framing)."
+            )
+            return 2
+
+    dataset_data = verifier_dev_cases.load_dev_cases(args.direct_cases)
+    cases = dataset_data["cases"]
+    case_ids = parse_id_list(args.case_ids)
+    if case_ids:
+        wanted = set(case_ids)
+        unknown = sorted(wanted - {case["id"] for case in cases})
+        if unknown:
+            print(f"Unknown dev case id(s): {unknown}")
+            return 2
+        cases = [case for case in cases if case["id"] in wanted]
+
+    verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
+    provider = build_proof_provider(args.provider, args.verifier_model)
+
+    planned_calls = len(cases) * (2 if architecture == "P2" else 1)
+    if args.max_calls is not None and planned_calls > args.max_calls:
+        print(
+            f"E1c call-budget violation: planned {planned_calls} calls for "
+            f"{len(cases)} case(s) under architecture {architecture} exceed "
+            f"--max-calls {args.max_calls}. No provider call was made."
+        )
+        return 2
+
+    started = time.perf_counter()
+    provider_abort = None
+    try:
+        evaluation = await verifier_proof_eval.run_proof_evaluation(
+            cases,
+            provider,
+            architecture,
+            stop_on_provider_error=True,
+        )
+    except verifier_proof_eval.ProofProviderAbortError as exc:
+        provider_abort = exc
+        evaluation = exc.evaluation
+    runtime_seconds = time.perf_counter() - started
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    report = verifier_proof_eval.build_proof_json_report(
+        architecture=architecture,
+        dataset_path=args.direct_cases,
+        dataset_version=dataset_data["dataset_version"],
+        provider=args.provider,
+        model=provider.model_name,
+        external_api=args.provider in verifier_providers.EXTERNAL_PROVIDERS,
+        runtime_seconds=runtime_seconds,
+        git_commit=git_commit(),
+        evaluation=evaluation,
+        max_calls=args.max_calls,
+    )
+    if provider_abort is not None:
+        report["benchmark"]["partial_failure"] = {
+            "first_failing_case": provider_abort.case_id,
+            "attempted_calls": evaluation.verifier_calls,
+            "successful_calls": evaluation.verifier_calls - 1,
+            "failure_type": "provider_error",
+            "planned_cases": len(cases),
+            "unexecuted_cases": len(cases) - evaluation.verifier_calls,
+        }
+    json_path = args.output_dir / f"{args.output_name}.json"
+    md_path = args.output_dir / f"{args.output_name}.md"
+    verifier_reporting.write_json_report(report, json_path)
+    md_path.write_text(verifier_proof_eval.render_proof_markdown(report), encoding="utf-8")
+
+    print("")
+    print("E1c verifiable-sufficiency spike (proof contract, direct cases)")
+    print(f"Dataset: {args.direct_cases}")
+    print(f"Cases: {len(cases)}")
+    print(
+        f"Architecture: {architecture} (proof schema v{verifier_proof_eval.PROOF_SCHEMA_VERSION})"
+    )
+    print(f"Provider: {args.provider} ({provider.model_name})")
+    print(f"Planned calls: {planned_calls}")
+    print(f"Verifier calls: {evaluation.verifier_calls}")
+    valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
+    print(f"Valid outputs: {valid_count}/{len(evaluation.outcomes)}")
+    print(f"Invalid outputs: {len(evaluation.invalid_outputs)}")
+    provider_failures = sum(
+        1 for outcome in evaluation.invalid_outputs if outcome.error_kind == "provider_error"
+    )
+    print(f"Provider failures: {provider_failures}")
+    print(f"False supports: {len(evaluation.false_supports)}")
+    print(f"False rejections: {len(evaluation.false_rejections)}")
+    overall = report["metrics"].get("overall", {})
+    if overall:
+        print(
+            f"Metrics: accuracy={overall.get('accuracy')} "
+            f"retention={overall.get('answerable_retention')} "
+            f"detection={overall.get('unsupported_detection')} "
+            f"balanced_accuracy={overall.get('balanced_accuracy')}"
+        )
+    print("Reports:")
+    print(f"  {json_path}")
+    print(f"  {md_path}")
+
+    if provider_abort is not None:
+        print("E1c run stopped after the first provider failure; no later case was called.")
+        print(f"First failing case: {provider_abort.case_id}")
+        print(
+            f"Partial run: {evaluation.verifier_calls} attempted, "
+            f"{evaluation.verifier_calls - 1} successful, "
+            f"{len(cases) - evaluation.verifier_calls} unexecuted "
+            f"(of {len(cases)} planned). The partial report was persisted."
+        )
+        return 3
+
+    expected_calls = args.expected_verifier_calls
+    if expected_calls is not None and evaluation.verifier_calls != expected_calls:
+        print(
+            f"Expected verifier call count mismatch: expected {expected_calls}, "
+            f"observed {evaluation.verifier_calls}."
+        )
+        return 2
+    return 0
+
+
+def build_proof_provider(provider: str, model: str | None):
+    """Instantiate the E1c proof provider (never executes a model call)."""
+    if provider == "mock":
+        return verifier_proof_eval.MockProofProvider()
+    if provider == "deepseek":
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'deepseek' requires the DEEPSEEK_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_DEEPSEEK_MODEL,
+            base_url=verifier_providers.DEFAULT_DEEPSEEK_BASE_URL,
+        )
+    if provider == "opencode-go":
+        api_key = os.environ.get("OPENCODE_GO_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'opencode-go' requires the OPENCODE_GO_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_OPENCODE_GO_MODEL,
+            base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
+        )
+    raise SystemExit(f"Unknown verifier provider {provider!r}")
+
+
 async def main() -> int:
     args = parse_args()
+
+    if args.e1c_architecture:
+        return await run_e1c(args)
 
     if args.direct_cases:
         return await run_direct_cases(args)
