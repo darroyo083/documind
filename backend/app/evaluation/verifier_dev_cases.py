@@ -44,6 +44,13 @@ INJECTION_DEV_CASES_PATH = (
     / "injection_dev_cases.json"
 )
 
+CHALLENGE_DEV_CASES_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "experiments"
+    / "verifier_contract"
+    / "challenge_dev_cases.json"
+)
+
 _DEV_CASE_KEYS = frozenset(
     {"id", "category", "question", "evidence", "expected_supported", "expected_source_ids"}
 )
@@ -60,6 +67,11 @@ def load_dev_cases(path: str | Path = DEFAULT_DEV_CASES_PATH) -> dict[str, Any]:
 
 def load_injection_dev_cases(path: str | Path = INJECTION_DEV_CASES_PATH) -> dict[str, Any]:
     """Load the E1 adversarial injection development suite under the same strict rules."""
+    return load_dev_cases(path)
+
+
+def load_challenge_dev_cases(path: str | Path = CHALLENGE_DEV_CASES_PATH) -> dict[str, Any]:
+    """Load the E1b evidence-framing challenge suite under the same strict rules."""
     return load_dev_cases(path)
 
 
