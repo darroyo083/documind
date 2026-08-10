@@ -33,7 +33,8 @@ from app.evaluation.verifier import (
     VerifierProviderError,
     validate_decision,
 )
-from app.evaluation.verifier_prompt import DEFAULT_PROMPT_VERSION, build_verifier_messages
+from app.evaluation.verifier_framing import DEFAULT_FRAMING_VERSION, build_verifier_messages
+from app.evaluation.verifier_prompt import DEFAULT_PROMPT_VERSION
 
 DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
@@ -126,11 +127,19 @@ def build_chat_request(
     evidence: Sequence[EvidenceItem],
     model: str,
     prompt_version: str = DEFAULT_PROMPT_VERSION,
+    framing_version: str = DEFAULT_FRAMING_VERSION,
 ) -> dict[str, Any]:
-    """Request payload: temperature 0, strict structured JSON, stream off."""
+    """Request payload: temperature 0, strict structured JSON, stream off.
+
+    ``framing_version`` selects the experimental evidence framing renderer
+    (see ``app.evaluation.verifier_framing``). The default ``"1"`` keeps the
+    user message byte-identical to the legacy rendering.
+    """
     return {
         "model": model,
-        "messages": build_verifier_messages(question, evidence, prompt_version=prompt_version),
+        "messages": build_verifier_messages(
+            question, evidence, prompt_version=prompt_version, framing_version=framing_version
+        ),
         "temperature": 0,
         "response_format": {"type": "json_object"},
         "stream": False,
@@ -151,6 +160,7 @@ class DeepSeekVerifierAdapter:
         timeout: float = 60.0,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
         schema_version: str = DEFAULT_SCHEMA_VERSION,
+        framing_version: str = DEFAULT_FRAMING_VERSION,
     ):
         self._api_key = api_key
         self._model = model
@@ -158,6 +168,7 @@ class DeepSeekVerifierAdapter:
         self._timeout = timeout
         self._prompt_version = prompt_version
         self._schema_version = schema_version
+        self._framing_version = framing_version
         self._model_name = model
 
     @property
@@ -174,7 +185,11 @@ class DeepSeekVerifierAdapter:
         """
         allowed = {item.source_id for item in evidence}
         payload = build_chat_request(
-            question, evidence, self._model, prompt_version=self._prompt_version
+            question,
+            evidence,
+            self._model,
+            prompt_version=self._prompt_version,
+            framing_version=self._framing_version,
         )
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
@@ -207,6 +222,7 @@ class OpenCodeGoVerifierAdapter(DeepSeekVerifierAdapter):
         timeout: float = 60.0,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
         schema_version: str = DEFAULT_SCHEMA_VERSION,
+        framing_version: str = DEFAULT_FRAMING_VERSION,
     ):
         super().__init__(
             api_key=api_key,
@@ -215,6 +231,7 @@ class OpenCodeGoVerifierAdapter(DeepSeekVerifierAdapter):
             timeout=timeout,
             prompt_version=prompt_version,
             schema_version=schema_version,
+            framing_version=framing_version,
         )
 
 
@@ -241,6 +258,7 @@ def build_verifier_provider(
     model: str | None = None,
     prompt_version: str = DEFAULT_PROMPT_VERSION,
     schema_version: str = DEFAULT_SCHEMA_VERSION,
+    framing_version: str = DEFAULT_FRAMING_VERSION,
 ) -> tuple[Any, str, bool]:
     """Instantiate the requested verifier provider (never executes a model call).
 
@@ -263,6 +281,7 @@ def build_verifier_provider(
                 model=selected_model,
                 prompt_version=prompt_version,
                 schema_version=schema_version,
+                framing_version=framing_version,
             ),
             "deepseek",
             True,
@@ -281,6 +300,7 @@ def build_verifier_provider(
                 model=selected_model,
                 prompt_version=prompt_version,
                 schema_version=schema_version,
+                framing_version=framing_version,
             ),
             "opencode-go",
             True,

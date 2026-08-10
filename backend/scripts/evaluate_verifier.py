@@ -131,6 +131,7 @@ from app.evaluation import (  # noqa: E402
     verifier_dataset,
     verifier_dev_cases,
     verifier_eval,
+    verifier_framing,
     verifier_manifest,
     verifier_manifest_v3,
     verifier_preflight,
@@ -255,6 +256,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Verifier decision schema version. Default: '2' for dev/direct runs; "
         "frozen v2/v3 datasets derive the effective version from their manifest.",
+    )
+    parser.add_argument(
+        "--framing-version",
+        choices=["1", "2", "3", "4"],
+        default=None,
+        help="Experimental evidence framing version (direct-cases mode only). "
+        "Default: '1' (legacy rendering, byte-identical to today's user message). "
+        "'2'/'3'/'4' select the E1b framing candidates (F1 JSON envelope, F2 "
+        "strongly delimited documents, F3 F1 + post-evidence reminder). "
+        "Independent of --prompt-version; frozen v2/v3 runs refuse any value "
+        "other than '1'.",
     )
     parser.add_argument(
         "--output-name",
@@ -408,6 +420,7 @@ def enforce_frozen_v2_contract(args, dataset_is_v2: bool) -> bool:
         dataset_path=args.dataset,
         prompt_version=effective_prompt,
         schema_version=effective_schema,
+        framing_version=args.framing_version,
         verifier_provider=args.provider,
         verifier_model=effective_model,
         embedding_provider=args.embedding_provider,
@@ -448,6 +461,7 @@ def enforce_frozen_v3_contract(args, dataset_is_v3: bool) -> bool:
         dataset_path=args.dataset,
         prompt_version=effective_prompt,
         schema_version=effective_schema,
+        framing_version=args.framing_version,
         verifier_provider=args.provider,
         verifier_model=effective_model,
         verifier_base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
@@ -594,11 +608,13 @@ async def run_direct_cases(args) -> int:
     verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
     prompt_version = args.prompt_version or verifier_prompt.DEFAULT_PROMPT_VERSION
     schema_version = args.schema_version or verifier.DEFAULT_SCHEMA_VERSION
+    framing_version = args.framing_version or verifier_framing.DEFAULT_FRAMING_VERSION
     verifier_instance, provider_name, external_api = verifier_providers.build_verifier_provider(
         args.provider,
         args.verifier_model,
         prompt_version=prompt_version,
         schema_version=schema_version,
+        framing_version=framing_version,
     )
 
     started = time.perf_counter()
@@ -628,6 +644,7 @@ async def run_direct_cases(args) -> int:
         verifier_model=verifier_instance.model_name,
         verifier_prompt_version=prompt_version,
         decision_schema_version=schema_version,
+        evidence_framing_version=framing_version,
         external_api=external_api,
         corpus_counts={"chunks": total_evidence},
         runtime_seconds=runtime_seconds,
@@ -654,6 +671,7 @@ async def run_direct_cases(args) -> int:
     print(f"Cases: {len(cases)}")
     print(f"Provider: {provider_name} (external_api={external_api})")
     print(f"Verifier prompt version: {prompt_version}")
+    print(f"Evidence framing version: {framing_version}")
     print(f"Decision schema version: {schema_version}")
     print(f"Verifier calls: {evaluation.verifier_calls}")
     valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
@@ -705,6 +723,14 @@ async def main() -> int:
 
     if args.direct_cases:
         return await run_direct_cases(args)
+
+    framing_version = args.framing_version or verifier_framing.DEFAULT_FRAMING_VERSION
+    if framing_version != "1":
+        print(
+            "--framing-version is only supported in --direct-cases mode "
+            "(experimental evidence framing runs with inline evidence)."
+        )
+        return 2
 
     source_url = make_url(settings.database_url)
     assert_safe_database_server(source_url)

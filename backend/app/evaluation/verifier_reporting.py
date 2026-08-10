@@ -145,6 +145,7 @@ def build_verifier_json_report(
     frozen_v2_holdout: bool = False,
     frozen_holdout_version: str | None = None,
     decision_schema_version: str | None = None,
+    evidence_framing_version: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the machine-readable verifier report."""
     benchmark: dict[str, Any] = {
@@ -168,6 +169,8 @@ def build_verifier_json_report(
     }
     if decision_schema_version is not None:
         benchmark["decision_schema_version"] = decision_schema_version
+    if evidence_framing_version is not None:
+        benchmark["evidence_framing_version"] = evidence_framing_version
     if dataset_canonical_sha256 is not None:
         benchmark["dataset_canonical_sha256"] = dataset_canonical_sha256
     if frozen_v2_holdout:
@@ -257,6 +260,8 @@ def render_verifier_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Verifier provider: {benchmark['verifier_provider']}")
     lines.append(f"- Verifier model: {benchmark['verifier_model']}")
     lines.append(f"- Verifier prompt version: {benchmark['verifier_prompt_version']}")
+    if benchmark.get("evidence_framing_version"):
+        lines.append(f"- Evidence framing version: {benchmark['evidence_framing_version']}")
     lines.append(f"- Verifier calls: {benchmark['verifier_calls']}")
     lines.append(f"- Run mode: {benchmark['run_mode']}")
     lines.append(f"- External API calls: {benchmark['external_api']}")
