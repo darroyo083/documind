@@ -79,6 +79,9 @@ from app.evaluation.verifier_requested_fact_prompts import (
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 DEV_CASES_PATH = BACKEND_DIR / "experiments" / "verifier_contract" / "dev_cases.json"
+TARGETED_RF1_CASES_PATH = (
+    BACKEND_DIR / "experiments" / "verifier_contract" / "targeted_rf1_dev_cases.json"
+)
 INJECTION_CASES_PATH = (
     BACKEND_DIR / "experiments" / "verifier_contract" / "injection_dev_cases.json"
 )
@@ -479,9 +482,9 @@ class TestAnswerabilityContract:
 
     def test_answer_kind_matrix_constant(self):
         assert ANSWER_KIND_MATRIX == {
-            "value": "value",
-            "existence": "existence",
-            "boolean": "boolean",
+            "value": frozenset({"value", "numeric"}),
+            "existence": frozenset({"existence"}),
+            "boolean": frozenset({"boolean"}),
         }
         assert ANSWERABILITY_SCHEMA_VERSION == "1"
         assert VALID_ANSWER_STATUSES == frozenset({"answered", "insufficient"})
@@ -491,7 +494,7 @@ class TestAnswerabilityContract:
         )
         assert ANSWER_STATUS_CONTRADICTED == "contradicted"
         assert ANSWER_KINDS == frozenset(
-            {"value", "boolean", "existence", "date_or_time", "entity", "text", "list"}
+            {"value", "numeric", "boolean", "existence", "date_or_time", "entity", "text", "list"}
         )
 
     def test_error_hierarchy_is_controlled(self):
@@ -1557,6 +1560,30 @@ class TestFrozenIdentity:
     def test_cli_budget_gate_fails_before_inference(self, monkeypatch, tmp_path):
         import asyncio
 
+        pack = tmp_path / "rf1_pack.json"
+        pack.write_text(
+            json.dumps(
+                {
+                    "dataset_version": "dev-direct",
+                    "cases": [
+                        {
+                            "id": "rf1_budget_case",
+                            "category": "value_question",
+                            "question": "What is the sample fee?",
+                            "question_kind": "value",
+                            "expected_answer_kind": "numeric",
+                            "requires_explicit_value": True,
+                            "expected_supported": True,
+                            "expected_answer": "five",
+                            "evidence": [
+                                {"source_id": "s1", "content": "The sample fee is five per month."}
+                            ],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
         module = _load_cli_module()
         monkeypatch.setattr(
             sys,
@@ -1566,11 +1593,9 @@ class TestFrozenIdentity:
                 "--requested-fact-architecture",
                 "RF1",
                 "--direct-cases",
-                str(CHALLENGE_CASES_PATH),
-                "--case-ids",
-                "e0_dev_inject_override,e0_conf_inject_discount",
+                str(pack),
                 "--max-calls",
-                "3",
+                "2",
                 "--output-dir",
                 str(tmp_path),
             ],
@@ -1589,9 +1614,9 @@ class TestFrozenIdentity:
                 "--requested-fact-architecture",
                 "RF1",
                 "--direct-cases",
-                str(DEV_CASES_PATH),
+                str(TARGETED_RF1_CASES_PATH),
                 "--case-ids",
-                "dev_sup_monthly_fee",
+                "tgt_genuine_value",
                 "--output-dir",
                 str(tmp_path),
                 "--output-name",

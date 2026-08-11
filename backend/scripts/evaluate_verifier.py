@@ -139,6 +139,7 @@ from app.evaluation import (  # noqa: E402
     verifier_proof_eval,
     verifier_providers,
     verifier_reporting,
+    verifier_requested_fact,
     verifier_requested_fact_eval,
 )
 from app.infrastructure import models as _models  # noqa: E402, F401
@@ -959,7 +960,7 @@ async def run_requested_fact(args) -> int:
             )
             return 2
 
-    dataset_data = verifier_dev_cases.load_dev_cases(args.direct_cases)
+    dataset_data = verifier_requested_fact.load_requested_fact_dev_cases(args.direct_cases)
     cases = dataset_data["cases"]
     case_ids = parse_id_list(args.case_ids)
     if case_ids:

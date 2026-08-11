@@ -35,8 +35,10 @@ calls, no network. Same input bytes, same output bytes.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from app.evaluation.verifier_proof import (
@@ -108,6 +110,7 @@ ANSWER_STATUS_CONTRADICTED = "contradicted"  # server-derived only, never model-
 VALID_ANSWER_STATUSES = frozenset({ANSWER_STATUS_ANSWERED, ANSWER_STATUS_INSUFFICIENT})
 
 ANSWER_KIND_VALUE = "value"
+ANSWER_KIND_NUMERIC = "numeric"
 ANSWER_KIND_BOOLEAN = "boolean"
 ANSWER_KIND_EXISTENCE = "existence"
 ANSWER_KIND_DATE_OR_TIME = "date_or_time"
@@ -117,6 +120,7 @@ ANSWER_KIND_LIST = "list"
 ANSWER_KINDS = frozenset(
     {
         ANSWER_KIND_VALUE,
+        ANSWER_KIND_NUMERIC,
         ANSWER_KIND_BOOLEAN,
         ANSWER_KIND_EXISTENCE,
         ANSWER_KIND_DATE_OR_TIME,
@@ -135,12 +139,13 @@ CHECK_FAILURE_ANSWER_KIND_MISMATCH = "answer_kind_mismatch"
 
 # Kind-consistency matrix (Worker B section 5): the model's answer_kind must
 # match the question kind of the RequestedFactV1. value questions (any
-# expected_answer_kind) require answer_kind=value; boolean/existence questions
-# require answer_kind=boolean/existence respectively.
+# expected_answer_kind) require answer_kind in {value, numeric};
+# boolean/existence questions require answer_kind=boolean/existence
+# respectively.
 ANSWER_KIND_MATRIX = {
-    QUESTION_KIND_VALUE: ANSWER_KIND_VALUE,
-    QUESTION_KIND_EXISTENCE: ANSWER_KIND_EXISTENCE,
-    QUESTION_KIND_BOOLEAN: ANSWER_KIND_BOOLEAN,
+    QUESTION_KIND_VALUE: frozenset({ANSWER_KIND_VALUE, ANSWER_KIND_NUMERIC}),
+    QUESTION_KIND_EXISTENCE: frozenset({ANSWER_KIND_EXISTENCE}),
+    QUESTION_KIND_BOOLEAN: frozenset({ANSWER_KIND_BOOLEAN}),
 }
 
 
@@ -434,7 +439,7 @@ def validate_answerability_decision(
     anchored = False
     kind_consistent = False
     if status == ANSWER_STATUS_ANSWERED:
-        if answer_kind == ANSWER_KIND_MATRIX[fact.question_kind]:
+        if answer_kind in ANSWER_KIND_MATRIX[fact.question_kind]:
             kind_consistent = True
         else:
             check_failures.append(CHECK_FAILURE_ANSWER_KIND_MISMATCH)
@@ -562,3 +567,141 @@ def answerability_to_dict(decision: AnswerabilityDecisionV1) -> dict[str, Any]:
         "check_failures": list(decision.check_failures),
         "reason": decision.reason,
     }
+
+
+# ---------------------------------------------------------------------------
+# Answerability-aware dev-pack loader (RF1 gold semantics)
+# ---------------------------------------------------------------------------
+
+RF1_DEV_DATASET_VERSION = "dev-direct"
+
+_RF1_CASE_ALLOWED_KEYS = frozenset(
+    {
+        "id",
+        "category",
+        "question",
+        "question_kind",
+        "expected_answer_kind",
+        "requires_explicit_value",
+        "expected_supported",
+        "expected_answer",
+        "notes",
+        "evidence",
+    }
+)
+_RF1_EVIDENCE_ALLOWED_KEYS = frozenset({"source_id", "content"})
+
+
+def load_requested_fact_dev_cases(path: str | Path) -> dict[str, Any]:
+    """Load a requested-fact dev pack with answerability gold semantics.
+
+    The pack format extends the legacy dev-case shape with
+    ``question_kind`` / ``expected_answer_kind`` / ``requires_explicit_value`` /
+    ``expected_answer`` and drops the legacy ``expected_source_ids`` (the
+    answerability gold is an expected answer, not a source-id list). Evidence
+    items carry only ``source_id`` + ``content`` so model-facing payloads never
+    see evaluation labels.
+    """
+    with open(path, encoding="utf-8") as handle:
+        dataset = json.load(handle)
+    validate_requested_fact_dev_cases(dataset)
+    return dataset
+
+
+def validate_requested_fact_dev_cases(dataset: dict[str, Any]) -> None:
+    """Raise ValueError on every structural violation of an RF1 dev pack."""
+    errors: list[str] = []
+    if dataset.get("dataset_version") != RF1_DEV_DATASET_VERSION:
+        errors.append(f"dataset_version must be {RF1_DEV_DATASET_VERSION!r}")
+
+    cases = dataset.get("cases")
+    if not isinstance(cases, list) or not cases:
+        errors.append("dataset must define a non-empty 'cases' list")
+        cases = []
+
+    seen_ids: set[str] = set()
+    for index, case in enumerate(cases):
+        prefix = f"case[{index}]"
+        if not isinstance(case, dict):
+            errors.append(f"{prefix}: case must be an object")
+            continue
+        unknown = sorted(set(case) - _RF1_CASE_ALLOWED_KEYS)
+        if unknown:
+            errors.append(f"{prefix}: unknown field(s): {unknown}")
+
+        case_id = case.get("id")
+        if not isinstance(case_id, str) or not case_id:
+            errors.append(f"{prefix}: missing id")
+        else:
+            if case_id in seen_ids:
+                errors.append(f"{prefix}: duplicate case id {case_id!r}")
+            seen_ids.add(case_id)
+
+        if not isinstance(case.get("category"), str) or not case["category"]:
+            errors.append(f"{prefix}: category must be a non-empty string")
+        if not isinstance(case.get("question"), str) or not case["question"].strip():
+            errors.append(f"{prefix}: question must be a non-empty string")
+
+        question_kind = case.get("question_kind")
+        if question_kind not in QUESTION_KINDS:
+            errors.append(f"{prefix}: question_kind must be one of {sorted(QUESTION_KINDS)}")
+        expected_answer_kind = case.get("expected_answer_kind")
+        if expected_answer_kind not in ANSWER_KINDS:
+            errors.append(f"{prefix}: expected_answer_kind must be one of {sorted(ANSWER_KINDS)}")
+        requires_explicit_value = case.get("requires_explicit_value")
+        if not isinstance(requires_explicit_value, bool):
+            errors.append(f"{prefix}: requires_explicit_value must be a boolean")
+
+        expected_supported = case.get("expected_supported")
+        if not isinstance(expected_supported, bool):
+            errors.append(f"{prefix}: expected_supported must be a boolean")
+        expected_answer = case.get("expected_answer")
+        if expected_answer is not None and not isinstance(expected_answer, str):
+            errors.append(f"{prefix}: expected_answer must be a string or null")
+
+        if question_kind in VALUE_ANSWER_KINDS:
+            if requires_explicit_value is not True:
+                errors.append(
+                    f"{prefix}: value-kind question requires requires_explicit_value=true"
+                )
+            if expected_supported is True and not expected_answer:
+                errors.append(f"{prefix}: supported value-kind case requires expected_answer")
+        if question_kind in (ANSWER_KIND_BOOLEAN, ANSWER_KIND_EXISTENCE):
+            if requires_explicit_value is not False:
+                errors.append(
+                    f"{prefix}: boolean/existence-kind question requires "
+                    "requires_explicit_value=false"
+                )
+            if expected_supported is True and expected_answer not in CONTROLLED_BOOLEAN_ANSWERS:
+                errors.append(
+                    f"{prefix}: supported boolean/existence-kind case requires expected_answer "
+                    f"in {sorted(CONTROLLED_BOOLEAN_ANSWERS)}"
+                )
+        if expected_supported is False and expected_answer is not None:
+            errors.append(f"{prefix}: unsupported case must have expected_answer null")
+
+        evidence = case.get("evidence")
+        if not isinstance(evidence, list) or not evidence:
+            errors.append(f"{prefix}: evidence must be a non-empty list")
+            evidence = []
+        evidence_ids: list[str] = []
+        for item_index, item in enumerate(evidence):
+            item_prefix = f"{prefix}.evidence[{item_index}]"
+            if not isinstance(item, dict):
+                errors.append(f"{item_prefix}: evidence item must be an object")
+                continue
+            unknown = sorted(set(item) - _RF1_EVIDENCE_ALLOWED_KEYS)
+            if unknown:
+                errors.append(f"{item_prefix}: unknown field(s): {unknown}")
+            source_id = item.get("source_id")
+            if not isinstance(source_id, str) or not source_id:
+                errors.append(f"{item_prefix}: source_id must be a non-empty string")
+            else:
+                evidence_ids.append(source_id)
+            if not isinstance(item.get("content"), str) or not item["content"].strip():
+                errors.append(f"{item_prefix}: content must be a non-empty string")
+        if len(evidence_ids) != len(set(evidence_ids)):
+            errors.append(f"{prefix}: duplicate source_id within one case")
+
+    if errors:
+        raise ValueError("Invalid requested-fact dev dataset:\n- " + "\n- ".join(errors))
