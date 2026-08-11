@@ -139,6 +139,7 @@ from app.evaluation import (  # noqa: E402
     verifier_proof_eval,
     verifier_providers,
     verifier_reporting,
+    verifier_requested_fact_eval,
 )
 from app.infrastructure import models as _models  # noqa: E402, F401
 from app.infrastructure.database import Base  # noqa: E402
@@ -153,6 +154,7 @@ LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
 DEFAULT_DATASET = BACKEND_DIR / "app" / "evaluation" / "datasets" / "retrieval_v1.json"
 DEFAULT_OUTPUT_DIR = BACKEND_DIR / "evaluation" / "results"
+POC_3F_E1D_OUTPUT_DIR = BACKEND_DIR / "evaluation" / "results" / "poc_3f_e1d"
 BENCHMARK_TOP_K = 5
 BENCHMARK_THRESHOLD = 0.5
 
@@ -212,7 +214,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "(not the config.py default 0.2).",
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Report output directory. Defaults to evaluation/results (and to "
+        "evaluation/results/poc_3f_e1d in --requested-fact-architecture mode).",
+    )
     parser.add_argument(
         "--retrieval-preflight",
         action="store_true",
@@ -299,9 +307,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--max-calls",
         type=int,
         default=None,
-        help="E1c mode only: maximum planned provider call budget. The run "
+        help="E1c/RF1 mode only: maximum planned provider call budget. The run "
         "hard-fails BEFORE any inference when planned calls (cases x 1 for "
-        "P1, x 2 for P2) exceed this budget. No hardcoded default.",
+        "P1, x 2 for P2, x 3 for RF1) exceed this budget. No hardcoded default.",
+    )
+    parser.add_argument(
+        "--requested-fact-architecture",
+        "--rf-architecture",
+        choices=["RF1"],
+        default=None,
+        dest="requested_fact_architecture",
+        help="RequestedFact (RF1) three-stage verifier architecture mode "
+        "(requires --direct-cases). Stage 1 derives the requested fact from "
+        "the QUESTION ONLY; stage 2 selects exact proofs (E1c contract); "
+        "stage 3 answerability over server-verified proofs only. Experimental "
+        "requested-fact prompts only; frozen v2/v3 modes and "
+        "prompt/schema/framing flags are rejected in this mode.",
     )
     return parser.parse_args(argv)
 
@@ -561,10 +582,11 @@ async def run_preflight(args, dataset_data: dict, source_url) -> int:
         if database_name is not None:
             await drop_disposable_database(source_url, database_name)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = args.output_dir or DEFAULT_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
     version = dataset_data["dataset_version"]
-    json_path = args.output_dir / f"verifier_v{version}_preflight.json"
-    md_path = args.output_dir / f"verifier_v{version}_preflight.md"
+    json_path = output_dir / f"verifier_v{version}_preflight.json"
+    md_path = output_dir / f"verifier_v{version}_preflight.md"
     verifier_preflight.write_preflight_report(report, json_path)
     md_path.write_text(verifier_preflight.render_preflight_markdown(report), encoding="utf-8")
 
@@ -651,7 +673,8 @@ async def run_direct_cases(args) -> int:
         evaluation = exc.evaluation
     runtime_seconds = time.perf_counter() - started
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = args.output_dir or DEFAULT_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
     total_evidence = sum(len(case["evidence"]) for case in cases)
     report = verifier_reporting.build_verifier_json_report(
         dataset_version=dataset_data["dataset_version"],
@@ -680,8 +703,8 @@ async def run_direct_cases(args) -> int:
             "planned_cases": len(cases),
             "unexecuted_cases": len(cases) - evaluation.verifier_calls,
         }
-    json_path = args.output_dir / f"{args.output_name}.json"
-    md_path = args.output_dir / f"{args.output_name}.md"
+    json_path = output_dir / f"{args.output_name}.json"
+    md_path = output_dir / f"{args.output_name}.md"
     verifier_reporting.write_json_report(report, json_path)
     md_path.write_text(verifier_reporting.render_verifier_markdown(report), encoding="utf-8")
 
@@ -815,7 +838,8 @@ async def run_e1c(args) -> int:
         evaluation = exc.evaluation
     runtime_seconds = time.perf_counter() - started
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = args.output_dir or DEFAULT_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
     report = verifier_proof_eval.build_proof_json_report(
         architecture=architecture,
         dataset_path=args.direct_cases,
@@ -837,8 +861,8 @@ async def run_e1c(args) -> int:
             "planned_cases": len(cases),
             "unexecuted_cases": len(cases) - evaluation.verifier_calls,
         }
-    json_path = args.output_dir / f"{args.output_name}.json"
-    md_path = args.output_dir / f"{args.output_name}.md"
+    json_path = output_dir / f"{args.output_name}.json"
+    md_path = output_dir / f"{args.output_name}.md"
     verifier_reporting.write_json_report(report, json_path)
     md_path.write_text(verifier_proof_eval.render_proof_markdown(report), encoding="utf-8")
 
@@ -894,6 +918,163 @@ async def run_e1c(args) -> int:
     return 0
 
 
+async def run_requested_fact(args) -> int:
+    """RequestedFact (RF1) architecture mode (--requested-fact-architecture RF1).
+
+    Three provider calls per case: requested-fact derivation (question only),
+    exact-proof selection, and answerability over server-verified proofs only.
+    Runs over direct-drive dev cases only. Frozen v2/v3 modes and any explicit
+    prompt/schema/framing version are rejected here; the experimental RF1
+    prompts never mix with the frozen registry. The call ledger hard-fails
+    BEFORE any inference when planned calls (cases x 3) exceed --max-calls.
+    Provider/transport failures abort the run with a persisted partial report
+    (exit 3); --expected-verifier-calls mismatches exit 2 after the report is
+    persisted.
+    """
+    if not args.direct_cases:
+        print(
+            "--requested-fact-architecture requires --direct-cases (dev suites "
+            "only; frozen v2/v3 holdouts cannot run in RF1 mode)."
+        )
+        return 2
+    for flag, label in (
+        (args.run_frozen_v2, "--run-frozen-v2"),
+        (args.run_frozen_v3, "--run-frozen-v3"),
+    ):
+        if flag:
+            print(
+                f"{label} is incompatible with --requested-fact-architecture "
+                "(frozen manifest gates reject RF1 mode)."
+            )
+            return 2
+    for value, label in (
+        (args.prompt_version, "--prompt-version"),
+        (args.schema_version, "--schema-version"),
+        (args.framing_version, "--framing-version"),
+    ):
+        if value is not None:
+            print(
+                f"{label} is not supported in --requested-fact-architecture mode "
+                "(experimental RF1 prompts replace prompt/schema/framing)."
+            )
+            return 2
+
+    dataset_data = verifier_dev_cases.load_dev_cases(args.direct_cases)
+    cases = dataset_data["cases"]
+    case_ids = parse_id_list(args.case_ids)
+    if case_ids:
+        wanted = set(case_ids)
+        unknown = sorted(wanted - {case["id"] for case in cases})
+        if unknown:
+            print(f"Unknown dev case id(s): {unknown}")
+            return 2
+        cases = [case for case in cases if case["id"] in wanted]
+
+    verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
+    provider = build_requested_fact_provider(args.provider, args.verifier_model)
+
+    planned_calls = len(cases) * verifier_requested_fact_eval.PLANNED_CALLS_PER_CASE
+    if args.max_calls is not None and planned_calls > args.max_calls:
+        print(
+            f"RF1 call-budget violation: planned {planned_calls} calls for "
+            f"{len(cases)} case(s) under architecture RF1 exceed "
+            f"--max-calls {args.max_calls}. No provider call was made."
+        )
+        return 2
+
+    started = time.perf_counter()
+    provider_abort = None
+    try:
+        evaluation = await verifier_requested_fact_eval.run_requested_fact_evaluation(
+            cases,
+            provider,
+            stop_on_provider_error=True,
+        )
+    except verifier_requested_fact_eval.RequestedFactProviderAbortError as exc:
+        provider_abort = exc
+        evaluation = exc.evaluation
+    runtime_seconds = time.perf_counter() - started
+
+    output_dir = args.output_dir or POC_3F_E1D_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report = verifier_requested_fact_eval.build_requested_fact_json_report(
+        architecture=verifier_requested_fact_eval.ARCHITECTURE_RF1,
+        dataset_path=args.direct_cases,
+        dataset_version=dataset_data["dataset_version"],
+        provider=args.provider,
+        model=provider.model_name,
+        external_api=args.provider in verifier_providers.EXTERNAL_PROVIDERS,
+        runtime_seconds=runtime_seconds,
+        git_commit=git_commit(),
+        evaluation=evaluation,
+        max_calls=args.max_calls,
+    )
+    if provider_abort is not None:
+        report["benchmark"]["partial_failure"] = {
+            "first_failing_case": provider_abort.case_id,
+            "attempted_calls": evaluation.verifier_calls,
+            "successful_calls": evaluation.verifier_calls - 1,
+            "failure_type": "provider_error",
+            "planned_cases": len(cases),
+            "unexecuted_cases": len(cases) - evaluation.verifier_calls,
+        }
+    json_path = output_dir / f"{args.output_name}.json"
+    md_path = output_dir / f"{args.output_name}.md"
+    verifier_reporting.write_json_report(report, json_path)
+    md_path.write_text(
+        verifier_requested_fact_eval.render_requested_fact_markdown(report), encoding="utf-8"
+    )
+
+    print("")
+    print("RequestedFact (RF1) verifier architecture (direct cases, no retrieval)")
+    print(f"Dataset: {args.direct_cases}")
+    print(f"Cases: {len(cases)}")
+    print("Architecture: RF1 (3 calls per case, stage-isolated)")
+    print(f"Provider: {args.provider} ({provider.model_name})")
+    print(f"Planned calls: {planned_calls}")
+    print(f"Verifier calls: {evaluation.verifier_calls}")
+    valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
+    print(f"Valid outputs: {valid_count}/{len(evaluation.outcomes)}")
+    print(f"Invalid outputs: {len(evaluation.invalid_outputs)}")
+    provider_failures = sum(
+        1 for outcome in evaluation.invalid_outputs if outcome.error_kind == "provider_error"
+    )
+    print(f"Provider failures: {provider_failures}")
+    print(f"False supports: {len(evaluation.false_supports)}")
+    print(f"False rejections: {len(evaluation.false_rejections)}")
+    overall = report["metrics"].get("overall", {})
+    if overall:
+        print(
+            f"Metrics: accuracy={overall.get('accuracy')} "
+            f"retention={overall.get('answerable_retention')} "
+            f"detection={overall.get('unsupported_detection')} "
+            f"balanced_accuracy={overall.get('balanced_accuracy')}"
+        )
+    print("Reports:")
+    print(f"  {json_path}")
+    print(f"  {md_path}")
+
+    if provider_abort is not None:
+        print("RF1 run stopped after the first provider failure; no later case was called.")
+        print(f"First failing case: {provider_abort.case_id}")
+        print(
+            f"Partial run: {evaluation.verifier_calls} attempted, "
+            f"{evaluation.verifier_calls - 1} successful, "
+            f"{len(cases) - evaluation.verifier_calls} unexecuted "
+            f"(of {len(cases)} planned). The partial report was persisted."
+        )
+        return 3
+
+    expected_calls = args.expected_verifier_calls
+    if expected_calls is not None and evaluation.verifier_calls != expected_calls:
+        print(
+            f"Expected verifier call count mismatch: expected {expected_calls}, "
+            f"observed {evaluation.verifier_calls}."
+        )
+        return 2
+    return 0
+
+
 def build_proof_provider(provider: str, model: str | None):
     """Instantiate the E1c proof provider (never executes a model call)."""
     if provider == "mock":
@@ -925,8 +1106,46 @@ def build_proof_provider(provider: str, model: str | None):
     raise SystemExit(f"Unknown verifier provider {provider!r}")
 
 
+def build_requested_fact_provider(provider: str, model: str | None):
+    """Instantiate the RF1 requested-fact provider (never executes a model call).
+
+    Reuses the E1c :class:`ProofChatAdapter` transport (temperature 0,
+    ``json_object``, stream off); the mock dispatches on the system prompt.
+    """
+    if provider == "mock":
+        return verifier_requested_fact_eval.MockRequestedFactProvider()
+    if provider == "deepseek":
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'deepseek' requires the DEEPSEEK_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_DEEPSEEK_MODEL,
+            base_url=verifier_providers.DEFAULT_DEEPSEEK_BASE_URL,
+        )
+    if provider == "opencode-go":
+        api_key = os.environ.get("OPENCODE_GO_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'opencode-go' requires the OPENCODE_GO_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_OPENCODE_GO_MODEL,
+            base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
+        )
+    raise SystemExit(f"Unknown verifier provider {provider!r}")
+
+
 async def main() -> int:
     args = parse_args()
+
+    if args.requested_fact_architecture:
+        return await run_requested_fact(args)
 
     if args.e1c_architecture:
         return await run_e1c(args)
@@ -1057,9 +1276,10 @@ async def main() -> int:
                         "failure_type": "provider_error",
                     }
 
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        json_path = args.output_dir / f"{args.output_name}.json"
-        md_path = args.output_dir / f"{args.output_name}.md"
+        output_dir = args.output_dir or DEFAULT_OUTPUT_DIR
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / f"{args.output_name}.json"
+        md_path = output_dir / f"{args.output_name}.md"
         verifier_reporting.write_json_report(report, json_path)
         md_path.write_text(verifier_reporting.render_verifier_markdown(report), encoding="utf-8")
 
