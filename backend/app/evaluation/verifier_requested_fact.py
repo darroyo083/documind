@@ -137,13 +137,24 @@ ANSWER_ALLOWED_KEYS = frozenset({"status", "answer", "answer_kind", "answer_anch
 CHECK_FAILURE_ANSWER_NOT_ANCHORED = "answer_not_anchored"
 CHECK_FAILURE_ANSWER_KIND_MISMATCH = "answer_kind_mismatch"
 
-# Kind-consistency matrix (Worker B section 5): the model's answer_kind must
-# match the question kind of the RequestedFactV1. value questions (any
-# expected_answer_kind) require answer_kind in {value, numeric};
-# boolean/existence questions require answer_kind=boolean/existence
-# respectively.
+# Kind-consistency matrix (Worker B section 5, corrected in goal):
+# For value questions the extracted answer is a VERBATIM, server-anchored
+# substring of a verified proof quote, so any concrete-value answer kind
+# (value/numeric/date_or_time/entity/text/list) is consistent - the literal
+# anchoring already guarantees the answer text exists in the evidence; the
+# kind is descriptive metadata, not a semantic gate. boolean/existence
+# questions require answer_kind=boolean/existence respectively.
 ANSWER_KIND_MATRIX = {
-    QUESTION_KIND_VALUE: frozenset({ANSWER_KIND_VALUE, ANSWER_KIND_NUMERIC}),
+    QUESTION_KIND_VALUE: frozenset(
+        {
+            ANSWER_KIND_VALUE,
+            ANSWER_KIND_NUMERIC,
+            ANSWER_KIND_DATE_OR_TIME,
+            ANSWER_KIND_ENTITY,
+            ANSWER_KIND_TEXT,
+            ANSWER_KIND_LIST,
+        }
+    ),
     QUESTION_KIND_EXISTENCE: frozenset({ANSWER_KIND_EXISTENCE}),
     QUESTION_KIND_BOOLEAN: frozenset({ANSWER_KIND_BOOLEAN}),
 }

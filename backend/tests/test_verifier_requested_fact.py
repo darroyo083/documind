@@ -459,10 +459,16 @@ class TestAnswerabilityContract:
         assert decision.kind_consistent is True
 
     def test_kind_matrix_mismatch_is_contradicted(self):
-        decision = self._check(_answerability_json(answer_kind="text"))
+        decision = self._check(_answerability_json(answer_kind="boolean"))
         assert decision.status == ANSWER_STATUS_CONTRADICTED
         assert decision.kind_consistent is False
         assert "answer_kind_mismatch" in decision.check_failures
+
+    def test_kind_matrix_any_value_kind_consistent(self):
+        for kind in ("value", "numeric", "date_or_time", "entity", "text", "list"):
+            decision = self._check(_answerability_json(answer_kind=kind))
+            assert decision.status == ANSWER_STATUS_ANSWERED, kind
+            assert decision.kind_consistent is True, kind
 
     def test_kind_matrix_existence_question(self):
         fact = _fact(question_kind="existence")
@@ -482,7 +488,7 @@ class TestAnswerabilityContract:
 
     def test_answer_kind_matrix_constant(self):
         assert ANSWER_KIND_MATRIX == {
-            "value": frozenset({"value", "numeric"}),
+            "value": frozenset({"value", "numeric", "date_or_time", "entity", "text", "list"}),
             "existence": frozenset({"existence"}),
             "boolean": frozenset({"boolean"}),
         }
