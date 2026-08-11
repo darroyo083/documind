@@ -1,0 +1,59 @@
+{
+  "dataset_version": "dev-direct",
+  "purpose": "Correction confirmation pack (fresh, unexecuted) validating the two generic RF1 corrections: (A) existence/boolean polarity proofs incl. explicit absence; (B) value-kind answers with any concrete-value answer kind.",
+  "gold_semantics": "answerability_v1",
+  "balance": "2 supported / 1 unsupported",
+  "cases": [
+    {
+      "id": "cc_existence_absence_fresh",
+      "category": "existence_question_explicit_absence",
+      "question": "Does the Greenway Pool specify a family membership discount?",
+      "question_kind": "existence",
+      "expected_answer_kind": "boolean",
+      "requires_explicit_value": false,
+      "expected_supported": true,
+      "expected_answer": "no",
+      "notes": "Fresh existence case validating correction A: the selector must quote the explicit absence sentence so stage 3 answers no with a polarity anchor.",
+      "evidence": [
+        {
+          "source_id": "cc_chunk_pool_terms",
+          "content": "Greenway Pool membership terms. A family membership is one hundred forty per month. The terms state that no discounts of any kind are offered on memberships."
+        }
+      ]
+    },
+    {
+      "id": "cc_value_entity_fresh",
+      "category": "genuine_supported_entity",
+      "question": "Who issues Greenway Pool locker assignments?",
+      "question_kind": "value",
+      "expected_answer_kind": "entity",
+      "requires_explicit_value": true,
+      "expected_supported": true,
+      "expected_answer": "the membership desk",
+      "notes": "Fresh entity-answer case validating correction B: the anchored answer kind (entity/text) must be accepted for a value question.",
+      "evidence": [
+        {
+          "source_id": "cc_chunk_locker_policy",
+          "content": "Greenway Pool locker policy. Locker assignments are issued by the membership desk; keys are collected at the front counter."
+        }
+      ]
+    },
+    {
+      "id": "cc_value_date_fresh",
+      "category": "numeric_near_miss",
+      "question": "What is the annual fee for a Greenway Pool family membership?",
+      "question_kind": "value",
+      "expected_answer_kind": "numeric",
+      "requires_explicit_value": true,
+      "expected_supported": false,
+      "expected_answer": null,
+      "notes": "Fresh unsupported value case: only a monthly fee is stated; the annual figure is absent so nothing can be anchored.",
+      "evidence": [
+        {
+          "source_id": "cc_chunk_pool_terms",
+          "content": "Greenway Pool membership terms. A family membership is one hundred forty per month, billed monthly. The terms do not quote an annual rate."
+        }
+      ]
+    }
+  ]
+}
