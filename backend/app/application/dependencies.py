@@ -5,6 +5,7 @@ from app.domain.actions import DocumentActionProvider
 from app.domain.analysis import DocumentAnalysisProvider
 from app.domain.comparison import DocumentComparisonProvider
 from app.domain.errors import ProviderError
+from app.domain.intelligence import SpaceIntelligenceProvider
 from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider
 from app.infrastructure.action_providers import (
     DeepSeekDocumentActionProvider,
@@ -18,6 +19,11 @@ from app.infrastructure.comparison_providers import (
     DeepSeekDocumentComparisonProvider,
     DeterministicComparisonProvider,
     OpenCodeGoDocumentComparisonProvider,
+)
+from app.infrastructure.intelligence_providers import (
+    DeepSeekSpaceIntelligenceProvider,
+    DeterministicSpaceIntelligenceProvider,
+    OpenCodeGoSpaceIntelligenceProvider,
 )
 from app.infrastructure.providers import (
     DeepSeekAnswerProvider,
@@ -103,3 +109,24 @@ def get_comparison_provider() -> DocumentComparisonProvider:
             timeout_seconds=settings.provider_timeout_seconds,
         )
     raise ProviderError("Unsupported document comparison provider configuration")
+
+
+@lru_cache
+def get_intelligence_provider() -> SpaceIntelligenceProvider:
+    if settings.intelligence_provider == "mock":
+        return DeterministicSpaceIntelligenceProvider()
+    if settings.intelligence_provider == "deepseek":
+        return DeepSeekSpaceIntelligenceProvider(
+            api_key=settings.deepseek_api_key,
+            model_name=settings.intelligence_model,
+            base_url=settings.deepseek_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    if settings.intelligence_provider == "opencode-go":
+        return OpenCodeGoSpaceIntelligenceProvider(
+            api_key=settings.opencode_go_api_key,
+            model_name=settings.intelligence_model,
+            base_url=settings.opencode_go_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    raise ProviderError("Unsupported space intelligence provider configuration")

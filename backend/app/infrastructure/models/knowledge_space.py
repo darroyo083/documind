@@ -11,6 +11,7 @@ from app.infrastructure.models.user import User
 
 if TYPE_CHECKING:
     from app.infrastructure.models.document_comparison import DocumentComparison
+    from app.infrastructure.models.space_intelligence import SpaceIntelligence
 
 
 class KnowledgeSpace(Base):
@@ -32,4 +33,10 @@ class KnowledgeSpace(Base):
     comparisons: Mapped[list["DocumentComparison"]] = relationship(
         back_populates="space",
         cascade="all, delete-orphan",
+    )
+
+    intelligence: Mapped["SpaceIntelligence | None"] = relationship(
+        back_populates="space",
+        cascade="all, delete-orphan",
+        uselist=False,
     )

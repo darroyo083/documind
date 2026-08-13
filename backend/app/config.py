@@ -71,6 +71,32 @@ class Settings(BaseSettings):
         description="Max characters of server-derived citation excerpts.",
     )
 
+    intelligence_provider: str = "mock"
+    intelligence_model: str = "deepseek-chat"
+    intelligence_max_context_chars: int = Field(
+        default=120000,
+        gt=0,
+        description=(
+            "Max total characters of space-document content sent to the "
+            "intelligence provider; values <= 0 would disable generation."
+        ),
+    )
+    intelligence_max_documents: int = Field(
+        default=20,
+        gt=0,
+        description="Max ready documents analyzed for a space intelligence snapshot.",
+    )
+    intelligence_max_sources_per_item: int = Field(
+        default=8,
+        gt=0,
+        description="Max validated source citations per intelligence item.",
+    )
+    intelligence_excerpt_chars: int = Field(
+        default=2000,
+        gt=0,
+        description="Max characters of intelligence citation excerpts.",
+    )
+
     embedding_provider: str = "local"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimension: int = 384

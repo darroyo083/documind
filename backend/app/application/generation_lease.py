@@ -10,6 +10,7 @@ from app.infrastructure.models import (
     DocumentActionSet,
     DocumentAnalysis,
     DocumentComparison,
+    SpaceIntelligence,
 )
 
 PROCESSING = "processing"
@@ -23,7 +24,9 @@ def stale_cutoff(now: datetime | None = None) -> datetime:
     return reference - timedelta(seconds=settings.generation_stale_after_seconds)
 
 
-async def claim_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison)](
+async def claim_generation[
+    LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison, SpaceIntelligence)
+](
     db: AsyncSession,
     model: type[LeaseRow],
     row_id: uuid.UUID,
@@ -78,7 +81,62 @@ async def claim_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet, Docum
     return attempt_id, now
 
 
-async def complete_generation[LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison)](
+async def reclaim_generation[
+    LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison, SpaceIntelligence)
+](
+    db: AsyncSession,
+    model: type[LeaseRow],
+    row_id: uuid.UUID,
+    *,
+    provider: str,
+    model_name: str,
+) -> tuple[uuid.UUID, datetime] | None:
+    """Atomically reclaim a READY, FAILED, or stale-PROCESSING row for regeneration.
+
+    Unlike :func:`claim_generation`, a READY row is claimable so a space-level
+    snapshot can be refreshed when its input signature changes. The claim is a
+    single compare-and-set UPDATE; the old JSON payload is preserved in place
+    until a terminal state is written.
+    """
+    now = datetime.now(UTC)
+    cutoff = stale_cutoff(now)
+    attempt_id = uuid.uuid4()
+    result = await db.execute(
+        update(model)
+        .where(
+            model.id == row_id,
+            or_(
+                model.status.in_([READY, FAILED]),
+                and_(
+                    model.status == PROCESSING,
+                    or_(
+                        model.processing_started_at.is_(None),
+                        model.processing_started_at < cutoff,
+                    ),
+                ),
+            ),
+        )
+        .values(
+            status=PROCESSING,
+            processing_started_at=now,
+            processing_attempt_id=attempt_id,
+            provider=provider,
+            model=model_name,
+            error_message=None,
+        )
+        .returning(model.id)
+        .execution_options(synchronize_session=False)
+    )
+    if result.scalar_one_or_none() is None:
+        await db.rollback()
+        return None
+    await db.commit()
+    return attempt_id, now
+
+
+async def complete_generation[
+    LeaseRow: (DocumentAnalysis, DocumentActionSet, DocumentComparison, SpaceIntelligence)
+](
     db: AsyncSession,
     model: type[LeaseRow],
     row_id: uuid.UUID,

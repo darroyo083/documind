@@ -8,6 +8,7 @@ from app.infrastructure.models.document_comparison import (
 )
 from app.infrastructure.models.knowledge_space import KnowledgeSpace
 from app.infrastructure.models.reference import ReferenceDocument, ReferenceDocumentChunk
+from app.infrastructure.models.space_intelligence import SpaceIntelligence, SpaceIntelligenceStatus
 from app.infrastructure.models.user import User
 
 __all__ = [
@@ -24,5 +25,7 @@ __all__ = [
     "KnowledgeSpace",
     "ReferenceDocument",
     "ReferenceDocumentChunk",
+    "SpaceIntelligence",
+    "SpaceIntelligenceStatus",
     "User",
 ]

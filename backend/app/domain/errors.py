@@ -84,3 +84,27 @@ class ComparisonContextTooLargeError(ComparisonError):
 
 class ComparisonValidationError(ComparisonError):
     pass
+
+
+class IntelligenceError(Exception):
+    pass
+
+
+class IntelligenceNotFoundError(IntelligenceError):
+    pass
+
+
+class IntelligenceConflictError(IntelligenceError):
+    pass
+
+
+class IntelligenceStateError(IntelligenceError):
+    pass
+
+
+class IntelligenceContextTooLargeError(IntelligenceError):
+    pass
+
+
+class IntelligenceValidationError(IntelligenceError):
+    pass
