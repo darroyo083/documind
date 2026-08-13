@@ -567,6 +567,33 @@ POST /knowledge-spaces/{space_id}/intelligence
   provider. Tests never make real provider calls.
 - Migration head: `010`.
 
+### Smart Ingestion (PoC 4D)
+
+A Space accepts multiple PDFs at once with independent per-document state:
+
+- **Batch upload + drag-and-drop.** Drop several PDFs (or multi-select) onto the
+  space; each file is validated client-side (PDF type, ≤ 10 MB) and queued with
+  bounded concurrency (3 concurrent uploads). One failed file never blocks the
+  others, and the Space stays usable throughout.
+- **Document lifecycle.** `processing` → `ready` / `failed`. A document's status
+  is visible in the list, and an aggregate summary (`N documents · R ready ·
+  P processing · F failed`) is shown while anything is in flight. Ready
+  documents participate in Overview, Ask, Compare, and Intelligence; failed
+  documents do not.
+- **Retry.** A failed document can be retried in place
+  (`POST /knowledge-spaces/{space_id}/documents/{document_id}/retry`): the
+  stored file is reprocessed, never duplicated, and the FAILED → PROCESSING →
+  READY/FAILED transition is compare-and-set guarded against concurrent retries.
+- **Structured failures.** A failed document carries a `failure_code`
+  (`no_extractable_text`, `extraction_failed`, or `processing_failed`) plus a
+  safe, human-readable `error_message`; no stack traces or provider internals
+  are exposed.
+- **Limitations.** Duplicate-content detection is not implemented (uploading
+  the same file twice creates two documents). A document stuck in `processing`
+  after a crash has no automatic reclaim; delete and re-upload it. Uploads are
+  synchronous (extraction/chunking/embedding run within the request).
+- Migration head: `011`.
+
 ## Development defaults and mock behavior
 
 The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
