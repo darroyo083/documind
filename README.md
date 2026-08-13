@@ -133,6 +133,10 @@ Key environment variables (see `.env.example`):
 | `COMPARISON_MODEL` | Model used for document comparison | `deepseek-chat` |
 | `COMPARISON_MAX_CONTEXT_CHARS` | Max total selected-document characters sent to comparison | `120000` |
 | `COMPARISON_MAX_FOCUS_LENGTH` | Max comparison-focus characters | `500` |
+| `INTELLIGENCE_PROVIDER` | Space intelligence provider (`deepseek`, `opencode-go`, `mock`) | `mock` |
+| `INTELLIGENCE_MODEL` | Model used for space intelligence | `deepseek-chat` |
+| `INTELLIGENCE_MAX_CONTEXT_CHARS` | Max total space-document characters sent to intelligence | `120000` |
+| `INTELLIGENCE_MAX_DOCUMENTS` | Max ready documents analyzed for a space intelligence snapshot | `20` |
 
 ## Structured Document Intelligence (PoC 2.1)
 
@@ -512,6 +516,56 @@ GET  /knowledge-spaces/{space_id}/comparisons/{comparison_id}
 - The mock provider is development-only.
 - Ready comparisons are idempotent; there is no "force regenerate" in this PoC.
 - Migration head: `009`.
+
+### Workspace Intelligence (PoC 4C)
+
+Open a space's **Intelligence** tab to synthesize cross-document insights over
+every ready private document in the space:
+
+```text
+GET  /knowledge-spaces/{space_id}/intelligence
+POST /knowledge-spaces/{space_id}/intelligence
+```
+
+- **One snapshot per space.** `GET` returns the latest snapshot plus its state
+  (`none` / `processing` / `ready` / `failed`), the ready-document count, and an
+  `is_stale` flag. `POST` generates (or refreshes) the snapshot.
+- **Source-grounded synthesis.** The result is a concise summary plus four
+  categories — `key_facts`, `contradictions`, `dates`, `open_questions` — each
+  item carrying source-validated citations (document name, page, excerpt).
+  Contradictions cite both sides. Open questions are framed cautiously as
+  questions and may omit source IDs (a gap is the *absence* of information).
+- **Deterministic inputs.** All ready private documents in the space, ordered by
+  document UUID then page/chunk index, full persisted chunks, no retrieval.
+  A SHA-256 input signature over the sorted `(document_id, updated_at)` pairs
+  drives stale detection; the provider's output is never part of the signature.
+- **Server-authoritative citations.** The provider cites positional `source_1..N`
+  labels; the server maps them back to the user's own chunks and rejects any
+  unknown/foreign label (fail-closed 502). Page numbers and excerpts are
+  server-derived.
+- **Stale/refresh UX.** If documents change after generation, the previous
+  snapshot is shown with an amber "documents changed" banner and a Refresh
+  action; refreshing atomically reclaims the row and regenerates.
+- **Failure and concurrency.** Generation reuses the shared lease architecture:
+  a concurrent refresh is a `409`, a failed snapshot can be retried, and a stale
+  `processing` claim is reclaimed. Provider/validation errors mark the snapshot
+  failed (502). Context over `INTELLIGENCE_MAX_CONTEXT_CHARS` or more than
+  `INTELLIGENCE_MAX_DOCUMENTS` documents is rejected (422) before the provider
+  is called.
+
+#### PoC 4C limitations
+
+- Private, same-space, ready-only; no reference-library documents, cross-space,
+  or cross-user synthesis.
+- Contradictions are grounded in the cited sources, but are AI-generated
+  interpretations — not a proof of logical inconsistency or global truth.
+- The default `INTELLIGENCE_PROVIDER=mock` is a deterministic development
+  provider (used to prove the flow, schemas, persistence, UI, and citations),
+  not real synthesis. Set `INTELLIGENCE_PROVIDER=opencode-go` /
+  `INTELLIGENCE_MODEL=deepseek-v4-flash` / `OPENCODE_GO_API_KEY` (or
+  `INTELLIGENCE_PROVIDER=deepseek` with `DEEPSEEK_API_KEY`) for the real
+  provider. Tests never make real provider calls.
+- Migration head: `010`.
 
 ## Development defaults and mock behavior
 
