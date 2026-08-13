@@ -15,6 +15,7 @@ class DocumentResponse(BaseModel):
     page_count: int | None
     status: str
     error_message: str | None
+    failure_code: str | None
     created_at: datetime
     updated_at: datetime
 

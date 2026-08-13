@@ -31,7 +31,7 @@ EXPECTED_TABLES = {
     "space_intelligence",
     "users",
 }
-EXPECTED_HEAD = "010"
+EXPECTED_HEAD = "011"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -273,6 +273,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "documents.knowledge_space_id": "uuid:NO",
         "documents.file_size": "bigint:NO",
         "documents.page_count": "integer:YES",
+        "documents.failure_code": "character varying:YES",
         "document_chunks.id": "uuid:NO",
         "document_chunks.document_id": "uuid:NO",
         "document_chunks.page_number": "integer:NO",

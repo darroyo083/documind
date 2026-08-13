@@ -6,6 +6,10 @@ class InvalidDocumentError(DocumentError):
     pass
 
 
+class DocumentStateError(DocumentError):
+    pass
+
+
 class TextExtractionError(DocumentError):
     pass
 

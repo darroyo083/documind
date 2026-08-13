@@ -137,7 +137,9 @@ async def test_textless_pdf_is_recorded_as_failed(async_client: AsyncClient):
     token = await register_user(async_client, "textless@test.com")
     space = await create_space(async_client, token)
     response = await upload_pdf(async_client, token, space["id"], " ")
-    assert response.status_code == 422
+    assert response.status_code == 201
+    assert response.json()["status"] == "failed"
+    assert response.json()["failure_code"] == "no_extractable_text"
 
     listing = await async_client.get(
         f"{SPACES_URL}/{space['id']}/documents", headers=auth_header(token)

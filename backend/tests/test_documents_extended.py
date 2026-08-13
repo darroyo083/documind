@@ -99,7 +99,7 @@ async def test_upload_empty_file_is_rejected(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_embedding_failure_leaves_no_file_or_chunks(
+async def test_embedding_failure_records_failed_and_keeps_file_for_retry(
     async_client: AsyncClient,
     db_session: AsyncSession,
     tmp_path,
@@ -119,8 +119,9 @@ async def test_embedding_failure_leaves_no_file_or_chunks(
     app.dependency_overrides[get_embedding_provider] = FailingEmbeddingProvider
 
     response = await upload_pdf(async_client, token, space["id"])
-    assert response.status_code == 502
-    assert response.json()["detail"] == "simulated embedding outage"
+    assert response.status_code == 201
+    assert response.json()["status"] == "failed"
+    assert response.json()["failure_code"] == "processing_failed"
 
     listing = await async_client.get(
         f"{SPACES_URL}/{space['id']}/documents", headers=auth_header(token)
@@ -130,7 +131,7 @@ async def test_embedding_failure_leaves_no_file_or_chunks(
     assert documents[0]["status"] == "failed"
     assert documents[0]["error_message"] == "simulated embedding outage"
     assert await chunk_count_for(db_session, documents[0]["id"]) == 0
-    assert list((tmp_path / "uploads").glob("*.pdf")) == []
+    assert list((tmp_path / "uploads").glob("*.pdf")) != []
 
 
 @pytest.mark.asyncio

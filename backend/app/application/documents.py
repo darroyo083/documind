@@ -2,12 +2,17 @@ import uuid
 from pathlib import PurePath
 
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.chunking import chunk_pages
 from app.config import settings
-from app.domain.errors import InvalidDocumentError, ProviderError, TextExtractionError
+from app.domain.errors import (
+    DocumentStateError,
+    InvalidDocumentError,
+    ProviderError,
+    TextExtractionError,
+)
 from app.domain.rag import DocumentStorage, EmbeddingProvider
 from app.infrastructure.models import (
     Document,
@@ -107,8 +112,37 @@ async def ingest_document(
         raise
     await db.refresh(document)
 
+    await _process_document(db, document, storage, embedding_provider)
+    await db.refresh(document)
+    return document
+
+
+FAILURE_CODE_NO_EXTRACTABLE_TEXT = "no_extractable_text"
+FAILURE_CODE_EXTRACTION_FAILED = "extraction_failed"
+FAILURE_CODE_PROCESSING_FAILED = "processing_failed"
+
+
+def failure_code_for(error: Exception) -> str:
+    if isinstance(error, TextExtractionError):
+        return FAILURE_CODE_NO_EXTRACTABLE_TEXT
+    if isinstance(error, InvalidDocumentError):
+        return FAILURE_CODE_EXTRACTION_FAILED
+    return FAILURE_CODE_PROCESSING_FAILED
+
+
+async def _process_document(
+    db: AsyncSession,
+    document: Document,
+    storage: DocumentStorage,
+    embedding_provider: EmbeddingProvider,
+) -> None:
+    """Extract, chunk, embed, and finalize one document (READY or FAILED).
+
+    On failure the document is marked FAILED with a safe ``failure_code`` and the
+    storage file is KEPT so the document can be retried without re-uploading.
+    """
     try:
-        pages = await PdfPageExtractor().extract(storage.path_for(storage_key))
+        pages = await PdfPageExtractor().extract(storage.path_for(document.storage_key))
         chunks = chunk_pages(pages, settings.chunk_size, settings.chunk_overlap)
         if not chunks:
             raise TextExtractionError("No meaningful text could be extracted from the PDF")
@@ -134,13 +168,55 @@ async def ingest_document(
         document.page_count = len(pages)
         document.status = DocumentStatus.READY.value
         document.error_message = None
+        document.failure_code = None
         await db.commit()
-        await db.refresh(document)
-        return document
     except (InvalidDocumentError, TextExtractionError, ProviderError) as exc:
         await db.rollback()
         document.status = DocumentStatus.FAILED.value
         document.error_message = str(exc)
+        document.failure_code = failure_code_for(exc)
         await db.commit()
-        await storage.delete(storage_key)
-        raise
+
+
+async def retry_document(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    document_id: uuid.UUID,
+    user_id: uuid.UUID,
+    storage: DocumentStorage,
+    embedding_provider: EmbeddingProvider,
+) -> Document | None:
+    """Reprocess a FAILED document's existing file in place.
+
+    Returns ``None`` when the document is not the user's (reported as 404).
+    Raises :class:`DocumentStateError` when the document is not FAILED. The
+    FAILED -> PROCESSING transition is a compare-and-set UPDATE so concurrent
+    retries never launch duplicate processing.
+    """
+    document = await get_owned_document(db, space_id, document_id, user_id)
+    if document is None:
+        return None
+
+    result = await db.execute(
+        update(Document)
+        .where(
+            Document.id == document.id,
+            Document.status == DocumentStatus.FAILED.value,
+        )
+        .values(
+            status=DocumentStatus.PROCESSING.value,
+            error_message=None,
+            failure_code=None,
+        )
+        .returning(Document.id)
+        .execution_options(synchronize_session=False)
+    )
+    if result.scalar_one_or_none() is None:
+        await db.rollback()
+        raise DocumentStateError("Only failed documents can be retried")
+    await db.commit()
+    await db.refresh(document)
+
+    await _process_document(db, document, storage, embedding_provider)
+    await db.refresh(document)
+    return document

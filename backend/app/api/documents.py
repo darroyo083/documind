@@ -14,10 +14,16 @@ from app.application.documents import (
     get_owned_document,
     get_owned_space,
     ingest_document,
+    retry_document,
 )
 from app.application.retrieval import answer_question, resolve_top_k, search_space
 from app.auth import get_current_user
-from app.domain.errors import InvalidDocumentError, ProviderError, TextExtractionError
+from app.domain.errors import (
+    DocumentStateError,
+    InvalidDocumentError,
+    ProviderError,
+    TextExtractionError,
+)
 from app.domain.rag import AnswerProvider, DocumentStorage, EmbeddingProvider, parse_knowledge_scope
 from app.infrastructure.database import get_db
 from app.infrastructure.models import Document, User
@@ -70,6 +76,26 @@ async def list_documents(
         .order_by(Document.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+@router.post("/documents/{document_id}/retry", response_model=DocumentResponse)
+async def retry_document_processing(
+    space_id: uuid.UUID,
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    storage: DocumentStorage = Depends(get_document_storage),
+    embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
+):
+    try:
+        document = await retry_document(
+            db, space_id, document_id, current_user.id, storage, embedding_provider
+        )
+    except DocumentStateError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return document
 
 
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
