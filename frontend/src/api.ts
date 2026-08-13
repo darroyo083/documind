@@ -469,3 +469,73 @@ export function getComparison(
     { signal }
   );
 }
+
+/* Space intelligence */
+
+export interface IntelligenceCitation {
+  document_id: string;
+  document_name: string;
+  chunk_id: string;
+  page_number: number;
+  excerpt: string;
+}
+
+export interface IntelligenceKeyFact {
+  title: string;
+  detail: string;
+  sources: IntelligenceCitation[];
+}
+
+export interface IntelligenceContradiction {
+  topic: string;
+  first_claim: string;
+  first_sources: IntelligenceCitation[];
+  second_claim: string;
+  second_sources: IntelligenceCitation[];
+}
+
+export interface IntelligenceDate {
+  label: string;
+  date_text: string;
+  context: string;
+  sources: IntelligenceCitation[];
+}
+
+export interface IntelligenceOpenQuestion {
+  question: string;
+  explanation: string;
+  sources: IntelligenceCitation[];
+}
+
+export type IntelligenceStatus = "none" | "processing" | "ready" | "failed";
+
+export interface SpaceIntelligence {
+  status: IntelligenceStatus;
+  is_stale: boolean;
+  ready_document_count: number;
+  summary: string;
+  key_facts: IntelligenceKeyFact[];
+  contradictions: IntelligenceContradiction[];
+  dates: IntelligenceDate[];
+  open_questions: IntelligenceOpenQuestion[];
+  provider: string | null;
+  model: string | null;
+  error_message: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function getIntelligence(
+  spaceId: string,
+  signal?: AbortSignal
+): Promise<SpaceIntelligence> {
+  return request<SpaceIntelligence>(`/knowledge-spaces/${spaceId}/intelligence`, {
+    signal,
+  });
+}
+
+export function generateIntelligence(spaceId: string): Promise<SpaceIntelligence> {
+  return request<SpaceIntelligence>(`/knowledge-spaces/${spaceId}/intelligence`, {
+    method: "POST",
+  });
+}

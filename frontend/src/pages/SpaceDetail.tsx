@@ -4,6 +4,7 @@ import * as api from "../api";
 import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
 import ComparePanel from "../components/ComparePanel";
+import IntelligencePanel from "../components/IntelligencePanel";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   private: "My documents",
@@ -11,7 +12,7 @@ const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   combined: "Both",
 };
 
-type Section = "overview" | "actions" | "compare" | "ask";
+type Section = "overview" | "actions" | "compare" | "intelligence" | "ask";
 
 type AnalysisView =
   | { kind: "loading" }
@@ -63,6 +64,7 @@ export default function SpaceDetail() {
   const actionsDocRef = useRef<string | null>(null);
   const actionsTabRef = useRef<HTMLButtonElement>(null);
   const compareTabRef = useRef<HTMLButtonElement>(null);
+  const intelligenceTabRef = useRef<HTMLButtonElement>(null);
   const askTabRef = useRef<HTMLButtonElement>(null);
   const overviewTabRef = useRef<HTMLButtonElement>(null);
 
@@ -286,7 +288,7 @@ export default function SpaceDetail() {
     }
   }
 
-  const SECTION_ORDER: Section[] = ["overview", "actions", "compare", "ask"];
+  const SECTION_ORDER: Section[] = ["overview", "actions", "compare", "intelligence", "ask"];
 
   function handleSectionKeyDown(event: React.KeyboardEvent) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -302,7 +304,9 @@ export default function SpaceDetail() {
           ? actionsTabRef.current
           : next === "compare"
             ? compareTabRef.current
-            : askTabRef.current;
+            : next === "intelligence"
+              ? intelligenceTabRef.current
+              : askTabRef.current;
     target?.focus();
   }
 
@@ -487,6 +491,22 @@ export default function SpaceDetail() {
                     Compare
                   </button>
                   <button
+                    ref={intelligenceTabRef}
+                    type="button"
+                    role="tab"
+                    id="section-tab-intelligence"
+                    aria-controls="section-panel-intelligence"
+                    aria-selected={section === "intelligence"}
+                    onClick={() => setSection("intelligence")}
+                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      section === "intelligence"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Intelligence
+                  </button>
+                  <button
                     ref={askTabRef}
                     type="button"
                     role="tab"
@@ -536,6 +556,14 @@ export default function SpaceDetail() {
                     aria-labelledby="section-tab-compare"
                   >
                     <ComparePanel key={id} spaceId={id as string} documents={documents} />
+                  </div>
+                ) : section === "intelligence" ? (
+                  <div
+                    role="tabpanel"
+                    id="section-panel-intelligence"
+                    aria-labelledby="section-tab-intelligence"
+                  >
+                    <IntelligencePanel spaceId={id as string} />
                   </div>
                 ) : (
                   <div
