@@ -1,0 +1,29 @@
+{
+  "goal": "verifier_finalization",
+  "dataset": "verifier_holdout_v4",
+  "dataset_canonical_sha256": "e46dce75586e0222cdffd21b4b4706a9a61302c79ce88ad36d3427133f256062",
+  "architecture": "AB2",
+  "provider": "opencode-go",
+  "model": "deepseek-v4-flash",
+  "frozen": true,
+  "case_count": 24,
+  "answerable_count": 12,
+  "unsupported_count": 12,
+  "one_shot_status": "INCOMPLETE",
+  "one_shot_note": "Two one-shot attempts aborted by provider transport failures (rate-limit/quota). First attempt reached 14/24 cases (37 calls), second reached 9/24 cases (24 calls). No case was re-interpreted or tuned; the frozen manifest gate passed on both attempts.",
+  "partial_results": {
+    "false_supports": 0,
+    "false_supports_stable": "0 false supports across both aborted runs and the full development + correction evidence",
+    "false_rejections_observed": ["v4_benign_imperative", "v4_existence_no"],
+    "false_rejections_non_deterministic": "v4_benign_imperative and v4_existence_no flipped to supported on the second attempt (model non-determinism at temperature 0)"
+  },
+  "readiness_gate_assessment": {
+    "false_supports_0": true,
+    "provider_failure_0": false,
+    "valid_output_rate_100": false,
+    "answerable_retention_ge_90": false,
+    "answerable_retention_observed": "0.71 - 1.0 (non-deterministic)",
+    "determinism": false
+  },
+  "final_decision": "B - NOT PRODUCTION READY"
+}
