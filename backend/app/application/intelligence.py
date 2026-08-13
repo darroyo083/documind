@@ -178,7 +178,7 @@ def _validate_citations(
     return citations
 
 
-def _require_title(value: object, field: str) -> str:
+def _require_title(value: str, field: str) -> str:
     text = (value or "").strip()
     if not text:
         raise IntelligenceValidationError(f"An intelligence item is missing {field}")
@@ -187,7 +187,7 @@ def _require_title(value: object, field: str) -> str:
     return text
 
 
-def _require_value(value: object, field: str) -> str:
+def _require_value(value: str, field: str) -> str:
     text = (value or "").strip()
     if not text:
         raise IntelligenceValidationError(f"An intelligence item is missing {field}")

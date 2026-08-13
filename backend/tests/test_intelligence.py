@@ -393,6 +393,7 @@ async def test_concurrent_refresh_protected(async_client: AsyncClient, db_sessio
             SpaceIntelligence.knowledge_space_id == uuid.UUID(space["id"])
         )
     )
+    assert row is not None
     row.status = "processing"
     row.processing_started_at = datetime.now(UTC)
     row.processing_attempt_id = uuid.uuid4()

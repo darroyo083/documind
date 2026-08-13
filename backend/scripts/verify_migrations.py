@@ -28,9 +28,10 @@ EXPECTED_TABLES = {
     "knowledge_spaces",
     "reference_document_chunks",
     "reference_documents",
+    "space_intelligence",
     "users",
 }
-EXPECTED_HEAD = "009"
+EXPECTED_HEAD = "010"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}
@@ -146,7 +147,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
         "'document_analyses', 'document_action_sets', 'document_actions', "
         "'document_comparisons', 'document_comparison_documents', "
-        "'reference_documents', 'reference_document_chunks')",
+        "'reference_documents', 'reference_document_chunks', 'space_intelligence')",
     )
     required_constraints = {
         "knowledge_spaces_pkey",
@@ -179,6 +180,9 @@ async def verify_head_schema(database_url: URL) -> None:
         "reference_document_chunks_pkey",
         "reference_document_chunks_reference_document_id_fkey",
         "uq_reference_document_chunks_position",
+        "space_intelligence_pkey",
+        "space_intelligence_knowledge_space_id_fkey",
+        "uq_space_intelligence_knowledge_space_id",
         "users_email_key",
         "users_pkey",
     }
@@ -196,7 +200,8 @@ async def verify_head_schema(database_url: URL) -> None:
         "'document_comparisons_knowledge_space_id_fkey', "
         "'document_comparison_documents_comparison_id_fkey', "
         "'document_comparison_documents_document_id_fkey', "
-        "'reference_document_chunks_reference_document_id_fkey')",
+        "'reference_document_chunks_reference_document_id_fkey', "
+        "'space_intelligence_knowledge_space_id_fkey')",
     )
     if delete_action != {"CASCADE"}:
         raise RuntimeError(f"Unexpected FK delete action: {sorted(delete_action)}")
@@ -217,6 +222,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "ix_document_comparison_documents_comparison_id",
         "ix_document_comparison_documents_document_id",
         "ix_reference_document_chunks_reference_document_id",
+        "ix_space_intelligence_knowledge_space_id",
         "documents_storage_key_key",
         "documents_pkey",
         "document_chunks_pkey",
@@ -228,6 +234,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "reference_documents_pkey",
         "reference_documents_content_sha256_key",
         "reference_document_chunks_pkey",
+        "space_intelligence_pkey",
         "uq_document_chunks_position",
         "uq_document_analyses_document_id",
         "uq_document_action_sets_document_id",
@@ -236,6 +243,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "uq_document_comparison_documents_member",
         "uq_document_comparison_documents_position",
         "uq_reference_document_chunks_position",
+        "uq_space_intelligence_knowledge_space_id",
         "knowledge_spaces_pkey",
         "users_email_key",
         "users_pkey",
@@ -251,7 +259,7 @@ async def verify_head_schema(database_url: URL) -> None:
         "AND table_name IN ('users', 'knowledge_spaces', 'documents', 'document_chunks', "
         "'document_analyses', 'document_action_sets', 'document_actions', "
         "'document_comparisons', 'document_comparison_documents', "
-        "'reference_documents', 'reference_document_chunks')",
+        "'reference_documents', 'reference_document_chunks', 'space_intelligence')",
     )
     required_columns = {
         "knowledge_spaces.id": "uuid:NO",
@@ -320,6 +328,18 @@ async def verify_head_schema(database_url: URL) -> None:
         "reference_document_chunks.page_number": "integer:NO",
         "reference_document_chunks.chunk_index": "integer:NO",
         "reference_document_chunks.embedding": "USER-DEFINED:NO",
+        "space_intelligence.id": "uuid:NO",
+        "space_intelligence.knowledge_space_id": "uuid:NO",
+        "space_intelligence.status": "character varying:NO",
+        "space_intelligence.input_signature": "character varying:NO",
+        "space_intelligence.summary": "text:NO",
+        "space_intelligence.key_facts": "jsonb:NO",
+        "space_intelligence.contradictions": "jsonb:NO",
+        "space_intelligence.dates": "jsonb:NO",
+        "space_intelligence.open_questions": "jsonb:NO",
+        "space_intelligence.provider": "character varying:NO",
+        "space_intelligence.processing_started_at": "timestamp with time zone:YES",
+        "space_intelligence.processing_attempt_id": "uuid:YES",
     }
     for column, expected in required_columns.items():
         if column_types.get(column) != expected:
@@ -366,6 +386,15 @@ async def verify_head_schema(database_url: URL) -> None:
         "reference_documents.status": "'ready'::character varying",
         "reference_documents.updated_at": "now()",
         "reference_document_chunks.created_at": "now()",
+        "space_intelligence.created_at": "now()",
+        "space_intelligence.updated_at": "now()",
+        "space_intelligence.status": "'processing'::character varying",
+        "space_intelligence.summary": "''::text",
+        "space_intelligence.key_facts": "'[]'::jsonb",
+        "space_intelligence.contradictions": "'[]'::jsonb",
+        "space_intelligence.dates": "'[]'::jsonb",
+        "space_intelligence.open_questions": "'[]'::jsonb",
+        "space_intelligence.model": "''::character varying",
     }
     for column, expected in expected_defaults.items():
         if defaults.get(column) != expected:
