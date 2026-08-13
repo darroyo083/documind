@@ -169,6 +169,7 @@ export interface DocumentResponse {
   page_count: number | null;
   status: "processing" | "ready" | "failed";
   error_message: string | null;
+  failure_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -226,6 +227,16 @@ export function deleteDocument(
   return request<void>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}`,
     { method: "DELETE" }
+  );
+}
+
+export function retryDocument(
+  spaceId: string,
+  documentId: string
+): Promise<DocumentResponse> {
+  return request<DocumentResponse>(
+    `/knowledge-spaces/${spaceId}/documents/${documentId}/retry`,
+    { method: "POST" }
   );
 }
 

@@ -4,6 +4,7 @@ import * as api from "../api";
 import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
 import ComparePanel from "../components/ComparePanel";
+import DocumentUpload from "../components/DocumentUpload";
 import IntelligencePanel from "../components/IntelligencePanel";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
@@ -45,8 +46,8 @@ export default function SpaceDetail() {
   const [documents, setDocuments] = useState<api.DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadingCount, setUploadingCount] = useState(0);
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<api.AnswerResponse | null>(null);
@@ -89,6 +90,18 @@ export default function SpaceDetail() {
         if (err instanceof Error) setError(err.message);
       })
       .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const refetch = () => {
+      api
+        .listDocuments(id)
+        .then(setDocuments)
+        .catch(() => undefined);
+    };
+    window.addEventListener("focus", refetch);
+    return () => window.removeEventListener("focus", refetch);
   }, [id]);
 
   useEffect(() => {
@@ -229,29 +242,42 @@ export default function SpaceDetail() {
     }
   }, [id, selectedDocumentId]);
 
-  async function handleUpload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!id) return;
-    const form = event.currentTarget;
-    const input = form.elements.namedItem("document") as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+  const handleDocumentAdded = useCallback(
+    (document: api.DocumentResponse) => {
+      setDocuments((current) => {
+        const withoutDuplicate = current.filter((item) => item.id !== document.id);
+        return [document, ...withoutDuplicate];
+      });
+      setSelectedDocumentId((current) => current ?? document.id);
+    },
+    []
+  );
 
-    setUploading(true);
-    setUploadError("");
-    try {
-      const uploaded = await api.uploadDocument(id, file);
-      setDocuments((current) => [uploaded, ...current]);
-      setSelectedDocumentId((current) => current ?? uploaded.id);
-      form.reset();
-    } catch (err: unknown) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
-      const refreshed = await api.listDocuments(id).catch(() => null);
-      if (refreshed) setDocuments(refreshed);
-    } finally {
-      setUploading(false);
-    }
-  }
+  const handleUploadingChange = useCallback((count: number) => {
+    setUploadingCount(count);
+  }, []);
+
+  const handleRetryDocument = useCallback(
+    async (documentId: string) => {
+      if (!id) return;
+      setUploadError("");
+      try {
+        const updated = await api.retryDocument(id, documentId);
+        setDocuments((current) =>
+          current.map((document) => (document.id === updated.id ? updated : document))
+        );
+      } catch (err: unknown) {
+        setUploadError(
+          err instanceof api.ApiError && err.status === 409
+            ? "This document is already being processed."
+            : err instanceof Error
+              ? err.message
+              : "Retry failed."
+        );
+      }
+    },
+    [id]
+  );
 
   async function handleDelete(documentId: string, filename: string) {
     if (!id) return;
@@ -331,6 +357,14 @@ export default function SpaceDetail() {
     );
   }
 
+  const readyCount = documents.filter((document) => document.status === "ready").length;
+  const processingCount =
+    documents.filter((document) => document.status === "processing").length + uploadingCount;
+  const failedCount = documents.filter((document) => document.status === "failed").length;
+  const aggregateStatusText =
+    `${documents.length} document${documents.length === 1 ? "" : "s"} · ` +
+    `${readyCount} ready · ${processingCount} processing · ${failedCount} failed`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white shadow-sm">
@@ -355,30 +389,21 @@ export default function SpaceDetail() {
               <p className="mt-1 text-sm text-gray-500">
                 Upload text-based PDFs up to 10 MB. Scanned pages are not supported yet.
               </p>
-              <form onSubmit={handleUpload} className="mt-4">
-                <label className="block text-sm font-medium text-gray-700" htmlFor="document">
-                  PDF file
-                </label>
-                <input
-                  id="document"
-                  name="document"
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  required
-                  disabled={uploading}
-                  className="mt-2 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+              <div className="mt-4">
+                <DocumentUpload
+                  spaceId={id as string}
+                  onDocumentAdded={handleDocumentAdded}
+                  onUploadingChange={handleUploadingChange}
                 />
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="mt-3 w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {uploading ? "Processing PDF..." : "Upload and process"}
-                </button>
-              </form>
+              </div>
               {uploadError && (
                 <p role="alert" className="mt-3 text-sm text-red-600">
                   {uploadError}
+                </p>
+              )}
+              {documents.length > 0 && (
+                <p className="mt-3 text-xs text-gray-500" aria-live="polite">
+                  {aggregateStatusText}
                 </p>
               )}
             </div>
@@ -415,6 +440,15 @@ export default function SpaceDetail() {
                           {` · ${(document.file_size / 1024).toFixed(1)} KB`}
                         </p>
                       </button>
+                      {document.status === "failed" && (
+                        <button
+                          type="button"
+                          onClick={() => handleRetryDocument(document.id)}
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Retry
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDelete(document.id, document.original_filename)}
@@ -425,7 +459,11 @@ export default function SpaceDetail() {
                       </button>
                     </div>
                     {document.error_message && (
-                      <p className="mt-2 text-sm text-red-600">{document.error_message}</p>
+                      <p className="mt-2 text-sm text-red-600">
+                        {document.failure_code === "no_extractable_text"
+                          ? "No extractable text. Scanned PDFs are not supported."
+                          : document.error_message}
+                      </p>
                     )}
                   </article>
                 );
