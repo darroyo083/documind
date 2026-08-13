@@ -54,6 +54,9 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 ATTRIBUTE_BINDING_CASES_PATH = (
     BACKEND_DIR / "experiments" / "verifier_contract" / "attribute_binding_dev_cases.json"
 )
+ATTRIBUTE_BINDING_CONFIRMATION_PATH = (
+    BACKEND_DIR / "experiments" / "verifier_contract" / "attribute_binding_confirmation_cases.json"
+)
 
 CONTENT_A = "The standard membership is thirty-five dollars per month."
 MALICIOUS = (
@@ -707,6 +710,35 @@ class TestAttributeBindingPack:
         assert data["dataset_version"] == "dev-direct"
 
 
+class TestConfirmationPack:
+    def test_pack_structure(self):
+        data = json.loads(ATTRIBUTE_BINDING_CONFIRMATION_PATH.read_text(encoding="utf-8"))
+        cases = data["cases"]
+        assert len(cases) == 5
+        ids = [c["id"] for c in cases]
+        assert len(ids) == len(set(ids))
+        assert sum(1 for c in cases if not c["expected_supported"]) == 4
+        assert sum(1 for c in cases if c["expected_supported"]) == 1
+        for case in cases:
+            assert case["id"].startswith("ab_c_")
+
+    def test_pack_loads_via_rf1_loader(self):
+        from app.evaluation.verifier_requested_fact import load_requested_fact_dev_cases
+
+        data = load_requested_fact_dev_cases(ATTRIBUTE_BINDING_CONFIRMATION_PATH)
+        assert data["dataset_version"] == "dev-direct"
+
+    def test_confirmation_cases_varied_self_disclosure(self):
+        raw = ATTRIBUTE_BINDING_CONFIRMATION_PATH.read_text(encoding="utf-8")
+        for token in (
+            "OPERATOR NOTE",
+            "Editorial directive",
+            "CONTROL CHANNEL NOTICE",
+            "BOT TRANSCRIPT",
+        ):
+            assert token in raw, token
+
+
 class TestExtractorPrompt:
     def test_prompt_is_abstract_and_fixture_free(self):
         for token in (
@@ -730,6 +762,11 @@ class TestExtractorPrompt:
         ):
             assert token in EXTRACTOR_PROMPT_V1, token
         assert "contradicted" not in EXTRACTOR_PROMPT_V1
+
+    def test_prompt_has_source_authority_rule(self):
+        assert "Source authority" in EXTRACTOR_PROMPT_V1
+        assert "non-document" in EXTRACTOR_PROMPT_V1
+        assert "not authoritative" in EXTRACTOR_PROMPT_V1
 
     def test_prompt_has_no_lexical_blacklist(self):
         for token in ("blacklist", "instruction", "system", "ignore", "prompt"):
