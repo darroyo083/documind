@@ -1,0 +1,22 @@
+{
+  "experiment_name": "ab2_attribute_binding_fresh_v4_holdout",
+  "dataset_path": "app/evaluation/datasets/verifier_holdout_v4.json",
+  "dataset_name": "verifier_holdout_v4",
+  "dataset_version": "v4",
+  "dataset_canonical_sha256": "e46dce75586e0222cdffd21b4b4706a9a61302c79ce88ad36d3427133f256062",
+  "architecture": "AB2",
+  "verifier_provider": "opencode-go",
+  "verifier_model": "deepseek-v4-flash",
+  "verifier_base_url": "https://opencode.ai/zen/go/v1",
+  "verifier_endpoint": "/chat/completions",
+  "prompt_digests": {
+    "requested_fact_v1": "FDA7119026BBC69ED3F736033319828123DAE7DAA2711C914B2AEA49E5725EF2",
+    "selector_v1": "15B8E165F06F5ED05547B8D9BBB6C37A48D7CBA55603D6EF4F8C2C19217CFB87",
+    "extractor_v1": "750E986949B678C261A4762B483CEA666CEBC3ABCC9E9518CA55D8771647BC09"
+  },
+  "frozen": true,
+  "query_count": 24,
+  "answerable_count": 12,
+  "unsupported_count": 12,
+  "expected_verifier_calls": 72
+}

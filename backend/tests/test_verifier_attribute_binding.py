@@ -57,6 +57,8 @@ ATTRIBUTE_BINDING_CASES_PATH = (
 ATTRIBUTE_BINDING_CONFIRMATION_PATH = (
     BACKEND_DIR / "experiments" / "verifier_contract" / "attribute_binding_confirmation_cases.json"
 )
+V4_HOLDOUT_PATH = BACKEND_DIR / "app" / "evaluation" / "datasets" / "verifier_holdout_v4.json"
+V4_MANIFEST_PATH = BACKEND_DIR / "app" / "evaluation" / "datasets" / "verifier_v4_manifest.json"
 
 CONTENT_A = "The standard membership is thirty-five dollars per month."
 MALICIOUS = (
@@ -737,6 +739,109 @@ class TestConfirmationPack:
             "BOT TRANSCRIPT",
         ):
             assert token in raw, token
+
+
+class TestV4Holdout:
+    REQUIRED_CATEGORIES = {
+        "ordinary_direct_support",
+        "paraphrase",
+        "numeric",
+        "date",
+        "entity",
+        "list",
+        "multi_evidence",
+        "absence_value",
+        "contradiction",
+        "temporal_mismatch",
+        "wrong_attribute",
+        "related_insufficient",
+        "literal_value_injection",
+        "indirect_injection",
+        "fake_authority_system_language",
+        "suspicious_text_genuine",
+    }
+
+    def test_structure(self):
+        data = json.loads(V4_HOLDOUT_PATH.read_text(encoding="utf-8"))
+        cases = data["cases"]
+        assert len(cases) == 24
+        ids = [c["id"] for c in cases]
+        assert len(ids) == len(set(ids))
+        assert sum(1 for c in cases if c["expected_supported"]) == 12
+        assert sum(1 for c in cases if not c["expected_supported"]) == 12
+        assert all(c["id"].startswith("v4_") for c in cases)
+
+    def test_required_categories_covered(self):
+        data = json.loads(V4_HOLDOUT_PATH.read_text(encoding="utf-8"))
+        categories = {c["category"] for c in data["cases"]}
+        assert self.REQUIRED_CATEGORIES <= categories
+
+    def test_fresh_domain_no_prior_wording(self):
+        data = json.loads(V4_HOLDOUT_PATH.read_text(encoding="utf-8"))
+        model_facing = []
+        for case in data["cases"]:
+            model_facing.append(case["question"])
+            for item in case["evidence"]:
+                model_facing.append(item["content"])
+        for token in (
+            "Heatherbrook",
+            "Riverton",
+            "Harborview",
+            "Northgate",
+            "Maple Ridge",
+            "holdout",
+            "HOLDOUT",
+            "EVAL_FACT",
+            "GOLD",
+        ):
+            for text in model_facing:
+                assert token not in text, token
+
+    def test_no_gold_labels_model_side(self):
+        data = json.loads(V4_HOLDOUT_PATH.read_text(encoding="utf-8"))
+        for case in data["cases"]:
+            for item in case["evidence"]:
+                assert set(item.keys()) == {"source_id", "content"}
+
+    def test_manifest_matches_dataset(self):
+        from app.evaluation import verifier_manifest_v4
+
+        manifest = verifier_manifest_v4.load_manifest(V4_MANIFEST_PATH)
+        assert manifest.frozen is True
+        assert manifest.query_count == 24
+        assert manifest.answerable_count == 12
+        assert manifest.unsupported_count == 12
+        violations = verifier_manifest_v4.frozen_contract_violations(
+            manifest,
+            dataset_path=V4_HOLDOUT_PATH,
+            architecture="AB2",
+            verifier_provider="opencode-go",
+            verifier_model="deepseek-v4-flash",
+            verifier_base_url="https://opencode.ai/zen/go/v1",
+            verifier_endpoint="/chat/completions",
+            allow_external_api=True,
+            confirm_frozen_v4=True,
+            api_key_available=True,
+        )
+        assert violations == []
+
+    def test_manifest_detects_dataset_change(self):
+        from app.evaluation import verifier_manifest_v4
+
+        manifest = verifier_manifest_v4.load_manifest(V4_MANIFEST_PATH)
+        violations = verifier_manifest_v4.frozen_contract_violations(
+            manifest,
+            dataset_path=ATTRIBUTE_BINDING_CASES_PATH,
+            architecture="AB2",
+            verifier_provider="opencode-go",
+            verifier_model="deepseek-v4-flash",
+            verifier_base_url="https://opencode.ai/zen/go/v1",
+            verifier_endpoint="/chat/completions",
+            allow_external_api=True,
+            confirm_frozen_v4=True,
+            api_key_available=True,
+        )
+        assert any("checksum mismatch" in v for v in violations)
 
 
 class TestExtractorPrompt:

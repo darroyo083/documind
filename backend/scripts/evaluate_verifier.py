@@ -135,6 +135,7 @@ from app.evaluation import (  # noqa: E402
     verifier_framing,
     verifier_manifest,
     verifier_manifest_v3,
+    verifier_manifest_v4,
     verifier_preflight,
     verifier_prompt,
     verifier_proof_eval,
@@ -175,6 +176,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--run-frozen-v3",
         action="store_true",
         help="Explicit confirmation for the one-shot OpenCode Go v3 holdout.",
+    )
+    parser.add_argument(
+        "--run-frozen-v4",
+        action="store_true",
+        help="Explicit confirmation for the one-shot AB2 attribute-binding V4 holdout.",
     )
     parser.add_argument(
         "--allow-external-api",
@@ -1136,6 +1142,29 @@ async def run_attribute_binding(args) -> int:
             print(f"Unknown dev case id(s): {unknown}")
             return 2
         cases = [case for case in cases if case["id"] in wanted]
+
+    if args.run_frozen_v4:
+        manifest = verifier_manifest_v4.load_manifest()
+        violations = verifier_manifest_v4.frozen_contract_violations(
+            manifest,
+            dataset_path=args.direct_cases,
+            architecture=verifier_attribute_binding_eval.ARCHITECTURE_AB2,
+            verifier_provider=args.provider,
+            verifier_model=args.verifier_model or verifier_providers.DEFAULT_OPENCODE_GO_MODEL,
+            verifier_base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
+            verifier_endpoint=verifier_providers.OPENCODE_GO_CHAT_ENDPOINT,
+            allow_external_api=args.allow_external_api,
+            confirm_frozen_v4=args.run_frozen_v4,
+            api_key_available=bool(os.environ.get("OPENCODE_GO_API_KEY", "").strip()),
+        )
+        if violations:
+            print("FROZEN V4 CONTRACT VIOLATIONS (refusing to run; no external call was made):")
+            for violation in violations:
+                print(f"  - {violation}")
+            return 2
+        if case_ids:
+            print("--run-frozen-v4 requires the full 24-case holdout (no --case-ids subset).")
+            return 2
 
     verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
     provider = build_attribute_binding_provider(args.provider, args.verifier_model)
