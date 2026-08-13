@@ -51,10 +51,6 @@ from app.infrastructure.models import (
 )
 
 
-def chunk_source_id(chunk: DocumentChunk) -> str:
-    return f"chunk:{chunk.id}"
-
-
 def space_intelligence_signature(documents: list[Document]) -> str:
     """Deterministic SHA-256 identity for the READY document state of a space.
 
@@ -111,32 +107,38 @@ async def build_intelligence_context(
     """Build the provider context from the full stored chunks of every READY doc.
 
     Documents are ordered canonically (sorted UUID); chunks within each document
-    by page then chunk index. No retrieval, re-extraction, or reference corpus.
+    by page then chunk index. Sources are labelled ``source_1``, ``source_2``, ...
+    (positional labels the model can cite verbatim) rather than raw UUIDs; the
+    server maps labels back to real chunks for citation validation.
     """
     document_contexts: list[IntelligenceDocumentContext] = []
     chunks_by_source_id: dict[str, DocumentChunk] = {}
+    counter = 0
     for document in documents:
         chunks = await load_ordered_chunks(db, document.id)
         if not chunks:
             raise IntelligenceStateError(
                 f"Document '{document.original_filename}' has no chunks to analyze"
             )
+        sources: list[AnalysisSource] = []
+        for chunk in chunks:
+            counter += 1
+            source_id = f"source_{counter}"
+            sources.append(
+                AnalysisSource(
+                    source_id=source_id,
+                    page_number=chunk.page_number,
+                    content=chunk.content,
+                )
+            )
+            chunks_by_source_id[source_id] = chunk
         document_contexts.append(
             IntelligenceDocumentContext(
                 document_id=document.id,
                 title=document.original_filename,
-                sources=[
-                    AnalysisSource(
-                        source_id=chunk_source_id(chunk),
-                        page_number=chunk.page_number,
-                        content=chunk.content,
-                    )
-                    for chunk in chunks
-                ],
+                sources=sources,
             )
         )
-        for chunk in chunks:
-            chunks_by_source_id[chunk_source_id(chunk)] = chunk
     context = SpaceIntelligenceContext(documents=document_contexts)
     if context.total_chars() > settings.intelligence_max_context_chars:
         raise IntelligenceContextTooLargeError(
