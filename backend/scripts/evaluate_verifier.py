@@ -128,6 +128,7 @@ from app.evaluation import (  # noqa: E402
     dataset,
     runner,
     verifier,
+    verifier_attribute_binding_eval,
     verifier_dataset,
     verifier_dev_cases,
     verifier_eval,
@@ -324,6 +325,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "stage 3 answerability over server-verified proofs only. Experimental "
         "requested-fact prompts only; frozen v2/v3 modes and "
         "prompt/schema/framing flags are rejected in this mode.",
+    )
+    parser.add_argument(
+        "--attribute-binding-architecture",
+        choices=["AB2"],
+        default=None,
+        dest="attribute_binding_architecture",
+        help="Attribute-Binding (AB2) three-stage verifier architecture mode "
+        "(requires --direct-cases). Stage 1 derives the requested fact from the "
+        "QUESTION ONLY; stage 2 selects exact proofs; stage 3 independently "
+        "extracts a structured fact (subject/attribute/value/polarity) and the "
+        "server composes supported deterministically. Experimental; frozen "
+        "v2/v3 modes and prompt/schema/framing flags are rejected in this mode.",
     )
     return parser.parse_args(argv)
 
@@ -1076,6 +1089,189 @@ async def run_requested_fact(args) -> int:
     return 0
 
 
+async def run_attribute_binding(args) -> int:
+    """Attribute-Binding (AB2) architecture mode (--attribute-binding-architecture AB2).
+
+    Three provider calls per case: requested-fact derivation (question only),
+    exact-proof selection, and independent structured fact extraction over
+    server-verified proofs only. Runs over direct-drive dev cases only. Frozen
+    v2/v3 modes and any explicit prompt/schema/framing version are rejected.
+    Provider/transport failures abort with a persisted partial report (exit 3).
+    """
+    if not args.direct_cases:
+        print(
+            "--attribute-binding-architecture requires --direct-cases (dev suites "
+            "only; frozen v2/v3 holdouts cannot run in AB2 mode)."
+        )
+        return 2
+    for flag, label in (
+        (args.run_frozen_v2, "--run-frozen-v2"),
+        (args.run_frozen_v3, "--run-frozen-v3"),
+    ):
+        if flag:
+            print(
+                f"{label} is incompatible with --attribute-binding-architecture "
+                "(frozen manifest gates reject AB2 mode)."
+            )
+            return 2
+    for value, label in (
+        (args.prompt_version, "--prompt-version"),
+        (args.schema_version, "--schema-version"),
+        (args.framing_version, "--framing-version"),
+    ):
+        if value is not None:
+            print(
+                f"{label} is not supported in --attribute-binding-architecture mode "
+                "(experimental AB2 prompts replace prompt/schema/framing)."
+            )
+            return 2
+
+    dataset_data = verifier_requested_fact.load_requested_fact_dev_cases(args.direct_cases)
+    cases = dataset_data["cases"]
+    case_ids = parse_id_list(args.case_ids)
+    if case_ids:
+        wanted = set(case_ids)
+        unknown = sorted(wanted - {case["id"] for case in cases})
+        if unknown:
+            print(f"Unknown dev case id(s): {unknown}")
+            return 2
+        cases = [case for case in cases if case["id"] in wanted]
+
+    verifier_providers.ensure_external_api_opt_in(args.provider, args.allow_external_api)
+    provider = build_attribute_binding_provider(args.provider, args.verifier_model)
+
+    planned_calls = len(cases) * verifier_attribute_binding_eval.PLANNED_CALLS_PER_CASE
+    if args.max_calls is not None and planned_calls > args.max_calls:
+        print(
+            f"AB2 call-budget violation: planned {planned_calls} calls for "
+            f"{len(cases)} case(s) under architecture AB2 exceed "
+            f"--max-calls {args.max_calls}. No provider call was made."
+        )
+        return 2
+
+    started = time.perf_counter()
+    provider_abort = None
+    try:
+        evaluation = await verifier_attribute_binding_eval.run_attribute_binding_evaluation(
+            cases,
+            provider,
+            stop_on_provider_error=True,
+        )
+    except verifier_attribute_binding_eval.AttributeBindingProviderAbortError as exc:
+        provider_abort = exc
+        evaluation = exc.evaluation
+    runtime_seconds = time.perf_counter() - started
+
+    output_dir = args.output_dir or POC_3F_E1D_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report = verifier_attribute_binding_eval.build_attribute_binding_json_report(
+        architecture=verifier_attribute_binding_eval.ARCHITECTURE_AB2,
+        dataset_path=args.direct_cases,
+        dataset_version=dataset_data["dataset_version"],
+        provider=args.provider,
+        model=provider.model_name,
+        external_api=args.provider in verifier_providers.EXTERNAL_PROVIDERS,
+        runtime_seconds=runtime_seconds,
+        git_commit=git_commit(),
+        evaluation=evaluation,
+        max_calls=args.max_calls,
+    )
+    if provider_abort is not None:
+        report["benchmark"]["partial_failure"] = {
+            "first_failing_case": provider_abort.case_id,
+            "attempted_calls": evaluation.verifier_calls,
+            "successful_calls": evaluation.verifier_calls - 1,
+            "failure_type": "provider_error",
+            "planned_cases": len(cases),
+            "unexecuted_cases": len(cases) - evaluation.verifier_calls,
+        }
+    json_path = output_dir / f"{args.output_name}.json"
+    md_path = output_dir / f"{args.output_name}.md"
+    verifier_reporting.write_json_report(report, json_path)
+    md_path.write_text(
+        verifier_attribute_binding_eval.render_attribute_binding_markdown(report),
+        encoding="utf-8",
+    )
+
+    print("")
+    print("Attribute-Binding (AB2) verifier architecture (direct cases, no retrieval)")
+    print(f"Dataset: {args.direct_cases}")
+    print(f"Cases: {len(cases)}")
+    print("Architecture: AB2 (3 calls per case, stage-isolated)")
+    print(f"Provider: {args.provider} ({provider.model_name})")
+    print(f"Planned calls: {planned_calls}")
+    print(f"Verifier calls: {evaluation.verifier_calls}")
+    valid_count = sum(1 for outcome in evaluation.outcomes if not outcome.invalid)
+    print(f"Valid outputs: {valid_count}/{len(evaluation.outcomes)}")
+    print(f"Invalid outputs: {len(evaluation.invalid_outputs)}")
+    provider_failures = sum(
+        1 for outcome in evaluation.invalid_outputs if outcome.error_kind == "provider_error"
+    )
+    print(f"Provider failures: {provider_failures}")
+    print(f"False supports: {len(evaluation.false_supports)}")
+    print(f"False rejections: {len(evaluation.false_rejections)}")
+    overall = report["metrics"].get("overall", {})
+    if overall:
+        print(
+            f"Metrics: accuracy={overall.get('accuracy')} "
+            f"retention={overall.get('answerable_retention')} "
+            f"detection={overall.get('unsupported_detection')} "
+            f"balanced_accuracy={overall.get('balanced_accuracy')}"
+        )
+    print("Reports:")
+    print(f"  {json_path}")
+    print(f"  {md_path}")
+
+    if provider_abort is not None:
+        print("AB2 run stopped after the first provider failure; no later case was called.")
+        print(f"First failing case: {provider_abort.case_id}")
+        return 3
+
+    expected_calls = args.expected_verifier_calls
+    if expected_calls is not None and evaluation.verifier_calls != expected_calls:
+        print(
+            f"Expected verifier call count mismatch: expected {expected_calls}, "
+            f"observed {evaluation.verifier_calls}."
+        )
+        return 2
+    return 0
+
+
+def build_attribute_binding_provider(provider: str, model: str | None):
+    """Instantiate the AB2 provider (never executes a model call).
+
+    Reuses the E1c :class:`ProofChatAdapter` transport; the mock dispatches on
+    the system prompt.
+    """
+    if provider == "mock":
+        return verifier_attribute_binding_eval.MockAttributeBindingProvider()
+    if provider == "deepseek":
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'deepseek' requires the DEEPSEEK_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_DEEPSEEK_MODEL,
+            base_url=verifier_providers.DEFAULT_DEEPSEEK_BASE_URL,
+        )
+    if provider == "opencode-go":
+        api_key = os.environ.get("OPENCODE_GO_API_KEY", "").strip()
+        if not api_key:
+            raise SystemExit(
+                "Provider 'opencode-go' requires the OPENCODE_GO_API_KEY environment "
+                "variable. The key is never printed by this tool."
+            )
+        return verifier_proof_eval.ProofChatAdapter(
+            api_key=api_key,
+            model=model or verifier_providers.DEFAULT_OPENCODE_GO_MODEL,
+            base_url=verifier_providers.DEFAULT_OPENCODE_GO_BASE_URL,
+        )
+    raise SystemExit(f"Unknown verifier provider {provider!r}")
+
+
 def build_proof_provider(provider: str, model: str | None):
     """Instantiate the E1c proof provider (never executes a model call)."""
     if provider == "mock":
@@ -1147,6 +1343,9 @@ async def main() -> int:
 
     if args.requested_fact_architecture:
         return await run_requested_fact(args)
+
+    if args.attribute_binding_architecture:
+        return await run_attribute_binding(args)
 
     if args.e1c_architecture:
         return await run_e1c(args)
