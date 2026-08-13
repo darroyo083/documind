@@ -344,6 +344,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "server composes supported deterministically. Experimental; frozen "
         "v2/v3 modes and prompt/schema/framing flags are rejected in this mode.",
     )
+    parser.add_argument(
+        "--inter-call-delay",
+        type=float,
+        default=0.0,
+        help="Optional seconds to wait between provider calls (rate-limit "
+        "pacing for AB2/one-shot runs). Does not change any semantic behavior.",
+    )
     return parser.parse_args(argv)
 
 
@@ -1185,6 +1192,7 @@ async def run_attribute_binding(args) -> int:
             cases,
             provider,
             stop_on_provider_error=True,
+            inter_call_delay_seconds=args.inter_call_delay,
         )
     except verifier_attribute_binding_eval.AttributeBindingProviderAbortError as exc:
         provider_abort = exc

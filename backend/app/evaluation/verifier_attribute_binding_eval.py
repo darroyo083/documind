@@ -17,6 +17,7 @@ map to :class:`VerifierProviderError` and may abort via ``stop_on_provider_error
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -268,6 +269,7 @@ async def run_attribute_binding_evaluation(
     provider: AttributeBindingProvider,
     *,
     stop_on_provider_error: bool = False,
+    inter_call_delay_seconds: float = 0.0,
 ) -> AttributeBindingEvaluation:
     outcomes: list[AttributeBindingCaseOutcome] = []
     ledger: list[AttributeBindingCallRecord] = []
@@ -284,6 +286,7 @@ async def run_attribute_binding_evaluation(
             evidence,
             sources,
             provider,
+            inter_call_delay_seconds,
         )
         records = _with_final_supported(records, outcome.supported)
         ledger.extend(records)
@@ -304,10 +307,18 @@ async def _run_case(
     evidence: Sequence[EvidenceItem],
     sources: dict[str, str],
     provider: AttributeBindingProvider,
+    inter_call_delay_seconds: float = 0.0,
 ) -> tuple[AttributeBindingCaseOutcome, list[AttributeBindingCallRecord], int]:
+    """Three-stage AB2 case: fact derivation, proof selection, extraction."""
+
+    async def _pace() -> None:
+        if inter_call_delay_seconds > 0:
+            await asyncio.sleep(inter_call_delay_seconds)
+
     records: list[AttributeBindingCallRecord] = []
 
     # ---- STAGE 1: requested-fact derivation (QUESTION ONLY) ----
+    await _pace()
     try:
         raw = await provider.complete(build_stage1_messages(question))
     except VerifierProviderError as error:
@@ -340,6 +351,7 @@ async def _run_case(
     records.append(_record(case_id, STAGE_REQUESTED_FACT, successful=True, structural_valid=True))
 
     # ---- STAGE 2: proof selection ----
+    await _pace()
     try:
         raw = await provider.complete(build_stage2_messages(question, fact, evidence))
     except VerifierProviderError as error:
@@ -389,6 +401,7 @@ async def _run_case(
             records,
             3,
         )
+    await _pace()
     try:
         raw = await provider.complete(build_extractor_messages(payload))
     except VerifierProviderError as error:
