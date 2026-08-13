@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as api from "../api";
 
 const MAX_CONCURRENCY = 3;
@@ -23,6 +23,8 @@ function clientValidationError(file: File): string | null {
   return null;
 }
 
+let itemCounter = 0;
+
 export default function DocumentUpload({
   spaceId,
   onDocumentAdded,
@@ -35,122 +37,96 @@ export default function DocumentUpload({
   const [items, setItems] = useState<UploadItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const itemsRef = useRef<UploadItem[]>([]);
-  const activeRef = useRef(0);
+  const inFlightRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
+  const syncItems = (updater: (items: UploadItem[]) => UploadItem[]) => {
+    itemsRef.current = updater(itemsRef.current);
+    setItems(itemsRef.current);
+  };
+
+  const uploadOne = async (item: UploadItem) => {
+    syncItems((current) =>
+      current.map((entry) => (entry.key === item.key ? { ...entry, state: "uploading" } : entry))
+    );
+    try {
+      const document = await api.uploadDocument(spaceId, item.file);
+      inFlightRef.current.delete(item.key);
+      syncItems((current) => current.filter((entry) => entry.key !== item.key));
+      onDocumentAdded(document);
+      pump();
+    } catch (err: unknown) {
+      inFlightRef.current.delete(item.key);
+      const message =
+        err instanceof api.ApiError
+          ? err.status === 422
+            ? "Rejected: this file could not be processed"
+            : err.detail || "Upload failed"
+          : "Upload failed";
+      syncItems((current) =>
+        current.map((entry) =>
+          entry.key === item.key ? { ...entry, state: "upload_failed", message } : entry
+        )
+      );
+      pump();
+    }
+  };
+
+  const pump = () => {
+    while (inFlightRef.current.size < MAX_CONCURRENCY) {
+      const next = itemsRef.current.find(
+        (item) => item.state === "queued" && !inFlightRef.current.has(item.key)
+      );
+      if (!next) break;
+      inFlightRef.current.add(next.key);
+      void uploadOne(next);
+    }
+  };
 
   useEffect(() => {
     onUploadingChange(items.filter((item) => item.state === "uploading").length);
   }, [items, onUploadingChange]);
 
-  const uploadOne = useCallback(
-    async (item: UploadItem) => {
-      activeRef.current += 1;
-      setItems((current) =>
-        current.map((entry) =>
-          entry.key === item.key ? { ...entry, state: "uploading" } : entry
-        )
-      );
-      try {
-        const document = await api.uploadDocument(spaceId, item.file);
-        setItems((current) => current.filter((entry) => entry.key !== item.key));
-        onDocumentAdded(document);
-      } catch (err: unknown) {
-        const message =
-          err instanceof api.ApiError
-            ? err.status === 422
-              ? "Rejected: this file could not be processed"
-              : err.detail || "Upload failed"
-            : "Upload failed";
-        setItems((current) =>
-          current.map((entry) =>
-            entry.key === item.key
-              ? { ...entry, state: "upload_failed", message }
-              : entry
-          )
-        );
-      } finally {
-        activeRef.current -= 1;
-        void pump();
-      }
-    },
-    [spaceId, onDocumentAdded]
-  );
+  const addFiles = (files: File[]) => {
+    const newItems: UploadItem[] = files.map((file) => {
+      itemCounter += 1;
+      const error = clientValidationError(file);
+      return {
+        key: `${itemCounter}-${file.name}-${file.lastModified}`,
+        file,
+        state: error ? "rejected" : "queued",
+        message: error ?? undefined,
+      };
+    });
+    syncItems((current) => [...current, ...newItems]);
+    pump();
+  };
 
-  const pump = useCallback(() => {
-    if (activeRef.current >= MAX_CONCURRENCY) return;
-    const queued = itemsRef.current.find((item) => item.state === "queued");
-    if (!queued) return;
-    setItems((current) =>
-      current.map((entry) =>
-        entry.key === queued.key ? { ...entry, state: "uploading" } : entry
-      )
-    );
-    void uploadOne(queued);
-  }, [uploadOne]);
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setDragging(false);
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) addFiles(files);
+  };
 
-  useEffect(() => {
-    void pump();
-  }, [items, pump]);
+  const handleSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) addFiles(files);
+    if (event.target) event.target.value = "";
+  };
 
-  const addFiles = useCallback(
-    (files: File[]) => {
-      const newItems: UploadItem[] = [];
-      for (const file of files) {
-        const error = clientValidationError(file);
-        if (error) {
-          newItems.push({
-            key: `${file.name}-${file.lastModified}-${newItems.length}-${Date.now()}`,
-            file,
-            state: "rejected",
-            message: error,
-          });
-        } else {
-          newItems.push({
-            key: `${file.name}-${file.lastModified}-${newItems.length}-${Date.now()}`,
-            file,
-            state: "queued",
-          });
-        }
-      }
-      setItems((current) => [...current, ...newItems]);
-    },
-    []
-  );
-
-  const handleDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      setDragging(false);
-      const files = Array.from(event.dataTransfer.files);
-      if (files.length > 0) addFiles(files);
-    },
-    [addFiles]
-  );
-
-  const handleSelect = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files ?? []);
-      if (files.length > 0) addFiles(files);
-      if (event.target) event.target.value = "";
-    },
-    [addFiles]
-  );
-
-  const retryUpload = useCallback((item: UploadItem) => {
-    setItems((current) =>
+  const retryUpload = (item: UploadItem) => {
+    syncItems((current) =>
       current.map((entry) =>
         entry.key === item.key ? { ...entry, state: "queued", message: undefined } : entry
       )
     );
-  }, []);
+    pump();
+  };
 
-  const removeItem = useCallback((item: UploadItem) => {
-    setItems((current) => current.filter((entry) => entry.key !== item.key));
-  }, []);
+  const removeItem = (item: UploadItem) => {
+    syncItems((current) => current.filter((entry) => entry.key !== item.key));
+  };
 
   return (
     <div>
