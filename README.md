@@ -594,6 +594,36 @@ A Space accepts multiple PDFs at once with independent per-document state:
   synchronous (extraction/chunking/embedding run within the request).
 - Migration head: `011`.
 
+### Cross-Space Search (PoC 4E)
+
+Search across every Space you own from one place (press `Ctrl/Cmd+K` or the
+header **Search** link):
+
+```text
+GET /search?q=termination&space_ids=<id>&limit=20
+```
+
+- **One embedding, one query.** The query is embedded once and matched against
+  READY private-document chunks across all the user's Spaces in a single
+  pgvector query — no per-Space queries. Ownership is enforced in the SQL
+  `WHERE` clause (joined to the current user) before ranking, so another user's
+  chunks never enter candidates.
+- **Grounded results.** Each hit shows the Space name, document name, page
+  number, and a server-derived excerpt. Clicking a result navigates into that
+  Space and selects the document. Results are collapsed to at most 3 per
+  document (highest-scoring per page) and bounded to `SEARCH_MAX_RESULTS`.
+- **Space filter.** Narrow results to one or more of your Spaces; a foreign
+  Space ID simply matches nothing.
+- **Semantic, not lexical.** Search uses the existing embedding model, so
+  paraphrases match ("how do I end the agreement" finds a "termination clause").
+  There is no full-text/lexical index; very specific identifiers (e.g. a long
+  invoice number) can be weaker. Vector similarity is a compressed score range,
+  so an unrelated query may still return low-similarity results — results are
+  ranked, and relevance degrades rather than erroring.
+- **Scope.** Private Space documents only. The shared reference library is not
+  searched in PoC 4E. This is search, not global Ask.
+- Migration head remains `011` (no schema change).
+
 ## Development defaults and mock behavior
 
 The default `GENERATION_PROVIDER=mock` is for local development only. It does **not** call an
