@@ -100,6 +100,19 @@ async def test_deepseek_parses_valid_structured_analysis(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_deepseek_accepts_null_normalized_title(monkeypatch):
+    payload = deepseek_result()
+    payload["normalized_title"] = None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return wrap_content(json.dumps(payload))
+
+    provider = provider_with_transport(monkeypatch, handler)
+    result = await provider.analyze(context())
+    assert result.normalized_title == ""
+
+
+@pytest.mark.asyncio
 async def test_deepseek_rejects_non_json_content(monkeypatch):
     provider = provider_with_transport(monkeypatch, lambda request: wrap_content("not json"))
     with pytest.raises(ProviderError):

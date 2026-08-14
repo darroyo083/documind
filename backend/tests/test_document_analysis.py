@@ -1,4 +1,3 @@
-import re
 import uuid
 from datetime import UTC, datetime
 
@@ -497,7 +496,7 @@ async def test_duplicate_source_ids_are_deduplicated(
                         label="Effective date",
                         value="1 September 2026",
                         normalized_date="2026-09-01",
-                        source_ids=[f"chunk:{real_chunk}", f"chunk:{real_chunk}"],
+                        source_ids=["source_1", "source_1"],
                     )
                 ],
                 key_facts=[],
@@ -613,19 +612,58 @@ async def test_empty_provider_response_is_rejected(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_source_ids_use_stable_chunk_format(async_client: AsyncClient):
+async def test_source_ids_use_stable_positional_labels(async_client: AsyncClient):
     token = await register_user(async_client, "analysis-stable@test.com")
     space = await create_space(async_client, token)
-    document = (await upload_pdf(async_client, token, space["id"], ["alpha beta"])).json()
+    document = (
+        await upload_pdf(
+            async_client,
+            token,
+            space["id"],
+            ["Page one content", "Page two content", "Page three content"],
+        )
+    ).json()
     stub = StubAnalysisProvider()
     install_provider(stub)
 
     await async_client.post(analysis_path(space["id"], document["id"]), headers=auth_header(token))
-    source_regex = re.compile(r"chunk:[0-9a-f-]{36}")
     assert stub.context is not None
-    for source in stub.context.sources:
-        assert source_regex.fullmatch(source.source_id)
+    assert [source.source_id for source in stub.context.sources] == [
+        "source_1",
+        "source_2",
+        "source_3",
+    ]
     assert stub.context.document_id == uuid.UUID(document["id"])
+
+
+@pytest.mark.asyncio
+async def test_analysis_accepts_missing_title(async_client: AsyncClient):
+    token = await register_user(async_client, "analysis-notitle@test.com")
+    space = await create_space(async_client, token)
+    document = (await upload_pdf(async_client, token, space["id"], ["alpha beta"])).json()
+    install_provider(
+        StubAnalysisProvider(
+            result=ProviderDocumentAnalysis(
+                document_type="contract",
+                normalized_title="",
+                summary="A title-less document.",
+                important_dates=[],
+                key_facts=[
+                    ProviderKeyFact(
+                        label="Termination notice",
+                        value="30 days",
+                        source_ids=["source_1"],
+                    )
+                ],
+            )
+        )
+    )
+
+    response = await async_client.post(
+        analysis_path(space["id"], document["id"]), headers=auth_header(token)
+    )
+    assert response.status_code == 201
+    assert response.json()["normalized_title"] == ""
 
 
 @pytest.mark.asyncio
@@ -918,7 +956,6 @@ async def test_partial_date_stays_null(
     token = await register_user(async_client, "analysis-partial@test.com")
     space = await create_space(async_client, token)
     document = (await upload_pdf(async_client, token, space["id"], ["alpha beta"])).json()
-    real_chunk = await first_chunk_id(db_session, document["id"])
     install_provider(
         StubAnalysisProvider(
             result=ProviderDocumentAnalysis(
@@ -930,7 +967,7 @@ async def test_partial_date_stays_null(
                         label="Validity",
                         value="January 2027",
                         normalized_date=None,
-                        source_ids=[f"chunk:{real_chunk}"],
+                        source_ids=["source_1"],
                     )
                 ],
                 key_facts=[],

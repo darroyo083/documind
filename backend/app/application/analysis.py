@@ -37,10 +37,6 @@ from app.infrastructure.models import (
 )
 
 
-def chunk_source_id(chunk: DocumentChunk) -> str:
-    return f"chunk:{chunk.id}"
-
-
 async def load_ordered_chunks(
     db: AsyncSession,
     document_id: uuid.UUID,
@@ -57,22 +53,33 @@ def build_context(
     document: Document,
     chunks: list[DocumentChunk],
     max_context_chars: int,
-) -> DocumentAnalysisContext:
-    sources = [
-        AnalysisSource(
-            source_id=chunk_source_id(chunk),
-            page_number=chunk.page_number,
-            content=chunk.content,
+) -> tuple[DocumentAnalysisContext, dict[str, DocumentChunk]]:
+    """Build the provider context with positional ``source_1..N`` labels.
+
+    Positional labels are used instead of raw UUIDs so a real model reproduces
+    citations reliably. The returned map resolves labels back to real chunks for
+    server-side citation validation; the model can never address arbitrary
+    internal IDs.
+    """
+    sources: list[AnalysisSource] = []
+    chunks_by_source_id: dict[str, DocumentChunk] = {}
+    for index, chunk in enumerate(chunks, start=1):
+        source_id = f"source_{index}"
+        sources.append(
+            AnalysisSource(
+                source_id=source_id,
+                page_number=chunk.page_number,
+                content=chunk.content,
+            )
         )
-        for chunk in chunks
-    ]
+        chunks_by_source_id[source_id] = chunk
     context = DocumentAnalysisContext(document_id=document.id, sources=sources)
     if len(context.render()) > max_context_chars:
         raise AnalysisContextTooLargeError(
             "Document exceeds the supported analysis context size; "
             f"the limit is {max_context_chars} characters"
         )
-    return context
+    return context, chunks_by_source_id
 
 
 def _validate_citation_sources(
@@ -157,8 +164,6 @@ def validate_provider_analysis(
     document_type = parse_document_type(getattr(provider_result, "document_type", None))
     normalized_title = (provider_result.normalized_title or "").strip()
     summary = (provider_result.summary or "").strip()
-    if not normalized_title:
-        raise AnalysisValidationError("Provider did not return a normalized title")
     if len(normalized_title) > 500:
         raise AnalysisValidationError("Normalized title exceeds the allowed length")
     if len(summary) > settings.analysis_max_summary_length:
@@ -229,8 +234,9 @@ async def analyze_document(
         raise AnalysisStateError("Document has no chunks to analyze")
 
     document_id = document.id
-    context = build_context(document, chunks, settings.analysis_max_context_chars)
-    chunks_by_source_id = {chunk_source_id(chunk): chunk for chunk in chunks}
+    context, chunks_by_source_id = build_context(
+        document, chunks, settings.analysis_max_context_chars
+    )
 
     existing = await _existing_analysis(db, document_id)
     if existing is not None and existing.status == DocumentAnalysisStatus.READY.value:

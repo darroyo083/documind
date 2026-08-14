@@ -355,7 +355,11 @@ class DeepSeekDocumentAnalysisProvider:
         document_type = parsed.get("document_type")
         normalized_title = parsed.get("normalized_title")
         summary = parsed.get("summary")
-        if not isinstance(document_type, str) or not isinstance(normalized_title, str):
+        if not isinstance(document_type, str):
+            raise ProviderError("Document analysis provider returned invalid metadata")
+        if normalized_title is None:
+            normalized_title = ""
+        if not isinstance(normalized_title, str):
             raise ProviderError("Document analysis provider returned invalid metadata")
         if not isinstance(summary, str):
             summary = ""
