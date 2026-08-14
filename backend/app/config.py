@@ -118,6 +118,11 @@ class Settings(BaseSettings):
     default_similarity_threshold: float = 0.2
     max_question_length: int = 1000
 
+    search_max_query_length: int = Field(default=500, gt=0)
+    search_max_results: int = Field(default=30, gt=0)
+    search_max_per_document: int = Field(default=3, gt=0)
+    search_max_space_ids: int = Field(default=50, gt=0)
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

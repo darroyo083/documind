@@ -12,6 +12,7 @@ from app.api.health import router as health_router
 from app.api.intelligence import router as intelligence_router
 from app.api.knowledge_spaces import router as knowledge_spaces_router
 from app.api.reference import router as reference_router
+from app.api.search import router as search_router
 from app.config import settings
 from app.infrastructure import models as _models  # noqa: F401
 
@@ -48,3 +49,4 @@ app.include_router(actions_router)
 app.include_router(comparisons_router)
 app.include_router(intelligence_router)
 app.include_router(reference_router)
+app.include_router(search_router)
