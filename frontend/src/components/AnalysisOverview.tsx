@@ -8,17 +8,6 @@ import { formatIsoDate } from "../utils/date";
 import AnalysisSources from "./AnalysisSources";
 import DocumentTypeBadge from "./DocumentTypeBadge";
 
-function DevelopmentIndicator() {
-  return (
-    <span
-      className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800"
-      title="Generated using the local deterministic development provider."
-    >
-      Development analysis
-    </span>
-  );
-}
-
 function DateCard({ item }: { item: AnalysisImportantDate }) {
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -62,18 +51,12 @@ export default function AnalysisOverview({
   return (
     <div className="space-y-8">
       <section aria-labelledby="overview-heading">
-        <div className="flex flex-wrap items-center gap-3">
-          {analysis.provider === "mock" && <DevelopmentIndicator />}
-        </div>
-        <h2 id="overview-heading" className="mt-3 text-2xl font-semibold text-gray-900">
-          {analysis.normalized_title}
+        <h2 id="overview-heading" className="text-2xl font-semibold text-gray-900">
+          {analysis.normalized_title || "Untitled document"}
         </h2>
         <p className="mt-1 text-sm text-gray-500">{document.original_filename}</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <DocumentTypeBadge documentType={analysis.document_type} />
-          <p className="text-xs text-gray-400">
-            {analysis.provider} · {analysis.model}
-          </p>
         </div>
         {analysis.summary && (
           <p className="mt-4 max-w-prose leading-7 text-gray-800">{analysis.summary}</p>

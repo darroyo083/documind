@@ -237,11 +237,8 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-gray-900">Workspace intelligence</h2>
           <p className="mt-1 text-xs text-gray-400">
-            {data.provider && data.model
-              ? `${data.provider} · ${data.model}`
-              : "Generated intelligence"}
             {data.updated_at
-              ? ` · Last generated ${new Date(data.updated_at).toLocaleString()}`
+              ? `Last generated ${new Date(data.updated_at).toLocaleString()}`
               : ""}
           </p>
         </div>

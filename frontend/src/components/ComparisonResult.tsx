@@ -7,17 +7,6 @@ import type {
 } from "../api";
 import ComparisonSources, { FindingEvidence } from "./ComparisonSources";
 
-function DevelopmentIndicator() {
-  return (
-    <span
-      className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800"
-      title="Generated using the local deterministic development provider."
-    >
-      Development comparison
-    </span>
-  );
-}
-
 function DocumentChip({ name }: { name: string }) {
   return (
     <span
@@ -135,12 +124,9 @@ export default function ComparisonResult({
   return (
     <div className="space-y-8">
       <section aria-labelledby="comparison-heading">
-        <div className="flex flex-wrap items-center gap-3">
-          {comparison.provider === "mock" && <DevelopmentIndicator />}
-        </div>
         <h2
           id="comparison-heading"
-          className="mt-3 text-2xl font-semibold text-gray-900"
+          className="text-2xl font-semibold text-gray-900"
         >
           {comparison.title || "Comparison"}
         </h2>

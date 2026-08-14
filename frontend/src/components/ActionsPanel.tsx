@@ -27,17 +27,6 @@ export function mapActionError(status: number, detail: string): string {
   return detail || "Action extraction could not be completed.";
 }
 
-function DevelopmentIndicator() {
-  return (
-    <span
-      className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800"
-      title="Generated using the local deterministic development provider."
-    >
-      Development extraction
-    </span>
-  );
-}
-
 export default function ActionsPanel({
   document,
   view,
@@ -133,9 +122,6 @@ export default function ActionsPanel({
   if (view.kind === "ready") {
     return (
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {view.data.provider === "mock" && <DevelopmentIndicator />}
-        </div>
         <h2 className="text-lg font-semibold text-gray-900">Checklist</h2>
         {error && (
           <p role="alert" className="text-sm text-red-600">
