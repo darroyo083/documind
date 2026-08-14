@@ -3,6 +3,7 @@ import { useAuth } from "./auth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import SearchPage from "./pages/SearchPage";
 import SpaceDetail from "./pages/SpaceDetail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -36,6 +37,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SpaceDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <SearchPage />
           </ProtectedRoute>
         }
       />

@@ -59,6 +59,9 @@ export default function Dashboard() {
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <h1 className="text-xl font-bold text-indigo-600">DocuMind</h1>
           <div className="flex items-center gap-4">
+            <Link to="/search" className="text-sm text-indigo-600 hover:text-indigo-700">
+              Search
+            </Link>
             <span className="text-sm text-gray-600">{user?.display_name}</span>
             <button
               onClick={logout}

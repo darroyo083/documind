@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import * as api from "../api";
 import ActionsPanel, { ActionsView, mapActionError } from "../components/ActionsPanel";
 import AnalysisOverview from "../components/AnalysisOverview";
@@ -42,6 +42,8 @@ function mapAnalysisError(status: number, detail: string): string {
 
 export default function SpaceDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [space, setSpace] = useState<api.SpaceResponse | null>(null);
   const [documents, setDocuments] = useState<api.DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,13 @@ export default function SpaceDetail() {
           if (current && documentResponse.some((document) => document.id === current)) {
             return current;
           }
+          const requestedDocument = searchParams.get("document");
+          if (
+            requestedDocument &&
+            documentResponse.some((document) => document.id === requestedDocument)
+          ) {
+            return requestedDocument;
+          }
           return documentResponse[0]?.id ?? null;
         });
       })
@@ -91,6 +100,17 @@ export default function SpaceDetail() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        navigate("/search");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     if (!id) return;
@@ -372,7 +392,10 @@ export default function SpaceDetail() {
           <Link to="/" className="mr-4 text-indigo-600 hover:underline">
             &larr; Dashboard
           </Link>
-          <h1 className="text-xl font-bold text-indigo-600">{space.name}</h1>
+          <h1 className="flex-1 truncate text-xl font-bold text-indigo-600">{space.name}</h1>
+          <Link to="/search" className="ml-4 text-sm text-indigo-600 hover:text-indigo-700">
+            Search
+          </Link>
         </div>
       </header>
 

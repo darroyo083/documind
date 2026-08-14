@@ -550,3 +550,31 @@ export function generateIntelligence(spaceId: string): Promise<SpaceIntelligence
     method: "POST",
   });
 }
+
+/* Global cross-space search */
+
+export interface GlobalSearchHit {
+  chunk_id: string;
+  document_id: string;
+  document_name: string;
+  space_id: string;
+  space_name: string;
+  page_number: number;
+  excerpt: string;
+  score: number;
+}
+
+export function searchDocuments(
+  query: string,
+  spaceIds?: string[],
+  limit?: number,
+  signal?: AbortSignal
+): Promise<GlobalSearchHit[]> {
+  const params = new URLSearchParams();
+  params.set("q", query);
+  if (limit !== undefined) params.set("limit", String(limit));
+  for (const spaceId of spaceIds ?? []) {
+    params.append("space_ids", spaceId);
+  }
+  return request<GlobalSearchHit[]>(`/search?${params.toString()}`, { signal });
+}
