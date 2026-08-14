@@ -25,9 +25,7 @@ async def global_search(
     embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
 ):
     try:
-        return await search_spaces(
-            db, current_user.id, q, embedding_provider, space_ids, limit
-        )
+        return await search_spaces(db, current_user.id, q, embedding_provider, space_ids, limit)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
