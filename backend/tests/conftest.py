@@ -44,6 +44,10 @@ os.environ["DATABASE_URL"] = test_database_url.render_as_string(hide_password=Fa
 os.environ["DEFAULT_SIMILARITY_THRESHOLD"] = "0.2"
 os.environ["EMBEDDING_PROVIDER"] = "mock"
 os.environ["GENERATION_PROVIDER"] = "mock"
+os.environ["ANALYSIS_PROVIDER"] = "mock"
+os.environ["ACTION_PROVIDER"] = "mock"
+os.environ["COMPARISON_PROVIDER"] = "mock"
+os.environ["INTELLIGENCE_PROVIDER"] = "mock"
 
 from app.application.dependencies import (  # noqa: E402
     get_answer_provider,

@@ -59,6 +59,13 @@ def get_answer_provider() -> AnswerProvider:
             base_url=settings.deepseek_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )
+    if settings.generation_provider == "opencode-go":
+        return DeepSeekAnswerProvider(
+            api_key=settings.opencode_go_api_key,
+            model_name=settings.opencode_go_model,
+            base_url=settings.opencode_go_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
     raise ProviderError("Unsupported answer provider configuration")
 
 
@@ -73,6 +80,13 @@ def get_analysis_provider() -> DocumentAnalysisProvider:
             base_url=settings.deepseek_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )
+    if settings.analysis_provider == "opencode-go":
+        return DeepSeekDocumentAnalysisProvider(
+            api_key=settings.opencode_go_api_key,
+            model_name=settings.opencode_go_model,
+            base_url=settings.opencode_go_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
     raise ProviderError("Unsupported document analysis provider configuration")
 
 
@@ -85,6 +99,13 @@ def get_action_provider() -> DocumentActionProvider:
             api_key=settings.deepseek_api_key,
             model_name=settings.action_model,
             base_url=settings.deepseek_base_url,
+            timeout_seconds=settings.provider_timeout_seconds,
+        )
+    if settings.action_provider == "opencode-go":
+        return DeepSeekDocumentActionProvider(
+            api_key=settings.opencode_go_api_key,
+            model_name=settings.opencode_go_model,
+            base_url=settings.opencode_go_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )
     raise ProviderError("Unsupported document action provider configuration")
@@ -104,7 +125,7 @@ def get_comparison_provider() -> DocumentComparisonProvider:
     if settings.comparison_provider == "opencode-go":
         return OpenCodeGoDocumentComparisonProvider(
             api_key=settings.opencode_go_api_key,
-            model_name=settings.comparison_model,
+            model_name=settings.opencode_go_model,
             base_url=settings.opencode_go_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )
@@ -125,7 +146,7 @@ def get_intelligence_provider() -> SpaceIntelligenceProvider:
     if settings.intelligence_provider == "opencode-go":
         return OpenCodeGoSpaceIntelligenceProvider(
             api_key=settings.opencode_go_api_key,
-            model_name=settings.intelligence_model,
+            model_name=settings.opencode_go_model,
             base_url=settings.opencode_go_base_url,
             timeout_seconds=settings.provider_timeout_seconds,
         )

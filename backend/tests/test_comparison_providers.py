@@ -270,7 +270,7 @@ def test_opencode_go_configuration_fields_are_explicit():
 
 def test_opencode_go_provider_selection(monkeypatch):
     monkeypatch.setattr(settings, "comparison_provider", "opencode-go")
-    monkeypatch.setattr(settings, "comparison_model", "deepseek-v4-flash")
+    monkeypatch.setattr(settings, "opencode_go_model", "deepseek-v4-flash")
     monkeypatch.setattr(settings, "opencode_go_api_key", "test-key")
     monkeypatch.setattr(settings, "opencode_go_base_url", "https://opencode.ai/zen/go/v1")
     get_comparison_provider.cache_clear()

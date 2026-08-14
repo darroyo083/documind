@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
+
+_BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -47,6 +51,7 @@ class Settings(BaseSettings):
     comparison_model: str = "deepseek-chat"
     opencode_go_api_key: str = ""
     opencode_go_base_url: str = "https://opencode.ai/zen/go/v1"
+    opencode_go_model: str = "deepseek-v4-flash"
     comparison_max_context_chars: int = Field(
         default=120000,
         gt=0,
@@ -123,7 +128,7 @@ class Settings(BaseSettings):
     search_max_per_document: int = Field(default=3, gt=0)
     search_max_space_ids: int = Field(default=50, gt=0)
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = {"env_file": str(_BASE_DIR / ".env"), "extra": "ignore"}
 
 
 settings = Settings()
