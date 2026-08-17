@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 
 import httpx
@@ -17,6 +18,8 @@ _DATE_PATTERN = re.compile(
     r"\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})\b",
     re.IGNORECASE,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DeterministicSpaceIntelligenceProvider:
@@ -112,6 +115,9 @@ class DeepSeekSpaceIntelligenceProvider:
             'open_questions is a list of {"question", "explanation", "source_ids"}; '
             "frame these as things the documents do not clearly specify, never as a "
             "claim that a fact is absent unless the documents clearly avoid the topic. "
+            "Return no more than 8 key_facts, 5 contradictions, 8 dates, and 5 "
+            "open_questions; when there are more candidates, keep only the most "
+            "important and best-supported items. "
             "Use ONLY the SOURCE ids shown as SOURCE <id> lines (they look like "
             "source_1, source_2, ...); never invent sources and never reword a "
             "source id. "
@@ -143,7 +149,26 @@ class DeepSeekSpaceIntelligenceProvider:
             raw_content = response.json()["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
             return self._parse(parsed)
-        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "Intelligence provider HTTP failure status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise ProviderError("Space intelligence provider failed") from exc
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "Intelligence provider transport failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
+            raise ProviderError("Space intelligence provider failed") from exc
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Intelligence provider response parsing failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
             raise ProviderError("Space intelligence provider failed") from exc
 
     def _parse(self, parsed: object) -> ProviderSpaceIntelligence:

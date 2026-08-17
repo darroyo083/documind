@@ -201,6 +201,7 @@ async def test_deepseek_parses_valid_structured_comparison(monkeypatch):
         assert "source_ids" in system_prompt
         assert "not_identified is true" in system_prompt
         assert "MUST be an empty list" in system_prompt
+        assert "never omit the finding" in system_prompt
         return wrap_content(json.dumps(deepseek_result()))
 
     provider = provider_with_transport(monkeypatch, handler)

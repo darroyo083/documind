@@ -47,6 +47,7 @@ async def test_deepseek_parses_valid_structured_response(monkeypatch):
         assert body["model"] == "deepseek-chat"
         assert body["response_format"] == {"type": "json_object"}
         assert "DocuMind evidence content" in body["messages"][1]["content"]
+        assert "including the private: or reference: prefix" in body["messages"][0]["content"]
         return httpx.Response(
             200,
             json={

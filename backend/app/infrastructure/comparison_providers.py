@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 
 import httpx
@@ -13,6 +14,8 @@ from app.domain.comparison import (
     document_ref,
 )
 from app.domain.errors import ProviderError
+
+logger = logging.getLogger(__name__)
 
 
 class DeterministicComparisonProvider:
@@ -310,6 +313,10 @@ class DeepSeekDocumentComparisonProvider:
             'dimensions is a list of {"label", "findings", "synthesis", "source_ids"}; '
             "findings is a list with EXACTLY one entry per supplied DOCUMENT, each "
             '{"document_ref", "value", "not_identified", "source_ids"}. '
+            "Every dimension MUST include exactly one finding for EVERY supplied "
+            "document, even when wording differs or a value is not identified. "
+            "Use not_identified=true only when that document has no relevant "
+            "statement in the supplied text; never omit the finding. "
             "document_ref MUST be one of the DOCUMENT <ref> lines shown, exactly as "
             "written; never invent document references. "
             "value must be null when that document does not state the fact, and "
@@ -355,7 +362,26 @@ class DeepSeekDocumentComparisonProvider:
             raw_content = response.json()["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
             return self._parse(parsed)
-        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "Comparison provider HTTP failure status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise ProviderError("Document comparison provider failed") from exc
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "Comparison provider transport failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
+            raise ProviderError("Document comparison provider failed") from exc
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Comparison provider response parsing failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
             raise ProviderError("Document comparison provider failed") from exc
 
     def _parse(self, parsed: object) -> ProviderComparisonResult:

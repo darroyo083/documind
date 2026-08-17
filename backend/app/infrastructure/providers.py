@@ -133,7 +133,9 @@ class DeepSeekAnswerProvider:
             "private (TYPE private, a user's own document) or reference (TYPE reference, "
             "a shared reference document). Do not claim a reference statement came from "
             "the user's private document, and do not claim private-document content is "
-            "general reference knowledge; when the distinction matters, phrase it clearly."
+            "general reference knowledge; when the distinction matters, phrase it clearly. "
+            "Return citation_source_ids exactly as shown, including the private: or "
+            "reference: prefix; never return a bare UUID or a chunk: identifier."
         )
         payload = {
             "model": self.model_name,

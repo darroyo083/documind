@@ -239,6 +239,33 @@ async def test_search_and_answer_include_verified_page_citations(async_client: A
 
 
 @pytest.mark.asyncio
+async def test_ask_normalizes_provider_uuid_citations_to_retrieved_sources(
+    async_client: AsyncClient,
+):
+    class BareUuidAnswerProvider:
+        @property
+        def model_name(self) -> str:
+            return "bare-uuid-test"
+
+        async def answer(self, question, context):
+            return GeneratedAnswer("The evidence is available.", True, [context[0].chunk_id])
+
+    token = await register_user(async_client, "retrieval-bare-uuid@test.com")
+    space = await create_space(async_client, token)
+    await upload_pdf(async_client, token, space["id"], "Reliable evidence is available here.")
+    app.dependency_overrides[get_answer_provider] = BareUuidAnswerProvider
+
+    answer = await async_client.post(
+        f"{SPACES_URL}/{space['id']}/ask",
+        json={"question": "What evidence is available?"},
+        headers=auth_header(token),
+    )
+    assert answer.status_code == 200
+    assert answer.json()["supported"] is True
+    assert answer.json()["citations"][0]["source_id"].startswith("private:")
+
+
+@pytest.mark.asyncio
 async def test_ask_returns_insufficient_context_without_results(async_client: AsyncClient):
     token = await register_user(async_client, "insufficient@test.com")
     space = await create_space(async_client, token)

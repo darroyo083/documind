@@ -503,6 +503,39 @@ async def test_cross_document_source_reference_is_rejected(
 
 
 @pytest.mark.asyncio
+async def test_provider_uuid_source_id_is_normalized_to_chunk_reference(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    token = await register_user(async_client, "actions-bare-source@test.com")
+    space = await create_space(async_client, token)
+    document = (await upload_pdf(async_client, token, space["id"], ["alpha beta"])).json()
+    real_chunk = await first_chunk_id(db_session, document["id"])
+    install_provider(
+        StubActionProvider(
+            result=ProviderDocumentActions(
+                actions=[
+                    ProviderAction(
+                        action_type="required_action",
+                        title="Submit the form",
+                        description=None,
+                        timing_text=None,
+                        due_date=None,
+                        source_ids=[str(real_chunk)],
+                    )
+                ]
+            )
+        )
+    )
+
+    response = await async_client.post(
+        actions_path(space["id"], document["id"]), headers=auth_header(token)
+    )
+    assert response.status_code == 201
+    assert response.json()["actions"][0]["sources"][0]["chunk_id"] == str(real_chunk)
+
+
+@pytest.mark.asyncio
 async def test_analysis_cannot_reference_another_users_chunk(
     async_client: AsyncClient,
     db_session: AsyncSession,

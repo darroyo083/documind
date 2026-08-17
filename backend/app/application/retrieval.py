@@ -166,6 +166,27 @@ def citation_from_chunk(chunk: RetrievedChunk) -> CitationResponse:
     )
 
 
+def _canonical_retrieved_source_id(
+    source_id: str,
+    by_source_id: dict[str, RetrievedChunk],
+) -> str:
+    """Resolve recoverable provider citation formatting without widening scope.
+
+    Providers occasionally return the retrieved chunk UUID without the
+    request-local ``private:``/``reference:`` namespace (or with the legacy
+    ``chunk:`` prefix). Only a candidate that maps to an already retrieved
+    chunk is accepted; unknown IDs remain unknown and are rejected below.
+    """
+    if source_id in by_source_id:
+        return source_id
+    raw_id = source_id.split(":", 1)[1] if ":" in source_id else source_id
+    for prefix in ("private:", "reference:"):
+        candidate = f"{prefix}{raw_id}"
+        if candidate in by_source_id:
+            return candidate
+    return source_id
+
+
 async def search_space(
     db: AsyncSession,
     space_id: uuid.UUID,
@@ -205,7 +226,12 @@ async def answer_question(
 
     generated = await answer_provider.answer(question, chunks)
     by_source_id = {chunk.source_id: chunk for chunk in chunks}
-    unique_source_ids = list(dict.fromkeys(generated.citation_source_ids))
+    unique_source_ids = list(
+        dict.fromkeys(
+            _canonical_retrieved_source_id(source_id, by_source_id)
+            for source_id in generated.citation_source_ids
+        )
+    )
     if generated.supported and (
         not generated.answer.strip()
         or not unique_source_ids

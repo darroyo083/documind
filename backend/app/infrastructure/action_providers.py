@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 
 import httpx
@@ -10,6 +11,8 @@ from app.domain.actions import (
 )
 from app.domain.errors import ProviderError
 from app.infrastructure.analysis_providers import parse_exact_date
+
+logger = logging.getLogger(__name__)
 
 
 class DeterministicActionProvider:
@@ -162,7 +165,26 @@ class DeepSeekDocumentActionProvider:
             raw_content = response.json()["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
             return self._parse(parsed)
-        except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "Action provider HTTP failure status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise ProviderError("Document action provider failed") from exc
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "Action provider transport failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
+            raise ProviderError("Document action provider failed") from exc
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Action provider response parsing failure type=%s message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
             raise ProviderError("Document action provider failed") from exc
 
     def _parse(self, parsed: object) -> ProviderDocumentActions:

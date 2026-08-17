@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -54,6 +55,8 @@ from app.infrastructure.models import (
     DocumentStatus,
     KnowledgeSpace,
 )
+
+logger = logging.getLogger(__name__)
 
 _MEMBER_LOAD = selectinload(DocumentComparison.members).joinedload(
     DocumentComparisonDocument.document
@@ -192,7 +195,12 @@ def _validate_citations(
         )
     citations: list[ComparisonCitation] = []
     for source_id in unique_ids:
-        chunk = chunks_by_source_id.get(source_id)
+        canonical_source_id = source_id
+        if canonical_source_id not in chunks_by_source_id:
+            prefixed_source_id = f"chunk:{source_id}"
+            if prefixed_source_id in chunks_by_source_id:
+                canonical_source_id = prefixed_source_id
+        chunk = chunks_by_source_id.get(canonical_source_id)
         if chunk is None:
             raise ComparisonValidationError(
                 f"Provider referenced an unknown or unauthorized source: {source_id}"
@@ -264,6 +272,13 @@ def _validate_dimension(
     if len(set(positions)) != len(positions):
         raise ComparisonValidationError("A dimension contains duplicate document findings")
     if set(positions) != expected_positions:
+        logger.warning(
+            "Comparison dimension document refs did not cover selected documents label=%s "
+            "positions=%s expected=%s",
+            label,
+            positions,
+            sorted(expected_positions),
+        )
         raise ComparisonValidationError(
             "A dimension must contain exactly one finding per selected document"
         )
