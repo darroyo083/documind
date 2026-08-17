@@ -18,6 +18,40 @@ export class ApiError extends Error {
   }
 }
 
+function humanizeField(field: string): string {
+  return field
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function formatApiErrorDetail(detail: unknown): string {
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail.flatMap((item) => {
+      if (typeof item === "string" && item.trim()) return [item];
+      if (!item || typeof item !== "object") return [];
+
+      const record = item as { loc?: unknown; msg?: unknown };
+      if (typeof record.msg !== "string" || !record.msg.trim()) return [];
+
+      const location = Array.isArray(record.loc)
+        ? record.loc
+            .filter((part) => part !== "body")
+            .map((part) => String(part))
+            .join(".")
+        : "";
+      return [location ? `${humanizeField(location)}: ${record.msg}` : record.msg];
+    });
+
+    if (messages.length > 0) return messages.join("; ");
+  }
+
+  return "Request failed. Please check your input and try again.";
+}
+
 function getToken(): string | null {
   return localStorage.getItem("access_token");
 }
@@ -49,8 +83,12 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => ({ detail: "Unknown error" }));
-    throw new ApiError(response.status, data.detail || "Unknown error");
+    const data: unknown = await response.json().catch(() => null);
+    const detail =
+      data && typeof data === "object" && "detail" in data
+        ? (data as { detail?: unknown }).detail
+        : undefined;
+    throw new ApiError(response.status, formatApiErrorDetail(detail));
   }
 
   if (response.status === 204) {

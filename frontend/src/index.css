@@ -383,6 +383,7 @@
   .dm-field label { color: var(--dm-ink); font-size: 13px; font-weight: 700; }
   .dm-field input { min-height: 44px; width: 100%; border: 1px solid var(--dm-border-strong); border-radius: 8px; background: var(--dm-surface); padding: 0 12px; color: var(--dm-ink); }
   .dm-field input:focus { border-color: var(--dm-focus); box-shadow: 0 0 0 3px #dedcff; outline: none; }
+  .dm-field-help { margin: -1px 0 0; color: var(--dm-muted); font-size: 12px; }
   .dm-auth-error { margin: 16px 0 0; border: 1px solid #efb8b1; border-radius: 8px; background: var(--dm-danger-soft); padding: 10px 12px; color: var(--dm-danger); font-size: 13px; }
   .dm-auth-submit { width: 100%; margin-top: 24px; }
   .dm-auth-footer { margin-top: 24px; border-top: 1px solid var(--dm-border); padding-top: 18px; color: var(--dm-muted); font-size: 13px; text-align: center; }
