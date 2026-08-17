@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api";
 import ComparisonResult from "./ComparisonResult";
+import { EmptyState, LoadingState, StatusBadge } from "./ui";
 
 export type CompareView =
   | { kind: "idle" }
@@ -27,26 +28,6 @@ export function mapComparisonError(status: number, detail: string): string {
   if (status === 502)
     return "The comparison could not be completed. Try again.";
   return detail || "The comparison could not be completed.";
-}
-
-function StatusBadge({ status }: { status: api.ComparisonStatus }) {
-  const styles: Record<api.ComparisonStatus, string> = {
-    ready: "bg-green-50 text-green-700",
-    processing: "bg-blue-50 text-blue-700",
-    failed: "bg-red-50 text-red-700",
-  };
-  const labels: Record<api.ComparisonStatus, string> = {
-    ready: "Ready",
-    processing: "Processing",
-    failed: "Failed",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}
-    >
-      {labels[status]}
-    </span>
-  );
 }
 
 export default function ComparePanel({
@@ -237,9 +218,10 @@ export default function ComparePanel({
               );
             })}
             {readyDocuments.length === 0 && (
-              <p className="rounded-md border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                No ready documents available to compare yet.
-              </p>
+              <EmptyState
+                title="No ready documents"
+                description="Upload and process at least two documents before comparing them."
+              />
             )}
           </div>
           {readyDocuments.length > 0 && (
@@ -289,9 +271,7 @@ export default function ComparePanel({
       </section>
 
       {view.kind === "generating" && (
-        <p role="status" className="text-sm text-gray-600">
-          Comparing documents...
-        </p>
+        <LoadingState message="Comparing documents..." />
       )}
 
       {view.kind === "processing" && (
@@ -336,13 +316,13 @@ export default function ComparePanel({
           </p>
         )}
         {history === null ? (
-          <p role="status" className="mt-3 text-sm text-gray-500">
-            Loading comparisons...
-          </p>
+          <LoadingState message="Loading comparison history..." />
         ) : history.length === 0 ? (
-          <p className="mt-3 rounded-lg border-2 border-dashed border-gray-300 p-5 text-center text-sm text-gray-500">
-            No comparisons yet. Select documents above to create one.
-          </p>
+          <EmptyState
+            className="mt-4"
+            title="No comparisons yet"
+            description="Select two to four ready documents above to create a comparison."
+          />
         ) : (
           <ul className="mt-4 space-y-3">
             {history.map((summary) => (

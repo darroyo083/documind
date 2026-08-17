@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api";
 import IntelligenceSources from "./IntelligenceSources";
+import { Button, EmptyState, LoadingState } from "./ui";
 
 type IntelligenceView =
   | { kind: "loading" }
@@ -150,22 +151,15 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
   }, [spaceId]);
 
   if (view.kind === "loading") {
-    return (
-      <p role="status" className="py-8 text-center text-sm text-gray-500">
-        Loading intelligence...
-      </p>
-    );
+    return <LoadingState message="Loading workspace intelligence..." />;
   }
 
   if (view.kind === "no_documents") {
     return (
-      <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-        <h2 className="text-lg font-semibold text-gray-900">Workspace intelligence</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
-          Upload and process at least one document to generate a cross-document
-          intelligence summary of this space.
-        </p>
-      </div>
+      <EmptyState
+        title="Intelligence needs a ready document"
+        description="Upload and process at least one document to generate a cross-document view of this Space."
+      />
     );
   }
 
@@ -177,13 +171,9 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
           Synthesize key facts, contradictions, dates and open questions across
           every ready document in this space.
         </p>
-        <button
-          type="button"
-          onClick={refresh}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
+        <Button type="button" onClick={refresh} className="mt-4">
           Generate intelligence
-        </button>
+        </Button>
       </div>
     );
   }
@@ -196,7 +186,7 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
             ? "Generating workspace intelligence..."
             : "Intelligence generation is in progress."}
         </p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-2 text-xs text-gray-400">
           This can take a moment for larger spaces.
         </p>
         {view.kind === "processing" && (

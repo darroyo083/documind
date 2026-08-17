@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as api from "../api";
+import { AppHeader, EmptyState, LoadingState } from "../components/ui";
 
 type View =
   | { kind: "idle" }
@@ -76,17 +77,17 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-3">
-          <Link to="/" className="mr-2 text-indigo-600 hover:underline">
-            &larr; Dashboard
-          </Link>
-          <h1 className="text-xl font-bold text-indigo-600">Search</h1>
-        </div>
-      </header>
+    <div className="dm-page">
+      <AppHeader title="Search" backTo="/" />
 
-      <main className="mx-auto max-w-4xl px-4 py-8">
+      <main className="dm-container dm-page-main">
+        <div className="dm-page-heading">
+          <div>
+            <p className="dm-kicker">Across your Spaces</p>
+            <h2>Search documents</h2>
+            <p>Find a passage, then return to the document and page where it belongs.</p>
+          </div>
+        </div>
         <input
           ref={inputRef}
           type="search"
@@ -94,7 +95,7 @@ export default function SearchPage() {
           onChange={(event) => handleQueryChange(event.target.value)}
           placeholder="Search all your Spaces..."
           aria-label="Search all spaces"
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
         />
 
         {spaces.length > 0 && (
@@ -132,15 +133,14 @@ export default function SearchPage() {
 
         <div className="mt-6">
           {view.kind === "idle" && (
-            <p className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-              Type a query to search across every document in your Spaces.
-            </p>
+            <EmptyState
+              title="Search across every Space"
+              description="Type a phrase or question to find the source passage you need."
+            />
           )}
 
           {view.kind === "loading" && (
-            <p role="status" className="py-8 text-center text-sm text-gray-500">
-              Searching...
-            </p>
+            <LoadingState message="Searching your documents..." />
           )}
 
           {view.kind === "failed" && (
@@ -150,9 +150,10 @@ export default function SearchPage() {
           )}
 
           {view.kind === "ready" && view.results.length === 0 && (
-            <p className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-              No results found for this search.
-            </p>
+            <EmptyState
+              title="No matching passages"
+              description="Try a shorter phrase or clear the Space filter to broaden the search."
+            />
           )}
 
           {view.kind === "ready" && view.results.length > 0 && (
@@ -161,7 +162,7 @@ export default function SearchPage() {
                 <li key={hit.chunk_id}>
                   <Link
                     to={`/spaces/${hit.space_id}?document=${hit.document_id}`}
-                    className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="dm-surface block p-4 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="font-medium text-indigo-600">{hit.space_name}</span>

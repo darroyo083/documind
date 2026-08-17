@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth";
 import * as api from "../api";
+import { AppHeader, Button, EmptyState, LoadingState } from "../components/ui";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -54,40 +55,31 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <h1 className="text-xl font-bold text-indigo-600">DocuMind</h1>
-          <div className="flex items-center gap-4">
-            <Link to="/search" className="text-sm text-indigo-600 hover:text-indigo-700">
-              Search
-            </Link>
-            <span className="text-sm text-gray-600">{user?.display_name}</span>
-            <button
-              onClick={logout}
-              className="rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="dm-page">
+      <AppHeader
+        userName={user?.display_name}
+        onLogout={logout}
+        right={
+          <Link to="/search" className="dm-header-search">
+            Search
+          </Link>
+        }
+      />
 
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-gray-800">
-            Knowledge Spaces
-          </h2>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
-          >
-            {showForm ? "Cancel" : "+ New Space"}
-          </button>
+      <main className="dm-container dm-page-main">
+        <div className="dm-page-heading">
+          <div>
+            <p className="dm-kicker">Your workspace</p>
+            <h2>Knowledge Spaces</h2>
+            <p>Keep each document set focused, searchable and easy to revisit.</p>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "secondary" : "primary"}>
+            {showForm ? "Cancel" : "New Space"}
+          </Button>
         </div>
 
         {error && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
+          <div className="dm-auth-error mb-5" role="alert">
             {error}
           </div>
         )}
@@ -95,7 +87,7 @@ export default function Dashboard() {
         {showForm && (
           <form
             onSubmit={handleCreate}
-            className="mb-6 rounded-lg border bg-white p-4 shadow-sm"
+            className="dm-surface mb-6 p-5"
           >
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Name
@@ -116,47 +108,43 @@ export default function Dashboard() {
               rows={2}
               className="mb-4 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
             />
-            <button
-              type="submit"
-              className="rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
-            >
-              Create
-            </button>
+            <Button type="submit">Create Space</Button>
           </form>
         )}
 
         {loading ? (
-          <p className="text-gray-500">Loading spaces...</p>
+          <LoadingState message="Loading Spaces..." />
         ) : spaces.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-500">
-              No knowledge spaces yet. Create your first one.
-            </p>
-          </div>
+          <EmptyState
+            title="Your first Space starts here"
+            description="Create a Space for a project, a set of agreements or any document group you want to understand together."
+            action={<Button onClick={() => setShowForm(true)}>Create a Space</Button>}
+          />
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {spaces.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-lg border bg-white p-4 shadow-sm"
+                className="dm-surface flex min-h-[142px] flex-col justify-between p-5"
               >
                 <Link
                   to={`/spaces/${s.id}`}
-                  className="block flex-1 hover:text-indigo-600"
+                  className="block min-w-0 hover:text-indigo-600"
                 >
-                  <h3 className="font-medium text-gray-900">{s.name}</h3>
+                  <h3 className="truncate text-lg font-semibold text-gray-900">{s.name}</h3>
                   {s.description && (
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">
                       {s.description}
                     </p>
                   )}
                 </Link>
-                <button
+                <Button
+                  variant="quiet"
+                  className="mt-5 self-start px-0 text-sm text-red-600"
                   onClick={() => handleDelete(s.id, s.name)}
-                  className="ml-4 rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             ))}
           </div>

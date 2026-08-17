@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { ComparisonCitation, ComparisonFinding } from "../api";
+import { SourceDisclosure } from "./ui";
 
 function uniqueSources(sources: ComparisonCitation[]): ComparisonCitation[] {
   const seen = new Set<string>();
@@ -19,43 +19,16 @@ export default function ComparisonSources({
   sources: ComparisonCitation[];
   documentNameFor: (documentId: string) => string;
 }) {
-  const [open, setOpen] = useState(false);
   const unique = uniqueSources(sources);
-  if (unique.length === 0) return null;
-
-  const label =
-    unique.length === 1
-      ? "View evidence"
-      : `View evidence (${unique.length})`;
-
   return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-expanded={open}
-        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-      >
-        {open ? "Hide evidence" : label}
-      </button>
-      {open && (
-        <ul className="mt-3 space-y-3" aria-label="Supporting evidence">
-          {unique.map((source) => (
-            <li
-              key={source.chunk_id}
-              className="rounded-md border-l-2 border-indigo-200 bg-gray-50 p-3"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {documentNameFor(source.document_id)} · Page {source.page_number}
-              </p>
-              <p className="mt-1 text-sm leading-6 text-gray-700">
-                &ldquo;{source.excerpt}&rdquo;
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <SourceDisclosure
+      noun="evidence"
+      sources={unique.map((source) => ({
+        key: source.chunk_id,
+        label: `${documentNameFor(source.document_id)} · Page ${source.page_number}`,
+        excerpt: source.excerpt,
+      }))}
+    />
   );
 }
 

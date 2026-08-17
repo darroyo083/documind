@@ -6,6 +6,14 @@ import AnalysisOverview from "../components/AnalysisOverview";
 import ComparePanel from "../components/ComparePanel";
 import DocumentUpload from "../components/DocumentUpload";
 import IntelligencePanel from "../components/IntelligencePanel";
+import {
+  AppHeader,
+  Button,
+  EmptyState,
+  LoadingState,
+  SourceDisclosure,
+  StatusBadge,
+} from "../components/ui";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   private: "My documents",
@@ -357,23 +365,22 @@ export default function SpaceDetail() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <LoadingState message="Loading Space..." />;
   }
 
   if (error || !space) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="mb-4 text-red-600">{error || "Space not found"}</p>
-          <Link to="/" className="text-indigo-600 hover:underline">
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
+      <main className="dm-page grid min-h-screen place-items-center px-4">
+        <EmptyState
+          title="This Space is unavailable"
+          description={error || "We could not find the Space you requested."}
+          action={
+            <Link to="/" className="dm-button dm-button-secondary">
+              Back to Dashboard
+            </Link>
+          }
+        />
+      </main>
     );
   }
 
@@ -386,26 +393,16 @@ export default function SpaceDetail() {
     `${readyCount} ready · ${processingCount} processing · ${failedCount} failed`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center px-4 py-3">
-          <Link to="/" className="mr-4 text-indigo-600 hover:underline">
-            &larr; Dashboard
-          </Link>
-          <h1 className="flex-1 truncate text-xl font-bold text-indigo-600">{space.name}</h1>
-          <Link to="/search" className="ml-4 text-sm text-indigo-600 hover:text-indigo-700">
-            Search
-          </Link>
-        </div>
-      </header>
+    <div className="dm-page">
+      <AppHeader title={space.name} backTo="/" right={<Link to="/search">Search</Link>} />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="dm-container dm-page-main">
         {space.description && (
-          <p className="mb-6 text-gray-600">{space.description}</p>
+          <p className="mb-7 max-w-prose text-gray-600">{space.description}</p>
         )}
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+        <div className="space-layout grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           <section aria-labelledby="documents-heading">
-            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="dm-surface p-5">
               <h2 id="documents-heading" className="text-lg font-semibold text-gray-900">
                 Documents
               </h2>
@@ -425,25 +422,41 @@ export default function SpaceDetail() {
                 </p>
               )}
               {documents.length > 0 && (
-                <p className="mt-3 text-xs text-gray-500" aria-live="polite">
-                  {aggregateStatusText}
-                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-2" aria-live="polite">
+                  <span className="text-xs text-gray-500">{documents.length} total</span>
+                  <StatusBadge status="ready" />
+                  <span className="text-xs text-gray-500">{readyCount}</span>
+                  {processingCount > 0 && (
+                    <>
+                      <StatusBadge status="processing" />
+                      <span className="text-xs text-gray-500">{processingCount}</span>
+                    </>
+                  )}
+                  {failedCount > 0 && (
+                    <>
+                      <StatusBadge status="failed" />
+                      <span className="text-xs text-gray-500">{failedCount}</span>
+                    </>
+                  )}
+                  <span className="sr-only">{aggregateStatusText}</span>
+                </div>
               )}
             </div>
 
             <div className="mt-4 space-y-3">
               {documents.length === 0 && (
-                <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-                  No PDFs have been uploaded.
-                </div>
+                <EmptyState
+                  title="No documents yet"
+                  description="Upload a text-based PDF to start analyzing this Space."
+                />
               )}
               {documents.map((document) => {
                 const isSelected = document.id === selectedDocumentId;
                 return (
                   <article
                     key={document.id}
-                    className={`rounded-lg border bg-white p-4 shadow-sm ${
-                      isSelected ? "border-indigo-300 ring-2 ring-indigo-100" : ""
+                    className={`dm-document-row ${
+                      isSelected ? "dm-document-row-selected" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -456,12 +469,14 @@ export default function SpaceDetail() {
                         <h3 className="truncate font-medium text-gray-900">
                           {document.original_filename}
                         </h3>
-                        <p className="mt-1 text-xs text-gray-500">
-                          {document.status === "ready"
-                            ? `${document.page_count} ${document.page_count === 1 ? "page" : "pages"}`
-                            : document.status}
-                          {` · ${(document.file_size / 1024).toFixed(1)} KB`}
-                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <StatusBadge status={document.status} />
+                          <span className="text-xs text-gray-500">
+                            {document.status === "ready"
+                              ? `${document.page_count} ${document.page_count === 1 ? "page" : "pages"}`
+                              : `${(document.file_size / 1024).toFixed(1)} KB`}
+                          </span>
+                        </div>
                       </button>
                       {document.status === "failed" && (
                         <button
@@ -496,12 +511,12 @@ export default function SpaceDetail() {
 
           <section aria-label="Selected document" className="min-w-0">
             {selectedDocument ? (
-              <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="dm-surface p-5">
                 <div
                   role="tablist"
                   aria-label="Document sections"
                   onKeyDown={handleSectionKeyDown}
-                  className="mb-5 flex gap-1 rounded-lg bg-gray-100 p-1"
+                  className="dm-tabs mb-5 flex gap-1 rounded-lg bg-gray-100 p-1"
                 >
                   <button
                     ref={overviewTabRef}
@@ -511,7 +526,7 @@ export default function SpaceDetail() {
                     aria-controls="section-panel-overview"
                     aria-selected={section === "overview"}
                     onClick={() => setSection("overview")}
-                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`dm-tab flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       section === "overview"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
@@ -527,7 +542,7 @@ export default function SpaceDetail() {
                     aria-controls="section-panel-actions"
                     aria-selected={section === "actions"}
                     onClick={() => setSection("actions")}
-                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`dm-tab flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       section === "actions"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
@@ -543,7 +558,7 @@ export default function SpaceDetail() {
                     aria-controls="section-panel-compare"
                     aria-selected={section === "compare"}
                     onClick={() => setSection("compare")}
-                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`dm-tab flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       section === "compare"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
@@ -559,7 +574,7 @@ export default function SpaceDetail() {
                     aria-controls="section-panel-intelligence"
                     aria-selected={section === "intelligence"}
                     onClick={() => setSection("intelligence")}
-                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`dm-tab flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       section === "intelligence"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
@@ -575,7 +590,7 @@ export default function SpaceDetail() {
                     aria-controls="section-panel-ask"
                     aria-selected={section === "ask"}
                     onClick={() => setSection("ask")}
-                    className={`flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`dm-tab flex-1 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       section === "ask"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
@@ -712,13 +727,13 @@ export default function SpaceDetail() {
                         placeholder="What do these documents say about...?"
                         className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                       />
-                      <button
+                      <Button
                         type="submit"
                         disabled={asking || !question.trim()}
-                        className="mt-3 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-3 bg-gray-900 text-white hover:bg-gray-800"
                       >
                         {asking ? "Finding evidence..." : "Ask question"}
-                      </button>
+                      </Button>
                     </form>
                     {askError && (
                       <p role="alert" className="mt-4 text-sm text-red-600">
@@ -736,37 +751,14 @@ export default function SpaceDetail() {
                           {answer.answer}
                         </p>
                         {answer.citations.length > 0 && (
-                          <div className="mt-5">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                              Sources
-                            </h3>
-                            <ol className="mt-3 space-y-3">
-                              {answer.citations.map((citation) => (
-                                <li
-                                  key={citation.source_id}
-                                  className="rounded-md bg-gray-50 p-3"
-                                >
-                                  <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-800">
-                                    <span
-                                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                        citation.source_kind === "reference"
-                                          ? "bg-indigo-50 text-indigo-700"
-                                          : "bg-gray-100 text-gray-700"
-                                      }`}
-                                    >
-                                      {citation.source_kind === "reference"
-                                        ? "Reference"
-                                        : "Private"}
-                                    </span>
-                                    {citation.document_name}, page {citation.page_number}
-                                  </p>
-                                  <p className="mt-1 line-clamp-3 text-sm text-gray-600">
-                                    {citation.excerpt}
-                                  </p>
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
+                          <SourceDisclosure
+                            noun="source"
+                            sources={answer.citations.map((citation) => ({
+                              key: citation.source_id,
+                              label: `${citation.source_kind === "reference" ? "Reference" : "Private"} · ${citation.document_name}, page ${citation.page_number}`,
+                              excerpt: citation.excerpt,
+                            }))}
+                          />
                         )}
                       </div>
                     )}
@@ -774,9 +766,10 @@ export default function SpaceDetail() {
                 )}
               </div>
             ) : (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-                Select a document to view its overview or ask questions.
-              </div>
+              <EmptyState
+                title="Select a document"
+                description="Choose a document from the list to view its overview, actions or ask questions."
+              />
             )}
           </section>
         </div>
