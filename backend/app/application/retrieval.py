@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from sqlalchemy import select
@@ -21,6 +22,13 @@ from app.infrastructure.models import (
     ReferenceDocumentChunk,
 )
 from app.schemas.document import AnswerResponse, CitationResponse, SearchResponse
+
+_INTERNAL_SOURCE_ID_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_-])(?:(?:private|reference|chunk):)?"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    r"(?![A-Za-z0-9_-])",
+    re.IGNORECASE,
+)
 
 
 def resolve_top_k(requested: int | None) -> int:
@@ -187,6 +195,26 @@ def _canonical_retrieved_source_id(
     return source_id
 
 
+def _safe_answer_text(answer: str, source_ids: list[str]) -> str:
+    """Remove only validated source IDs from prose without hiding bad citations."""
+    identifiers: set[str] = set()
+    for source_id in source_ids:
+        raw_id = source_id.split(":", 1)[1] if ":" in source_id else source_id
+        identifiers.update({raw_id, f"private:{raw_id}", f"reference:{raw_id}", f"chunk:{raw_id}"})
+
+    display_answer = answer
+    for identifier in sorted(identifiers, key=len, reverse=True):
+        display_answer = display_answer.replace(identifier, "")
+    display_answer = re.sub(r"\(\s*\)|\[\s*\]", "", display_answer)
+    display_answer = re.sub(r"[ \t]+([,.;:!?])", r"\1", display_answer)
+    display_answer = re.sub(r"[ \t]+", " ", display_answer).strip()
+    if _INTERNAL_SOURCE_ID_PATTERN.search(display_answer):
+        raise ProviderError("Answer provider returned internal citation identifiers")
+    if not display_answer:
+        raise ProviderError("Answer provider returned an empty display answer")
+    return display_answer
+
+
 async def search_space(
     db: AsyncSession,
     space_id: uuid.UUID,
@@ -247,7 +275,7 @@ async def answer_question(
             answer_model=answer_provider.model_name,
         )
     return AnswerResponse(
-        answer=generated.answer.strip(),
+        answer=_safe_answer_text(generated.answer.strip(), unique_source_ids),
         supported=True,
         citations=[citation_from_chunk(by_source_id[source_id]) for source_id in unique_source_ids],
         embedding_model=embedding_provider.model_name,

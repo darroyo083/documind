@@ -136,6 +136,8 @@ class DeepSeekAnswerProvider:
             "general reference knowledge; when the distinction matters, phrase it clearly. "
             "Return citation_source_ids exactly as shown, including the private: or "
             "reference: prefix; never return a bare UUID or a chunk: identifier."
+            " Keep internal SOURCE values and citation identifiers out of answer prose; "
+            "put them only in citation_source_ids."
         )
         payload = {
             "model": self.model_name,

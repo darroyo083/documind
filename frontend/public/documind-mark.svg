@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
+  <title>DocuMind</title>
+  <rect width="32" height="32" rx="8" fill="#5f5bd8"/>
+  <rect x="7" y="9" width="10" height="14" rx="2.5" fill="#f7f8fa"/>
+  <rect x="15" y="9" width="10" height="14" rx="2.5" fill="#b9b4f2"/>
+  <path d="M10 13h4M10 16h4M18 13h4M18 16h4" stroke="#5f5bd8" stroke-linecap="round" stroke-width="1.5"/>
+</svg>

@@ -245,6 +245,59 @@ async def test_unknown_source_rejected(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_internal_source_labels_are_removed_from_intelligence_text(
+    async_client: AsyncClient,
+):
+    token = await register_user(async_client, "intel-display-source@test.com")
+    space = await create_space(async_client, token)
+    await upload_pdf(async_client, token, space["id"], "alpha beta")
+
+    async def leaky_result(context: SpaceIntelligenceContext) -> ProviderSpaceIntelligence:
+        source_id = context.documents[0].sources[0].source_id
+        return ProviderSpaceIntelligence(
+            summary=f"Summary supported by {source_id}.",
+            key_facts=[
+                ProviderKeyFact(
+                    title="Key fact",
+                    detail=f"The detail cites {source_id}.",
+                    source_ids=[source_id],
+                )
+            ],
+            contradictions=[],
+            dates=[],
+            open_questions=[],
+        )
+
+    install_provider(StubIntelligenceProvider(result_fn=leaky_result))
+    response = await async_client.post(intelligence_path(space["id"]), headers=auth_header(token))
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"] == "Summary supported by."
+    assert payload["key_facts"][0]["detail"] == "The detail cites."
+    assert "source_" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_unknown_internal_source_labels_are_rejected(async_client: AsyncClient):
+    token = await register_user(async_client, "intel-unknown-display-source@test.com")
+    space = await create_space(async_client, token)
+    await upload_pdf(async_client, token, space["id"], "alpha beta")
+
+    async def leaky_result(context: SpaceIntelligenceContext) -> ProviderSpaceIntelligence:
+        return ProviderSpaceIntelligence(
+            summary="Summary mentions source_999.",
+            key_facts=[],
+            contradictions=[],
+            dates=[],
+            open_questions=[],
+        )
+
+    install_provider(StubIntelligenceProvider(result_fn=leaky_result))
+    response = await async_client.post(intelligence_path(space["id"]), headers=auth_header(token))
+    assert response.status_code == 502
+
+
+@pytest.mark.asyncio
 async def test_contradiction_requires_both_sides(async_client: AsyncClient):
     token = await register_user(async_client, "intel-contra@test.com")
     space = await create_space(async_client, token)

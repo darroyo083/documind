@@ -12,6 +12,19 @@ type IntelligenceView =
   | { kind: "ready"; data: api.SpaceIntelligence }
   | { kind: "failed"; message: string };
 
+const INTERNAL_SOURCE_LABEL_PATTERN = /\bsource_\d+\b/gi;
+
+function cleanIntelligenceText(value: string): string {
+  // Keep legacy snapshots readable while fresh provider output is validated
+  // at the backend boundary. Only remove the known positional label format.
+  return value
+    .replace(INTERNAL_SOURCE_LABEL_PATTERN, "the document")
+    .replace(/\(\s*\)|\[\s*\]/g, "")
+    .replace(/[ \t]+([,.;:!?])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function mapIntelligenceError(status: number, detail: string): string {
   if (status === 422) {
     const lower = detail.toLowerCase();
@@ -45,9 +58,11 @@ function KeyFactCard({ item }: { item: api.IntelligenceKeyFact }) {
   return (
     <li className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-        {item.title}
+        {cleanIntelligenceText(item.title)}
       </h4>
-      <p className="mt-1 break-words font-medium text-gray-900">{item.detail}</p>
+      <p className="mt-1 break-words font-medium text-gray-900">
+        {cleanIntelligenceText(item.detail)}
+      </p>
       <IntelligenceSources sources={item.sources} />
     </li>
   );
@@ -56,20 +71,26 @@ function KeyFactCard({ item }: { item: api.IntelligenceKeyFact }) {
 function ContradictionCard({ item }: { item: api.IntelligenceContradiction }) {
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <h4 className="text-sm font-semibold text-gray-900">{item.topic}</h4>
+      <h4 className="text-sm font-semibold text-gray-900">
+        {cleanIntelligenceText(item.topic)}
+      </h4>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             One document
           </p>
-          <p className="mt-1 break-words text-sm text-gray-800">{item.first_claim}</p>
+          <p className="mt-1 break-words text-sm text-gray-800">
+            {cleanIntelligenceText(item.first_claim)}
+          </p>
           <IntelligenceSources sources={item.first_sources} />
         </div>
         <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Another document
           </p>
-          <p className="mt-1 break-words text-sm text-gray-800">{item.second_claim}</p>
+          <p className="mt-1 break-words text-sm text-gray-800">
+            {cleanIntelligenceText(item.second_claim)}
+          </p>
           <IntelligenceSources sources={item.second_sources} />
         </div>
       </div>
@@ -82,11 +103,13 @@ function DateRow({ item }: { item: api.IntelligenceDate }) {
     <li className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          {item.label}
+          {cleanIntelligenceText(item.label)}
         </h4>
-        <p className="font-medium text-gray-900">{item.date_text}</p>
+        <p className="font-medium text-gray-900">{cleanIntelligenceText(item.date_text)}</p>
       </div>
-      {item.context && <p className="mt-1 text-sm text-gray-600">{item.context}</p>}
+      {item.context && (
+        <p className="mt-1 text-sm text-gray-600">{cleanIntelligenceText(item.context)}</p>
+      )}
       <IntelligenceSources sources={item.sources} />
     </li>
   );
@@ -95,9 +118,13 @@ function DateRow({ item }: { item: api.IntelligenceDate }) {
 function OpenQuestionRow({ item }: { item: api.IntelligenceOpenQuestion }) {
   return (
     <li className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="break-words text-sm font-medium text-gray-900">{item.question}</p>
+      <p className="break-words text-sm font-medium text-gray-900">
+        {cleanIntelligenceText(item.question)}
+      </p>
       {item.explanation && (
-        <p className="mt-1 text-sm text-gray-600">{item.explanation}</p>
+        <p className="mt-1 text-sm text-gray-600">
+          {cleanIntelligenceText(item.explanation)}
+        </p>
       )}
       <IntelligenceSources sources={item.sources} />
     </li>
@@ -249,7 +276,7 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
             id="intelligence-summary-heading"
             className="max-w-prose leading-7 text-gray-800"
           >
-            {data.summary}
+            {cleanIntelligenceText(data.summary)}
           </p>
         </section>
       )}

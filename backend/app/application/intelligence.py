@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import uuid
 from datetime import UTC, datetime
 
@@ -48,6 +49,11 @@ from app.infrastructure.models import (
     DocumentChunk,
     DocumentStatus,
     SpaceIntelligence,
+)
+
+_INTERNAL_SOURCE_LABEL_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_-])source_\d+(?![A-Za-z0-9_-])",
+    re.IGNORECASE,
 )
 
 
@@ -180,6 +186,26 @@ def _validate_citations(
     return citations
 
 
+def _sanitize_provider_text(value: str, source_ids, field: str) -> str:
+    """Remove validated positional source labels without hiding unknown labels."""
+    display_text = value.strip()
+    for source_id in sorted(set(source_ids), key=len, reverse=True):
+        display_text = re.sub(
+            rf"(?<![A-Za-z0-9_-]){re.escape(source_id)}(?![A-Za-z0-9_-])",
+            "",
+            display_text,
+            flags=re.IGNORECASE,
+        )
+    display_text = re.sub(r"\(\s*\)|\[\s*\]", "", display_text)
+    display_text = re.sub(r"[ \t]+([,.;:!?])", r"\1", display_text)
+    display_text = re.sub(r"[ \t]+", " ", display_text).strip()
+    if _INTERNAL_SOURCE_LABEL_PATTERN.search(display_text):
+        raise IntelligenceValidationError(
+            f"An intelligence {field} contains internal source identifiers"
+        )
+    return display_text
+
+
 def _require_title(value: str, field: str) -> str:
     text = (value or "").strip()
     if not text:
@@ -203,9 +229,13 @@ def _validate_fact(
     chunks_by_source_id: dict[str, DocumentChunk],
     documents_by_id: dict[uuid.UUID, Document],
 ) -> ValidatedKeyFact:
-    title = _require_title(item.title, "title")
-    detail = _require_value(item.detail, "detail")
     sources = _validate_citations(item.source_ids, chunks_by_source_id, documents_by_id)
+    title = _require_title(
+        _sanitize_provider_text(item.title, item.source_ids, "key fact title"), "title"
+    )
+    detail = _require_value(
+        _sanitize_provider_text(item.detail, item.source_ids, "key fact detail"), "detail"
+    )
     return ValidatedKeyFact(title=title, detail=detail, sources=sources)
 
 
@@ -214,12 +244,25 @@ def _validate_contradiction(
     chunks_by_source_id: dict[str, DocumentChunk],
     documents_by_id: dict[uuid.UUID, Document],
 ) -> ValidatedContradiction:
-    topic = _require_title(item.topic, "topic")
-    first_claim = _require_value(item.first_claim, "first_claim")
-    second_claim = _require_value(item.second_claim, "second_claim")
     first_sources = _validate_citations(item.first_source_ids, chunks_by_source_id, documents_by_id)
     second_sources = _validate_citations(
         item.second_source_ids, chunks_by_source_id, documents_by_id
+    )
+    topic = _require_title(
+        _sanitize_provider_text(
+            item.topic,
+            [*item.first_source_ids, *item.second_source_ids],
+            "contradiction topic",
+        ),
+        "topic",
+    )
+    first_claim = _require_value(
+        _sanitize_provider_text(item.first_claim, item.first_source_ids, "first claim"),
+        "first_claim",
+    )
+    second_claim = _require_value(
+        _sanitize_provider_text(item.second_claim, item.second_source_ids, "second claim"),
+        "second_claim",
     )
     return ValidatedContradiction(
         topic=topic,
@@ -235,12 +278,16 @@ def _validate_date(
     chunks_by_source_id: dict[str, DocumentChunk],
     documents_by_id: dict[uuid.UUID, Document],
 ) -> ValidatedDate:
-    label = _require_title(item.label, "label")
-    date_text = _require_value(item.date_text, "date_text")
-    context = (item.context or "").strip()
+    sources = _validate_citations(item.source_ids, chunks_by_source_id, documents_by_id)
+    label = _require_title(
+        _sanitize_provider_text(item.label, item.source_ids, "date label"), "label"
+    )
+    date_text = _require_value(
+        _sanitize_provider_text(item.date_text, item.source_ids, "date value"), "date_text"
+    )
+    context = _sanitize_provider_text(item.context or "", item.source_ids, "date context")
     if len(context) > MAX_INTELLIGENCE_VALUE_LENGTH:
         raise IntelligenceValidationError("An intelligence date context exceeds the allowed length")
-    sources = _validate_citations(item.source_ids, chunks_by_source_id, documents_by_id)
     return ValidatedDate(label=label, date_text=date_text, context=context, sources=sources)
 
 
@@ -249,15 +296,19 @@ def _validate_open_question(
     chunks_by_source_id: dict[str, DocumentChunk],
     documents_by_id: dict[uuid.UUID, Document],
 ) -> ValidatedOpenQuestion:
-    question = _require_title(item.question, "question")
-    explanation = (item.explanation or "").strip()
-    if len(explanation) > MAX_INTELLIGENCE_VALUE_LENGTH:
-        raise IntelligenceValidationError("An open question explanation exceeds the allowed length")
     sources = (
         _validate_citations(item.source_ids, chunks_by_source_id, documents_by_id)
         if item.source_ids
         else []
     )
+    question = _require_title(
+        _sanitize_provider_text(item.question, item.source_ids, "open question"), "question"
+    )
+    explanation = _sanitize_provider_text(
+        item.explanation or "", item.source_ids, "open question explanation"
+    )
+    if len(explanation) > MAX_INTELLIGENCE_VALUE_LENGTH:
+        raise IntelligenceValidationError("An open question explanation exceeds the allowed length")
     return ValidatedOpenQuestion(question=question, explanation=explanation, sources=sources)
 
 
@@ -268,7 +319,9 @@ def validate_provider_intelligence(
 ) -> SpaceIntelligenceResult:
     if provider_result is None:
         raise IntelligenceValidationError("Provider returned an empty intelligence result")
-    summary = (provider_result.summary or "").strip()
+    summary = _sanitize_provider_text(
+        provider_result.summary or "", chunks_by_source_id.keys(), "summary"
+    )
     if len(summary) > MAX_INTELLIGENCE_SUMMARY_LENGTH:
         raise IntelligenceValidationError("Intelligence summary exceeds the allowed length")
 

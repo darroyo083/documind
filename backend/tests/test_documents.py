@@ -266,6 +266,68 @@ async def test_ask_normalizes_provider_uuid_citations_to_retrieved_sources(
 
 
 @pytest.mark.asyncio
+async def test_ask_removes_validated_internal_ids_from_answer_prose(
+    async_client: AsyncClient,
+):
+    class LeakyAnswerProvider:
+        @property
+        def model_name(self) -> str:
+            return "leaky-test"
+
+        async def answer(self, question, context):
+            chunk = context[0]
+            return GeneratedAnswer(
+                f"The fee is CHF 420 (private:{chunk.chunk_id}).",
+                True,
+                [chunk.source_id],
+            )
+
+    token = await register_user(async_client, "retrieval-display-id@test.com")
+    space = await create_space(async_client, token)
+    await upload_pdf(async_client, token, space["id"], "The monthly fee is CHF 420.")
+    app.dependency_overrides[get_answer_provider] = LeakyAnswerProvider
+
+    answer = await async_client.post(
+        f"{SPACES_URL}/{space['id']}/ask",
+        json={"question": "What is the monthly fee?"},
+        headers=auth_header(token),
+    )
+    assert answer.status_code == 200
+    assert answer.json()["answer"] == "The fee is CHF 420."
+    assert answer.json()["citations"][0]["source_id"].startswith("private:")
+
+
+@pytest.mark.asyncio
+async def test_ask_rejects_unknown_internal_ids_in_answer_prose(
+    async_client: AsyncClient,
+):
+    class UnknownIdAnswerProvider:
+        @property
+        def model_name(self) -> str:
+            return "unknown-id-test"
+
+        async def answer(self, question, context):
+            return GeneratedAnswer(
+                "The fee is supported by private:00000000-0000-0000-0000-000000000000.",
+                True,
+                [context[0].source_id],
+            )
+
+    token = await register_user(async_client, "retrieval-unknown-display-id@test.com")
+    space = await create_space(async_client, token)
+    await upload_pdf(async_client, token, space["id"], "The monthly fee is CHF 420.")
+    app.dependency_overrides[get_answer_provider] = UnknownIdAnswerProvider
+
+    answer = await async_client.post(
+        f"{SPACES_URL}/{space['id']}/ask",
+        json={"question": "What is the monthly fee?"},
+        headers=auth_header(token),
+    )
+    assert answer.status_code == 502
+    assert answer.json()["detail"] == "Answer provider returned internal citation identifiers"
+
+
+@pytest.mark.asyncio
 async def test_ask_returns_insufficient_context_without_results(async_client: AsyncClient):
     token = await register_user(async_client, "insufficient@test.com")
     space = await create_space(async_client, token)

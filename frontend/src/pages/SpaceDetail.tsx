@@ -651,7 +651,12 @@ export default function SpaceDetail() {
                     <p className="mt-1 text-sm text-gray-500">
                       Answers are limited to evidence found in ready documents.
                     </p>
-                    <fieldset className="mt-4">
+                    <fieldset
+                      className="mt-4"
+                      aria-describedby={
+                        referenceDocuments.length === 0 ? "knowledge-scope-help" : undefined
+                      }
+                    >
                       <legend className="text-sm font-medium text-gray-700">
                         Knowledge scope
                       </legend>
@@ -694,8 +699,8 @@ export default function SpaceDetail() {
                       </div>
                     </fieldset>
                     {referenceDocuments.length === 0 ? (
-                      <p className="mt-2 text-xs text-gray-500">
-                        No shared reference documents are available.
+                      <p id="knowledge-scope-help" className="mt-2 text-xs text-gray-500">
+                        Reference and Both are disabled because no shared reference documents are available.
                       </p>
                     ) : (
                       <details className="mt-2">
