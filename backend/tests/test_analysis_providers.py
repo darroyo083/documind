@@ -105,7 +105,7 @@ async def test_deepseek_prompt_requires_explicit_non_empty_json_contract(monkeyp
         body = json.loads(request.content)
         prompt = body["messages"][0]["content"]
         assert "exactly one valid JSON object" in prompt
-        assert 'exactly these five keys' in prompt
+        assert "exactly these five keys" in prompt
         assert "important_dates and key_facts must be arrays" in prompt
         assert "use [] when none" in prompt
         return wrap_content(json.dumps(deepseek_result()))
