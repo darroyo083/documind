@@ -137,8 +137,8 @@ export default function DocumentUpload({
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`rounded-lg border-2 border-dashed p-5 text-center transition-colors ${
-          dragging ? "border-indigo-400 bg-indigo-50" : "border-gray-300 bg-white"
+        className={`dm-upload-dropzone text-center transition-colors ${
+          dragging ? "dm-upload-dropzone-active" : ""
         }`}
       >
         <p className="text-sm text-gray-600">
@@ -163,11 +163,11 @@ export default function DocumentUpload({
       </div>
 
       {items.length > 0 && (
-        <ul className="mt-3 space-y-2" aria-label="Uploads">
+        <ul className="dm-upload-queue" aria-label="Uploads">
           {items.map((item) => (
             <li
               key={item.key}
-              className="flex items-center gap-3 rounded-md border border-gray-200 bg-white p-3"
+              className="dm-upload-item"
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-gray-900">

@@ -169,7 +169,7 @@ export default function ComparePanel({
     summary.documents.map((member) => member.original_filename).join(", ");
 
   return (
-    <div className="space-y-6">
+    <div className="dm-compare-panel space-y-6">
       <section aria-labelledby="compare-heading">
         <h2 id="compare-heading" className="text-lg font-semibold text-gray-900">
           Compare documents
@@ -188,8 +188,8 @@ export default function ComparePanel({
               return (
                 <label
                   key={document.id}
-                  className={`flex items-center gap-3 rounded-md border bg-white p-3 ${
-                    checked ? "border-indigo-300 bg-indigo-50" : "border-gray-200"
+                  className={`dm-compare-select-row ${
+                    checked ? "dm-compare-select-row-active" : ""
                   }`}
                 >
                   <input
@@ -197,7 +197,7 @@ export default function ComparePanel({
                     checked={checked}
                     disabled={blocked}
                     onChange={() => toggleDocument(document.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="dm-compare-checkbox"
                   />
                   <span className="min-w-0">
                     <span
@@ -245,7 +245,7 @@ export default function ComparePanel({
             onChange={(event) => setFocus(event.target.value)}
             maxLength={500}
             placeholder="e.g. renewal, termination, and fees"
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          className="dm-input mt-1"
           />
           <p className="mt-1 text-xs text-gray-500">
             Optional. Directs the comparison toward the topics you care about.
@@ -264,7 +264,7 @@ export default function ComparePanel({
           disabled={
             selectedCount < 2 || busyRef.current || view.kind === "generating"
           }
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dm-button dm-button-primary mt-4 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Compare selected
         </button>
@@ -275,14 +275,14 @@ export default function ComparePanel({
       )}
 
       {view.kind === "processing" && (
-        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center shadow-sm">
+        <div className="dm-feature-state">
           <p role="status" className="text-sm text-gray-600">
             A comparison for these documents is currently in progress.
           </p>
           <button
             type="button"
             onClick={handleRetry}
-            className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="dm-button dm-button-primary mt-4"
           >
             Try again
           </button>
@@ -290,14 +290,14 @@ export default function ComparePanel({
       )}
 
       {view.kind === "failed" && (
-        <div className="rounded-lg border border-gray-200 bg-white p-5 text-center shadow-sm">
+        <div className="dm-feature-state">
           <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
             {view.message}
           </p>
           <button
             type="button"
             onClick={handleRetry}
-            className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="dm-button dm-button-primary mt-4"
           >
             Try again
           </button>
@@ -327,10 +327,10 @@ export default function ComparePanel({
           <ul className="mt-4 space-y-3">
             {history.map((summary) => (
               <li key={summary.id}>
-                <button
-                  type="button"
-                  onClick={() => handleOpenHistory(summary)}
-                  className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  <button
+                    type="button"
+                    onClick={() => handleOpenHistory(summary)}
+                    className="dm-comparison-history-row"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h4 className="truncate text-sm font-semibold text-gray-900">

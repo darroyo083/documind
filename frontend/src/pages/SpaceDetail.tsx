@@ -11,8 +11,8 @@ import {
   Button,
   EmptyState,
   LoadingState,
-  SourceDisclosure,
   StatusBadge,
+  type WorkspaceTab,
 } from "../components/ui";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
@@ -30,6 +30,16 @@ type AnalysisView =
   | { kind: "processing" }
   | { kind: "ready"; analysis: api.DocumentAnalysis }
   | { kind: "failed"; message: string };
+
+const SECTION_ORDER: Section[] = ["overview", "actions", "compare", "intelligence", "ask"];
+
+const SECTION_TABS: WorkspaceTab[] = [
+  { id: "overview", label: "Overview" },
+  { id: "actions", label: "Actions" },
+  { id: "compare", label: "Compare" },
+  { id: "intelligence", label: "Intelligence" },
+  { id: "ask", label: "Ask" },
+];
 
 function mapAnalysisError(status: number, detail: string): string {
   if (status === 422) {
@@ -69,6 +79,7 @@ export default function SpaceDetail() {
   >([]);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [section, setSection] = useState<Section>("overview");
   const [analysisView, setAnalysisView] = useState<AnalysisView>({ kind: "loading" });
   const [actionsView, setActionsView] = useState<ActionsView>({ kind: "loading" });
@@ -89,11 +100,12 @@ export default function SpaceDetail() {
         setSpace(spaceResponse);
         setDocuments(documentResponse);
         setReferenceDocuments(referenceResponse);
+        const requestedDocument = searchParams.get("document");
+        if (requestedDocument) setMobileDetailOpen(true);
         setSelectedDocumentId((current) => {
           if (current && documentResponse.some((document) => document.id === current)) {
             return current;
           }
-          const requestedDocument = searchParams.get("document");
           if (
             requestedDocument &&
             documentResponse.some((document) => document.id === requestedDocument)
@@ -277,6 +289,7 @@ export default function SpaceDetail() {
         return [document, ...withoutDuplicate];
       });
       setSelectedDocumentId((current) => current ?? document.id);
+      setMobileDetailOpen(true);
     },
     []
   );
@@ -342,8 +355,6 @@ export default function SpaceDetail() {
     }
   }
 
-  const SECTION_ORDER: Section[] = ["overview", "actions", "compare", "intelligence", "ask"];
-
   function handleSectionKeyDown(event: React.KeyboardEvent) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
@@ -394,21 +405,62 @@ export default function SpaceDetail() {
 
   return (
     <div className="dm-page">
-      <AppHeader title={space.name} backTo="/" right={<Link to="/search">Search</Link>} />
+      <AppHeader
+        title={space.name}
+        backTo="/"
+        right={<Link to="/search">Search</Link>}
+        tabs={SECTION_TABS}
+        activeTab={section}
+        onTabChange={(next) => {
+          setSection(next as Section);
+          if (selectedDocument) setMobileDetailOpen(true);
+        }}
+      />
 
       <main className="dm-container dm-page-main">
         {space.description && (
-          <p className="mb-7 max-w-prose text-gray-600">{space.description}</p>
+          <p className="dm-space-description mb-7 max-w-prose text-gray-600">{space.description}</p>
         )}
-        <div className="space-layout grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-          <section aria-labelledby="documents-heading">
+        {documents.length === 0 ? (
+          <section className="dm-empty-space-layout" aria-label="Empty Space">
+            <div className="dm-empty-space-content">
+              <EmptyState
+                title="This space is empty"
+                description="Add contracts, reports or research to build a connected intelligence workspace."
+                action={
+                  <DocumentUpload
+                    spaceId={id as string}
+                    onDocumentAdded={handleDocumentAdded}
+                    onUploadingChange={handleUploadingChange}
+                  />
+                }
+              />
+              {uploadError && (
+                <p role="alert" className="dm-empty-space-error">
+                  {uploadError}
+                </p>
+              )}
+            </div>
+          </section>
+        ) : (
+        <>
+        {mobileDetailOpen && (
+          <button
+            type="button"
+            className="dm-mobile-sheet-backdrop"
+            aria-label="Close document detail"
+            onClick={() => setMobileDetailOpen(false)}
+          />
+        )}
+        <div className="dm-space-layout">
+          <section className="dm-space-library" aria-labelledby="documents-heading">
             <div className="dm-surface p-5">
-              <h2 id="documents-heading" className="text-lg font-semibold text-gray-900">
-                Documents
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Upload text-based PDFs up to 10 MB. Scanned pages are not supported yet.
-              </p>
+              <div className="dm-space-library-heading">
+                <div>
+                  <h2 id="documents-heading">Documents</h2>
+                  <p>Upload text-based PDFs up to 10 MB. Scanned pages are not supported yet.</p>
+                </div>
+              </div>
               <div className="mt-4">
                 <DocumentUpload
                   spaceId={id as string}
@@ -443,7 +495,7 @@ export default function SpaceDetail() {
               )}
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="dm-document-list mt-4 space-y-3">
               {documents.length === 0 && (
                 <EmptyState
                   title="No documents yet"
@@ -462,7 +514,10 @@ export default function SpaceDetail() {
                     <div className="flex items-start justify-between gap-3">
                       <button
                         type="button"
-                        onClick={() => setSelectedDocumentId(document.id)}
+                        onClick={() => {
+                          setSelectedDocumentId(document.id);
+                          setMobileDetailOpen(true);
+                        }}
                         className="min-w-0 flex-1 rounded p-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                         aria-current={isSelected ? "true" : undefined}
                       >
@@ -509,14 +564,25 @@ export default function SpaceDetail() {
             </div>
           </section>
 
-          <section aria-label="Selected document" className="min-w-0">
+          <section
+            aria-label="Selected document"
+            className={`dm-space-detail min-w-0${mobileDetailOpen ? " dm-mobile-document-detail-open" : ""}`}
+          >
             {selectedDocument ? (
               <div className="dm-surface p-5">
+                <button
+                  type="button"
+                  className="dm-mobile-sheet-close"
+                  aria-label="Close document detail"
+                  onClick={() => setMobileDetailOpen(false)}
+                >
+                  Close
+                </button>
                 <div
                   role="tablist"
                   aria-label="Document sections"
                   onKeyDown={handleSectionKeyDown}
-                  className="dm-tabs mb-5 flex gap-1 rounded-lg bg-gray-100 p-1"
+                  className="dm-tabs dm-tabs-secondary mb-5 flex gap-1 rounded-lg bg-gray-100 p-1"
                 >
                   <button
                     ref={overviewTabRef}
@@ -647,126 +713,78 @@ export default function SpaceDetail() {
                     id="section-panel-ask"
                     aria-labelledby="section-tab-ask"
                   >
-                    <h2 className="text-lg font-semibold text-gray-900">Ask this space</h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Answers are limited to evidence found in ready documents.
-                    </p>
-                    <fieldset
-                      className="mt-4"
-                      aria-describedby={
-                        referenceDocuments.length === 0 ? "knowledge-scope-help" : undefined
-                      }
-                    >
-                      <legend className="text-sm font-medium text-gray-700">
-                        Knowledge scope
-                      </legend>
-                      <div className="mt-2 flex flex-wrap gap-4">
-                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="radio"
-                            name="knowledge-scope"
-                            value="private"
-                            checked={scope === "private"}
-                            onChange={() => setScope("private")}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          My documents
-                        </label>
-                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="radio"
-                            name="knowledge-scope"
-                            value="reference"
-                            checked={scope === "reference"}
-                            onChange={() => setScope("reference")}
-                            disabled={referenceDocuments.length === 0}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
-                          />
-                          Reference
-                        </label>
-                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="radio"
-                            name="knowledge-scope"
-                            value="combined"
-                            checked={scope === "combined"}
-                            onChange={() => setScope("combined")}
-                            disabled={referenceDocuments.length === 0}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
-                          />
-                          Both
-                        </label>
-                      </div>
-                    </fieldset>
-                    {referenceDocuments.length === 0 ? (
-                      <p id="knowledge-scope-help" className="mt-2 text-xs text-gray-500">
-                        Reference and Both are disabled because no shared reference documents are available.
-                      </p>
-                    ) : (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs font-medium text-gray-600">
-                          {referenceDocuments.length}{" "}
-                          reference document
-                          {referenceDocuments.length === 1 ? "" : "s"} available
-                        </summary>
-                        <ul className="mt-2 space-y-1">
-                          {referenceDocuments.map((document) => (
-                            <li key={document.id} className="text-xs text-gray-500">
-                              {document.title}
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    )}
-                    <form onSubmit={handleAsk} className="mt-4">
-                      <label htmlFor="question" className="sr-only">
-                        Question
-                      </label>
-                      <textarea
-                        id="question"
-                        value={question}
-                        onChange={(event) => setQuestion(event.target.value)}
-                        maxLength={1000}
-                        rows={4}
-                        required
-                        placeholder="What do these documents say about...?"
-                        className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={asking || !question.trim()}
-                        className="mt-3 bg-gray-900 text-white hover:bg-gray-800"
-                      >
-                        {asking ? "Finding evidence..." : "Ask question"}
-                      </Button>
-                    </form>
-                    {askError && (
-                      <p role="alert" className="mt-4 text-sm text-red-600">
-                        {askError}
-                      </p>
-                    )}
-                    {answer && (
-                      <div aria-live="polite" className="mt-6 border-t pt-5">
-                        {answerScope && (
-                          <p className="text-xs text-gray-400">
-                            Scope: {SCOPE_LABELS[answerScope]}
-                          </p>
-                        )}
-                        <p className="whitespace-pre-wrap leading-7 text-gray-800">
-                          {answer.answer}
-                        </p>
-                        {answer.citations.length > 0 && (
-                          <SourceDisclosure
-                            noun="source"
-                            sources={answer.citations.map((citation) => ({
-                              key: citation.source_id,
-                              label: `${citation.source_kind === "reference" ? "Reference" : "Private"} · ${citation.document_name}, page ${citation.page_number}`,
-                              excerpt: citation.excerpt,
-                            }))}
-                          />
-                        )}
-                      </div>
-                    )}
+                    <div className="dm-ask-workspace">
+                      <section className="dm-ask-conversation" aria-label="Ask conversation">
+                        <div className="dm-ask-history" aria-live="polite">
+                          {!question && !answer && (
+                            <div className="dm-ask-empty">
+                              <p className="dm-kicker">Document intelligence</p>
+                              <h2>How can I help?</h2>
+                              <p>Ask a focused question and keep the supporting passages in view.</p>
+                            </div>
+                          )}
+                          {question && <p className="dm-ask-question">{question}</p>}
+                          {answer && (
+                            <article className="dm-ask-answer">
+                              <div className="dm-ask-answer-heading">Analysis complete</div>
+                              {answerScope && <p className="dm-ask-answer-scope">Scope: {SCOPE_LABELS[answerScope]}</p>}
+                              <p className="dm-ask-answer-text">{answer.answer}</p>
+                            </article>
+                          )}
+                          {askError && <p role="alert" className="dm-error-state mt-4">{askError}</p>}
+                        </div>
+                        <form onSubmit={handleAsk} className="dm-ask-composer">
+                          <fieldset
+                            className="dm-ask-scope"
+                            aria-describedby={referenceDocuments.length === 0 ? "knowledge-scope-help" : undefined}
+                          >
+                            <legend>Scope</legend>
+                            <label>
+                              <input type="radio" name="knowledge-scope" value="private" checked={scope === "private"} onChange={() => setScope("private")} />
+                              My documents
+                            </label>
+                            <label>
+                              <input type="radio" name="knowledge-scope" value="reference" checked={scope === "reference"} onChange={() => setScope("reference")} disabled={referenceDocuments.length === 0} />
+                              Reference
+                            </label>
+                            <label>
+                              <input type="radio" name="knowledge-scope" value="combined" checked={scope === "combined"} onChange={() => setScope("combined")} disabled={referenceDocuments.length === 0} />
+                              Both
+                            </label>
+                          </fieldset>
+                          {referenceDocuments.length === 0 && (
+                            <p id="knowledge-scope-help" className="dm-field-help mb-3">Reference and Both are disabled because no shared reference documents are available.</p>
+                          )}
+                          <div className="dm-ask-input-wrap">
+                            <label htmlFor="question" className="sr-only">Question</label>
+                            <textarea
+                              id="question"
+                              value={question}
+                              onChange={(event) => setQuestion(event.target.value)}
+                              maxLength={1000}
+                              rows={2}
+                              required
+                              placeholder="Ask a question about your documents..."
+                              className="dm-textarea"
+                            />
+                            <Button type="submit" disabled={asking || !question.trim()} className="dm-ask-submit">
+                              {asking ? "Finding..." : "Ask"}
+                            </Button>
+                          </div>
+                        </form>
+                      </section>
+                      <aside className="dm-ask-sources" aria-label="Active citations">
+                        <header>Active citations</header>
+                        <div className="dm-ask-sources-body">
+                          {answer && answer.citations.length > 0 ? answer.citations.map((citation, index) => (
+                            <article className="dm-ask-source" key={citation.source_id}>
+                              <strong>[{index + 1}] {citation.document_name} / page {citation.page_number}</strong>
+                              <p>{citation.excerpt}</p>
+                            </article>
+                          )) : <p className="dm-field-help">Sources will appear here with the answer.</p>}
+                        </div>
+                      </aside>
+                    </div>
                   </div>
                 )}
               </div>
@@ -778,6 +796,8 @@ export default function SpaceDetail() {
             )}
           </section>
         </div>
+        </>
+        )}
       </main>
     </div>
   );
@@ -794,7 +814,7 @@ function AnalysisPanel({
 }) {
   if (view.kind === "loading") {
     return (
-      <p role="status" className="py-8 text-center text-sm text-gray-500">
+      <p role="status" className="dm-feature-state">
         Loading analysis...
       </p>
     );
@@ -802,27 +822,27 @@ function AnalysisPanel({
 
   if (view.kind === "processing") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="status" className="text-sm text-gray-600">
           Analysis is currently in progress.
         </p>
         <p className="mt-1 text-xs text-gray-400">
           The structured overview will appear once it completes.
         </p>
-        <button
+        <Button
           type="button"
           onClick={onAnalyze}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="mt-4"
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (view.kind === "starting") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="status" className="text-sm text-gray-600">
           Analyzing document...
         </p>
@@ -832,17 +852,17 @@ function AnalysisPanel({
 
   if (view.kind === "failed") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
           {view.message}
         </p>
-        <button
+        <Button
           type="button"
           onClick={onAnalyze}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="mt-4"
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -864,19 +884,19 @@ function AnalysisPanel({
   }
 
   return (
-    <div className="py-8 text-center">
+    <div className="dm-feature-state">
       <h2 className="text-lg font-semibold text-gray-900">Structured overview</h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
         Generate a structured overview with key facts, important dates and source
         references.
       </p>
-      <button
+      <Button
         type="button"
         onClick={onAnalyze}
-        className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        className="mt-4"
       >
         Analyze document
-      </button>
+      </Button>
     </div>
   );
 }

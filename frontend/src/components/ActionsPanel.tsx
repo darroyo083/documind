@@ -66,7 +66,7 @@ export default function ActionsPanel({
 
   if (view.kind === "loading") {
     return (
-      <p role="status" className="py-8 text-center text-sm text-gray-500">
+      <p role="status" className="dm-feature-state">
         Loading actions...
       </p>
     );
@@ -74,7 +74,7 @@ export default function ActionsPanel({
 
   if (view.kind === "processing") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="status" className="text-sm text-gray-600">
           Action extraction is currently in progress.
         </p>
@@ -84,7 +84,7 @@ export default function ActionsPanel({
         <button
           type="button"
           onClick={onGenerate}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="dm-button dm-button-primary mt-4"
         >
           Retry
         </button>
@@ -94,7 +94,7 @@ export default function ActionsPanel({
 
   if (view.kind === "starting") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="status" className="text-sm text-gray-600">
           Extracting actions...
         </p>
@@ -104,14 +104,14 @@ export default function ActionsPanel({
 
   if (view.kind === "failed") {
     return (
-      <div className="py-8 text-center">
+      <div className="dm-feature-state">
         <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
           {view.message}
         </p>
         <button
           type="button"
           onClick={onGenerate}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="dm-button dm-button-primary mt-4"
         >
           Retry
         </button>
@@ -121,7 +121,7 @@ export default function ActionsPanel({
 
   if (view.kind === "ready") {
     return (
-      <div className="space-y-4">
+      <div className="dm-feature-panel">
         <h2 className="text-lg font-semibold text-gray-900">Checklist</h2>
         {error && (
           <p role="alert" className="text-sm text-red-600">
@@ -150,7 +150,7 @@ export default function ActionsPanel({
   }
 
   return (
-    <div className="py-8 text-center">
+    <div className="dm-feature-state">
       <h2 className="text-lg font-semibold text-gray-900">Checklist</h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
         Find deadlines, required actions and important reminders supported by this
@@ -159,7 +159,7 @@ export default function ActionsPanel({
       <button
         type="button"
         onClick={onGenerate}
-        className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="dm-button dm-button-primary mt-4"
       >
         Extract actions
       </button>
