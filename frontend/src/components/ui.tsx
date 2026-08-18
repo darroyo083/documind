@@ -16,6 +16,11 @@ export type ShellNavItem = {
   end?: boolean;
 };
 
+export type WorkspaceTab = {
+  id: string;
+  label: string;
+};
+
 const DEFAULT_SHELL_NAV: ShellNavItem[] = [
   { label: "Dashboard", to: "/", end: true },
   { label: "Search", to: "/search" },
@@ -379,6 +384,9 @@ export function AppHeader({
   userName,
   onLogout,
   right,
+  tabs,
+  activeTab,
+  onTabChange,
 }: {
   title?: string;
   backTo?: string;
@@ -386,6 +394,9 @@ export function AppHeader({
   userName?: string;
   onLogout?: () => void;
   right?: ReactNode;
+  tabs?: WorkspaceTab[];
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }) {
   return (
     <header className="dm-app-header">
@@ -402,6 +413,34 @@ export function AppHeader({
           )}
           {title && <h1 className="dm-header-title">{title}</h1>}
         </div>
+        {tabs && onTabChange && (
+          <nav className="dm-workspace-tabs" aria-label="Document sections">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={cx(
+                  "dm-workspace-tab",
+                  activeTab === tab.id && "dm-workspace-tab-active",
+                )}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                  event.preventDefault();
+                  const currentIndex = tabs.findIndex((item) => item.id === tab.id);
+                  const offset = event.key === "ArrowRight" ? 1 : -1;
+                  const nextIndex = (currentIndex + offset + tabs.length) % tabs.length;
+                  const nextTab = tabs[nextIndex];
+                  onTabChange(nextTab.id);
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[nextIndex]?.focus();
+                }}
+                onClick={() => onTabChange(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
         <div className="dm-header-actions">
           {right}
           {userName && <span className="dm-header-user">{userName}</span>}
@@ -436,23 +475,25 @@ export function AuthFrame({
   description,
   children,
   footer,
+  variant = "login",
 }: {
   title: string;
   description: string;
   children: ReactNode;
   footer: ReactNode;
+  variant?: "login" | "register";
 }) {
   return (
-    <main className="dm-auth-layout">
+    <main className={`dm-auth-layout dm-auth-layout-${variant}`}>
       <section className="dm-auth-intro" aria-labelledby="auth-intro-title">
         <Link to="/" aria-label="DocuMind home">
           <BrandMark />
         </Link>
         <div className="dm-auth-intro-copy">
-          <p className="dm-kicker">Document intelligence, grounded in your files</p>
-          <h1 id="auth-intro-title">Read less. Understand more.</h1>
+          <p className="dm-kicker">System registration / set A</p>
+          <h1 id="auth-intro-title">Intelligence Workspace</h1>
           <p>
-            Bring your documents into a focused workspace for analysis, comparison and clear answers.
+            Shift from manual searching to intelligent discovery. Join DocuMind to establish your precise, authoritative record-keeping system.
           </p>
         </div>
         <p className="dm-auth-note">Private local MVP. Built for careful reading.</p>

@@ -57,6 +57,7 @@ export default function Register() {
 
   return (
     <AuthFrame
+      variant="register"
       title="Create your account"
       description="Start with a focused space for the documents you need to understand."
       footer={

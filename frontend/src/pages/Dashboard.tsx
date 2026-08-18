@@ -1,7 +1,17 @@
-import { useEffect, useState, FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as api from "../api";
-import { AppHeader, Button, EmptyState, LoadingState } from "../components/ui";
+import {
+  AppHeader,
+  Button,
+  EmptyState,
+  ErrorState,
+  FormField,
+  Input,
+  LoadingState,
+  PageHeader,
+  Textarea,
+} from "../components/ui";
 
 export default function Dashboard() {
   const [spaces, setSpaces] = useState<api.SpaceResponse[]>([]);
@@ -14,8 +24,7 @@ export default function Dashboard() {
   async function loadSpaces() {
     try {
       setError("");
-      const data = await api.listSpaces();
-      setSpaces(data);
+      setSpaces(await api.listSpaces());
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
     } finally {
@@ -24,14 +33,14 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadSpaces();
+    void loadSpaces();
   }, []);
 
-  async function handleCreate(e: FormEvent) {
-    e.preventDefault();
+  async function handleCreate(event: FormEvent) {
+    event.preventDefault();
     try {
       setError("");
-      await api.createSpace({ name: newName, description: newDesc || null });
+      await api.createSpace({ name: newName.trim(), description: newDesc.trim() || null });
       setNewName("");
       setNewDesc("");
       setShowForm(false);
@@ -55,93 +64,95 @@ export default function Dashboard() {
   return (
     <div className="dm-page">
       <AppHeader
+        title="Dashboard"
         right={
           <Link to="/search" className="dm-header-search">
-            Search
+            Search spaces
           </Link>
         }
       />
 
       <main className="dm-container dm-page-main">
-        <div className="dm-page-heading">
-          <div>
-            <p className="dm-kicker">Your workspace</p>
-            <h2>Knowledge Spaces</h2>
-            <p>Keep each document set focused, searchable and easy to revisit.</p>
-          </div>
-          <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "secondary" : "primary"}>
-            {showForm ? "Cancel" : "New Space"}
-          </Button>
-        </div>
+        <PageHeader
+          eyebrow="Workspace / Spaces"
+          title="My Spaces"
+          description="Organize and analyze collections of documents."
+          actions={
+            <Button onClick={() => setShowForm((current) => !current)} variant={showForm ? "secondary" : "primary"}>
+              {showForm ? "Close" : "Create space"}
+            </Button>
+          }
+        />
 
-        {error && (
-          <div className="dm-auth-error mb-5" role="alert">
-            {error}
-          </div>
-        )}
+        {error && <ErrorState message={error} className="dm-dashboard-error" />}
 
         {showForm && (
-          <form
-            onSubmit={handleCreate}
-            className="dm-surface mb-6 p-5"
-          >
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Name
-            </label>
-            <input
-              type="text"
-              required
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="mb-3 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-            />
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Description (optional)
-            </label>
-            <textarea
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              rows={2}
-              className="mb-4 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-            />
-            <Button type="submit">Create Space</Button>
+          <form onSubmit={handleCreate} className="dm-create-space-panel">
+            <div>
+              <p className="dm-kicker">New space</p>
+              <h2>Start a focused workspace</h2>
+            </div>
+            <div className="dm-create-space-fields">
+              <FormField label="Name" htmlFor="space-name" help="Use a project, contract or topic name.">
+                <Input
+                  id="space-name"
+                  type="text"
+                  required
+                  value={newName}
+                  onChange={(event) => setNewName(event.target.value)}
+                />
+              </FormField>
+              <FormField label="Description" htmlFor="space-description" help="Optional context for this document set.">
+                <Textarea
+                  id="space-description"
+                  rows={2}
+                  value={newDesc}
+                  onChange={(event) => setNewDesc(event.target.value)}
+                />
+              </FormField>
+            </div>
+            <div className="dm-create-space-actions">
+              <Button type="submit">Create space</Button>
+            </div>
           </form>
         )}
 
         {loading ? (
-          <LoadingState message="Loading Spaces..." />
+          <LoadingState message="Loading spaces..." />
         ) : spaces.length === 0 ? (
           <EmptyState
-            title="Your first Space starts here"
-            description="Create a Space for a project, a set of agreements or any document group you want to understand together."
-            action={<Button onClick={() => setShowForm(true)}>Create a Space</Button>}
+            title="No spaces yet"
+            description="Create a space for a project, a set of agreements or any document group you want to understand together."
+            action={<Button onClick={() => setShowForm(true)}>Create space</Button>}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {spaces.map((s) => (
-              <div
-                key={s.id}
-                className="dm-surface flex min-h-[142px] flex-col justify-between p-5"
-              >
-                <Link
-                  to={`/spaces/${s.id}`}
-                  className="block min-w-0 hover:text-indigo-600"
-                >
-                  <h3 className="truncate text-lg font-semibold text-gray-900">{s.name}</h3>
-                  {s.description && (
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">
-                      {s.description}
-                    </p>
-                  )}
+          <div className="dm-space-grid">
+            <button type="button" className="dm-space-cell dm-space-create-cell" onClick={() => setShowForm(true)}>
+              <span className="dm-space-cell-mark" aria-hidden="true">+</span>
+              <span>Create new space</span>
+            </button>
+            {spaces.map((space) => (
+              <article key={space.id} className="dm-space-cell">
+                <div className="dm-space-cell-topline">
+                  <span className="dm-space-cell-mark" aria-hidden="true">□</span>
+                  <span className="dm-space-cell-state">Active</span>
+                </div>
+                <Link to={`/spaces/${space.id}`} className="dm-space-cell-link">
+                  <h2 title={space.name}>{space.name}</h2>
+                  <p>{space.description || "Document workspace"}</p>
                 </Link>
+                <div className="dm-space-cell-meta">
+                  <span>Updated</span>
+                  <time dateTime={space.updated_at}>{new Date(space.updated_at).toLocaleDateString()}</time>
+                </div>
                 <Button
                   variant="quiet"
-                  className="mt-5 self-start px-0 text-sm text-red-600"
-                  onClick={() => handleDelete(s.id, s.name)}
+                  className="dm-space-delete"
+                  onClick={() => handleDelete(space.id, space.name)}
                 >
                   Delete
                 </Button>
-              </div>
+              </article>
             ))}
           </div>
         )}

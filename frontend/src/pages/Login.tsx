@@ -38,6 +38,7 @@ export default function Login() {
 
   return (
     <AuthFrame
+      variant="login"
       title="Sign in"
       description="Open your document spaces and continue where you left off."
       footer={
