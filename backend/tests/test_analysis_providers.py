@@ -100,6 +100,22 @@ async def test_deepseek_parses_valid_structured_analysis(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_deepseek_prompt_requires_explicit_non_empty_json_contract(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        prompt = body["messages"][0]["content"]
+        assert "exactly one valid JSON object" in prompt
+        assert 'exactly these five keys' in prompt
+        assert "important_dates and key_facts must be arrays" in prompt
+        assert "use [] when none" in prompt
+        return wrap_content(json.dumps(deepseek_result()))
+
+    provider = provider_with_transport(monkeypatch, handler)
+    result = await provider.analyze(context())
+    assert result.document_type == "contract"
+
+
+@pytest.mark.asyncio
 async def test_deepseek_accepts_null_normalized_title(monkeypatch):
     payload = deepseek_result()
     payload["normalized_title"] = None

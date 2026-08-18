@@ -308,22 +308,25 @@ class DeepSeekDocumentAnalysisProvider:
 
     async def analyze(self, context: DocumentAnalysisContext) -> ProviderDocumentAnalysis:
         system_prompt = (
-            "You extract structured document intelligence from text-only content. "
-            'Return ONLY JSON with keys "document_type", "normalized_title", "summary", '
-            '"important_dates", "key_facts". Select document_type ONLY from '
-            "contract, invoice, insurance_policy, bank_statement, tax_document, "
-            "employment_document, housing_document, pension_document, official_letter, "
-            "receipt, report, other, unknown. If unclear, use unknown. "
-            'important_dates is a list of {"label", "value", "normalized_date", "source_ids"}; '
-            "normalized_date is ISO YYYY-MM-DD ONLY when the value expresses a full "
-            "exact date, otherwise null. Never invent a missing day or month. "
-            'key_facts is a list of {"label", "value", "source_ids"}. Use ONLY the '
-            "source IDs shown as SOURCE <id> lines. Every date and every fact must "
-            "list at least one source ID that contains its evidence. Do not use "
-            "external knowledge. Do not invent labels, values, dates, or citations. "
-            "Return valid JSON only. COST: "
-            "normalized_title must be the document title as written. summary must be "
-            "one concise sentence using only the content."
+            "Return exactly one valid JSON object with exactly these five keys: "
+            '"document_type", "normalized_title", "summary", "important_dates", '
+            '"key_facts". '
+            "document_type must be exactly one of contract, invoice, insurance_policy, "
+            "bank_statement, tax_document, employment_document, housing_document, "
+            "pension_document, official_letter, receipt, report, other, unknown; "
+            "use other when no exact type matches. "
+            "normalized_title and summary must be strings; use an empty string when "
+            "unavailable. important_dates and key_facts must be arrays; use [] when "
+            "none. "
+            'Each important_dates item must have "label", "value", "normalized_date", '
+            '"source_ids". normalized_date must be ISO YYYY-MM-DD only for a full, '
+            "exact date; otherwise use null. Each key_facts item must have "
+            '"label", "value", "source_ids". '
+            "Use only SOURCE IDs present in the supplied text. Every date and fact "
+            "must cite at least one source containing its evidence. Do not use "
+            "external knowledge or invent labels, values, dates, or citations. "
+            "normalized_title must be the document title as written. Keep summary "
+            "to one concise sentence. Do not add prose or extra keys."
         )
         payload = {
             "model": self.model_name,
