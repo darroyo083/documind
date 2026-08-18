@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BrandMark } from "../components/ui";
+import { PublicHeader } from "../components/ui";
 
 function ProductPreview() {
   return (
@@ -62,20 +62,17 @@ function ProductPreview() {
 export default function Landing() {
   return (
     <main className="dm-landing">
-      <nav className="dm-landing-nav" aria-label="Primary navigation">
-        <div className="dm-container dm-landing-nav-inner">
-          <Link to="/" aria-label="DocuMind home">
-            <BrandMark />
-          </Link>
-          <div className="dm-landing-nav-actions">
+      <PublicHeader
+        actions={
+          <>
             <a href="#how-it-works">How it works</a>
             <Link to="/login">Sign in</Link>
             <Link to="/register" className="dm-button dm-button-primary dm-button-small">
               Create a space
             </Link>
-          </div>
-        </div>
-      </nav>
+          </>
+        }
+      />
 
       <section className="dm-container dm-landing-hero" aria-labelledby="landing-title">
         <div className="dm-landing-hero-copy">

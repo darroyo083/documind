@@ -1,7 +1,29 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import {
+  useState,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
+import { Link, NavLink } from "react-router-dom";
 
 type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+
+export type ShellNavItem = {
+  label: string;
+  to: string;
+  end?: boolean;
+};
+
+const DEFAULT_SHELL_NAV: ShellNavItem[] = [
+  { label: "Dashboard", to: "/", end: true },
+  { label: "Search", to: "/search" },
+];
+
+function cx(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ");
+}
 
 export function Button({
   variant = "primary",
@@ -16,11 +38,96 @@ export function Button({
   );
 }
 
+export function IconButton({
+  className = "",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button {...props} className={cx("dm-icon-button", className)} />;
+}
+
+export function Input({
+  className = "",
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={cx("dm-input", className)} />;
+}
+
+export function Textarea({
+  className = "",
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...props} className={cx("dm-textarea", className)} />;
+}
+
+export function Select({
+  className = "",
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={cx("dm-select", className)} />;
+}
+
+export function FormField({
+  label,
+  htmlFor,
+  help,
+  error,
+  children,
+  className = "",
+}: {
+  label: string;
+  htmlFor?: string;
+  help?: string;
+  error?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const helpId = htmlFor ? `${htmlFor}-help` : undefined;
+  const errorId = htmlFor ? `${htmlFor}-error` : undefined;
+
+  return (
+    <div className={cx("dm-form-field", className)}>
+      <label htmlFor={htmlFor}>{label}</label>
+      {children}
+      {help && !error && (
+        <p id={helpId} className="dm-field-help">
+          {help}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} className="dm-field-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function Divider({ className = "" }: { className?: string }) {
+  return <hr className={cx("dm-divider", className)} />;
+}
+
 export function LoadingState({ message }: { message: string }) {
   return (
     <div className="dm-loading" role="status" aria-live="polite">
       <span className="dm-skeleton dm-skeleton-short" aria-hidden="true" />
       <span>{message}</span>
+    </div>
+  );
+}
+
+export function ErrorState({
+  message,
+  action,
+  className = "",
+}: {
+  message: string;
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("dm-error-state", className)} role="alert">
+      <p>{message}</p>
+      {action && <div className="dm-error-action">{action}</div>}
     </div>
   );
 }
@@ -58,11 +165,15 @@ const STATUS_LABELS: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
   return (
-    <span className={`dm-status dm-status-${status}`}>
+    <span className={`dm-status dm-status-${status}`} aria-label={label}>
       <span className="dm-status-dot" aria-hidden="true" />
       {label}
     </span>
   );
+}
+
+export function StatusIndicator({ status }: { status: string }) {
+  return <StatusBadge status={status} />;
 }
 
 export interface SourceItem {
@@ -107,12 +218,157 @@ export function SourceDisclosure({
   );
 }
 
+export function EvidenceSource({ source }: { source: SourceItem }) {
+  return (
+    <article className="dm-evidence-source">
+      <p className="dm-source-label">{source.label}</p>
+      <p className="dm-source-excerpt">“{source.excerpt}”</p>
+    </article>
+  );
+}
+
 export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`dm-brand ${compact ? "dm-brand-compact" : ""}`.trim()}>
       <span className="dm-brand-mark" aria-hidden="true" />
       DocuMind
     </span>
+  );
+}
+
+export function SidebarNavItem({ item }: { item: ShellNavItem }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) =>
+        cx("dm-sidebar-link", isActive && "dm-sidebar-link-active")
+      }
+    >
+      <span className="dm-sidebar-link-mark" aria-hidden="true" />
+      <span>{item.label}</span>
+    </NavLink>
+  );
+}
+
+export function WorkspaceSidebar({
+  navItems = DEFAULT_SHELL_NAV,
+  userName,
+  userEmail,
+  onLogout,
+}: {
+  navItems?: ShellNavItem[];
+  userName?: string;
+  userEmail?: string;
+  onLogout?: () => void;
+}) {
+  return (
+    <aside className="dm-workspace-sidebar" aria-label="Workspace navigation">
+      <div className="dm-sidebar-top">
+        <Link to="/" aria-label="DocuMind home">
+          <BrandMark />
+        </Link>
+        <p className="dm-sidebar-label">Intelligence Workspace</p>
+      </div>
+      <nav className="dm-sidebar-nav" aria-label="Primary">
+        {navItems.map((item) => (
+          <SidebarNavItem key={`${item.to}-${item.label}`} item={item} />
+        ))}
+      </nav>
+      {(userName || userEmail || onLogout) && (
+        <div className="dm-sidebar-account">
+          <div className="dm-account-avatar" aria-hidden="true">
+            {(userName || userEmail || "D").slice(0, 1).toUpperCase()}
+          </div>
+          <div className="dm-account-copy">
+            {userName && <strong>{userName}</strong>}
+            {userEmail && <span>{userEmail}</span>}
+          </div>
+          {onLogout && (
+            <button type="button" onClick={onLogout} className="dm-sidebar-logout">
+              Sign out
+            </button>
+          )}
+        </div>
+      )}
+    </aside>
+  );
+}
+
+export function MobileBottomNav({ navItems = DEFAULT_SHELL_NAV }: { navItems?: ShellNavItem[] }) {
+  return (
+    <nav className="dm-mobile-bottom-nav" aria-label="Mobile navigation">
+      {navItems.slice(0, 3).map((item) => (
+        <SidebarNavItem key={`${item.to}-${item.label}`} item={item} />
+      ))}
+    </nav>
+  );
+}
+
+export function AppShell({
+  children,
+  navItems = DEFAULT_SHELL_NAV,
+  userName,
+  userEmail,
+  onLogout,
+}: {
+  children: ReactNode;
+  navItems?: ShellNavItem[];
+  userName?: string;
+  userEmail?: string;
+  onLogout?: () => void;
+}) {
+  return (
+    <div className="dm-app-shell">
+      <WorkspaceSidebar
+        navItems={navItems}
+        userName={userName}
+        userEmail={userEmail}
+        onLogout={onLogout}
+      />
+      <div className="dm-app-shell-main">
+        {children}
+        <MobileBottomNav navItems={navItems} />
+      </div>
+    </div>
+  );
+}
+
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="dm-page-heading">
+      <div>
+        {eyebrow && <p className="dm-kicker">{eyebrow}</p>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
+      </div>
+      {actions && <div className="dm-page-heading-actions">{actions}</div>}
+    </div>
+  );
+}
+
+export function SectionHeading({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="dm-section-heading">
+      <h2>{title}</h2>
+      {description && <p>{description}</p>}
+    </div>
   );
 }
 
@@ -155,6 +411,21 @@ export function AppHeader({
             </button>
           )}
         </div>
+      </div>
+    </header>
+  );
+}
+
+export function PublicHeader({ actions }: { actions: ReactNode }) {
+  return (
+    <header className="dm-public-header">
+      <div className="dm-container dm-public-header-inner">
+        <Link to="/" aria-label="DocuMind home">
+          <BrandMark />
+        </Link>
+        <nav className="dm-public-header-actions" aria-label="Primary navigation">
+          {actions}
+        </nav>
       </div>
     </header>
   );

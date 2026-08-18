@@ -1,11 +1,9 @@
 import { useEffect, useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../auth";
 import * as api from "../api";
 import { AppHeader, Button, EmptyState, LoadingState } from "../components/ui";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
   const [spaces, setSpaces] = useState<api.SpaceResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -57,8 +55,6 @@ export default function Dashboard() {
   return (
     <div className="dm-page">
       <AppHeader
-        userName={user?.display_name}
-        onLogout={logout}
         right={
           <Link to="/search" className="dm-header-search">
             Search

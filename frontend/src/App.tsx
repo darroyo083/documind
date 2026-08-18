@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth";
-import { LoadingState } from "./components/ui";
+import { AppShell, LoadingState } from "./components/ui";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -9,20 +9,38 @@ import SearchPage from "./pages/SearchPage";
 import SpaceDetail from "./pages/SpaceDetail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   if (loading) {
     return <LoadingState message="Loading your workspace..." />;
   }
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  return <>{children}</>;
+  return (
+    <AppShell
+      userName={user.display_name}
+      userEmail={user.email}
+      onLogout={logout}
+    >
+      {children}
+    </AppShell>
+  );
 }
 
 function HomeRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   if (loading) return <LoadingState message="Loading DocuMind..." />;
-  return user ? <Dashboard /> : <Landing />;
+  if (!user) return <Landing />;
+
+  return (
+    <AppShell
+      userName={user.display_name}
+      userEmail={user.email}
+      onLogout={logout}
+    >
+      <Dashboard />
+    </AppShell>
+  );
 }
 
 export default function App() {
