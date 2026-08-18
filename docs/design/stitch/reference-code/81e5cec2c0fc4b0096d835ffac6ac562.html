@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DocuMind - Spaces</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-background": "#1a1c1c",
+                      "surface-tint": "#5b5e66",
+                      "tertiary": "#000000",
+                      "surface": "#f9f9f8",
+                      "surface-container-low": "#f3f4f3",
+                      "charcoal-ink": "#0D1117",
+                      "on-error": "#ffffff",
+                      "on-secondary-container": "#dfe3ff",
+                      "tertiary-fixed-dim": "#d6c3b7",
+                      "surface-container-high": "#e8e8e7",
+                      "surface-container-highest": "#e2e2e2",
+                      "on-primary-container": "#80848c",
+                      "inverse-on-surface": "#f1f1f0",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f9f9f8",
+                      "on-surface-variant": "#45474b",
+                      "on-tertiary-fixed": "#231a12",
+                      "technical-blue": "#0052FF",
+                      "border-muted": "#D1D5DB",
+                      "secondary-container": "#0052fe",
+                      "error": "#ba1a1a",
+                      "archival-paper": "#F9F9F8",
+                      "primary-fixed-dim": "#c3c6cf",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#dde1ff",
+                      "inverse-surface": "#2f3130",
+                      "tertiary-fixed": "#f3dfd2",
+                      "on-secondary-fixed-variant": "#0038b6",
+                      "primary": "#000000",
+                      "on-primary-fixed": "#181c22",
+                      "on-tertiary-container": "#918176",
+                      "outline": "#76777b",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed-dim": "#b7c4ff",
+                      "on-primary": "#ffffff",
+                      "background": "#f9f9f8",
+                      "primary-fixed": "#dfe2eb",
+                      "on-tertiary-fixed-variant": "#51443b",
+                      "surface-variant": "#e2e2e2",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#43474e",
+                      "surface-container": "#eeeeed",
+                      "on-surface": "#1a1c1c",
+                      "primary-container": "#181c22",
+                      "on-secondary-fixed": "#001452",
+                      "outline-variant": "#c6c6cb",
+                      "surface-dim": "#dadad9",
+                      "tertiary-container": "#231a12",
+                      "inverse-primary": "#c3c6cf",
+                      "secondary": "#003ec6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "margin": "32px",
+                      "sidebar-width": "280px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F9F9F8; /* Archival Paper */
+            color: #1a1c1c;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md flex bg-archival-paper">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col bg-archival-paper border-r border-charcoal-ink fixed left-0 top-0 h-full w-sidebar-width p-margin z-20">
+<div class="mb-12">
+<h1 class="font-headline-md text-headline-md font-bold text-charcoal-ink">DocuMind</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant mt-2">Intelligence Workspace</p>
+</div>
+<button class="w-full bg-charcoal-ink text-white py-3 px-4 rounded font-label-caps text-label-caps flex items-center justify-center gap-2 hover:bg-surface-container-high hover:text-charcoal-ink transition-colors mb-8">
+<span class="material-symbols-outlined text-[16px]">upload</span>
+            Upload Document
+        </button>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded bg-charcoal-ink text-white font-bold hover:bg-surface-container-high hover:text-charcoal-ink transition-colors scale-95 origin-left" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder_shared" style="font-variation-settings: 'FILL' 1;">folder_shared</span>
+<span class="font-label-caps text-label-caps">Spaces</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="search">search</span>
+<span class="font-label-caps text-label-caps">Search</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto flex items-center gap-4 pt-4 border-t border-charcoal-ink">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-charcoal-ink">
+<img alt="User profile picture" class="w-full h-full object-cover" data-alt="A detailed headshot portrait of a professional in a minimalist setting. Soft, natural high-key lighting, bright white background, reflecting a clean, modern, and serious aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5w6PdKU9y4bv9qQE_SctNAJLDKsn-W0PP_BmyfvrQ_4y6aROT5Sc1JosQYYisdzrVTf0YG555UIdsYjsswWkQVj5MfvOpy7ZSzj62XcY3TwXHpWpXiC9eHxyyr6NuTD0prWlkqeeb0BOG5URfymFpifg-ARQrhc4HMdZahOg_7aQNN0OlQWjVmIFxNX2aitpmMxooEVw5DES8ewHdNZKP5_hklZroKvTVQinJaZ0twAFm1f3aCtKH"/>
+</div>
+<div>
+<p class="font-label-mono text-label-mono text-charcoal-ink">User Account</p>
+<p class="font-label-mono text-[10px] text-on-surface-variant">Pro Tier</p>
+</div>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-0 md:ml-sidebar-width min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-white flex justify-between items-center h-16 px-gutter border-b border-charcoal-ink sticky top-0 z-10 w-full">
+<div class="flex items-center gap-6">
+<!-- Mobile menu button (hidden on desktop) -->
+<button class="md:hidden text-charcoal-ink">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="md:hidden font-headline-md text-headline-md font-bold text-charcoal-ink">DocuMind</div>
+<nav class="hidden md:flex gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant pb-2 hover:text-technical-blue transition-opacity" href="#">Overview</a>
+<a class="font-label-caps text-label-caps text-technical-blue border-b-2 border-technical-blue pb-2 hover:text-technical-blue transition-opacity" href="#">Actions</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant pb-2 hover:text-technical-blue transition-opacity" href="#">Compare</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant pb-2 hover:text-technical-blue transition-opacity" href="#">Intelligence</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant pb-2 hover:text-technical-blue transition-opacity" href="#">Ask</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface text-body-sm font-body-sm border-b border-charcoal-ink focus:outline-none focus:border-technical-blue w-64" placeholder="Search across spaces..." type="text"/>
+</div>
+<button class="font-label-caps text-label-caps text-charcoal-ink border border-charcoal-ink px-4 py-2 rounded hover:bg-surface-container-high transition-colors">Invite</button>
+<button class="font-label-caps text-label-caps bg-charcoal-ink text-white px-4 py-2 rounded hover:bg-surface-container-high hover:text-charcoal-ink transition-colors hidden sm:block">Upload</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 p-margin overflow-y-auto">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-end mb-8 border-b border-charcoal-ink pb-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-charcoal-ink">My Spaces</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant mt-1">Organize and analyze collections of documents.</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 border border-charcoal-ink rounded text-charcoal-ink hover:bg-surface-container-high transition-colors" title="Grid View">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+</button>
+<button class="p-2 border border-charcoal-ink rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="List View">
+<span class="material-symbols-outlined text-[20px]">view_list</span>
+</button>
+</div>
+</div>
+<!-- Bento Grid for Spaces -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Create New Space Card (Primary Action) -->
+<button class="h-64 border border-dashed border-charcoal-ink rounded bg-surface-container-low flex flex-col items-center justify-center hover:bg-surface-container-high transition-colors group">
+<div class="w-12 h-12 rounded-full border border-charcoal-ink flex items-center justify-center mb-4 group-hover:bg-charcoal-ink group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">add</span>
+</div>
+<span class="font-label-caps text-label-caps text-charcoal-ink">Create New Space</span>
+</button>
+<!-- Space Card 1 -->
+<div class="h-64 border border-charcoal-ink rounded bg-white flex flex-col hover:border-technical-blue transition-colors cursor-pointer group">
+<div class="p-4 border-b border-charcoal-ink flex justify-between items-start">
+<div class="w-10 h-10 rounded border border-charcoal-ink flex items-center justify-center bg-surface group-hover:bg-technical-blue group-hover:text-white transition-colors group-hover:border-technical-blue">
+<span class="material-symbols-outlined text-[20px]">architecture</span>
+</div>
+<span class="font-label-mono text-label-mono text-technical-blue bg-secondary-fixed px-2 py-1 rounded">Active</span>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-[18px] font-bold text-charcoal-ink mb-1 truncate">Q4 Earnings Analysis</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Financial Reports</p>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Docs</span>
+<span class="font-label-mono text-body-sm font-bold">12</span>
+</div>
+<div class="flex flex-col gap-1 text-right">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Updated</span>
+<span class="font-label-mono text-body-sm">2h ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Space Card 2 -->
+<div class="h-64 border border-charcoal-ink rounded bg-white flex flex-col hover:border-technical-blue transition-colors cursor-pointer group">
+<div class="p-4 border-b border-charcoal-ink flex justify-between items-start">
+<div class="w-10 h-10 rounded border border-charcoal-ink flex items-center justify-center bg-surface group-hover:bg-technical-blue group-hover:text-white transition-colors group-hover:border-technical-blue">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+</div>
+<!-- No status badge -->
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-[18px] font-bold text-charcoal-ink mb-1 truncate">Merger Due Diligence</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Legal Contracts</p>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Docs</span>
+<span class="font-label-mono text-body-sm font-bold">45</span>
+</div>
+<div class="flex flex-col gap-1 text-right">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Updated</span>
+<span class="font-label-mono text-body-sm">1d ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Space Card 3 -->
+<div class="h-64 border border-charcoal-ink rounded bg-white flex flex-col hover:border-technical-blue transition-colors cursor-pointer group">
+<div class="p-4 border-b border-charcoal-ink flex justify-between items-start">
+<div class="w-10 h-10 rounded border border-charcoal-ink flex items-center justify-center bg-surface group-hover:bg-technical-blue group-hover:text-white transition-colors group-hover:border-technical-blue">
+<span class="material-symbols-outlined text-[20px]">science</span>
+</div>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-[18px] font-bold text-charcoal-ink mb-1 truncate">Project Apollo Specs</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Engineering Docs</p>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Docs</span>
+<span class="font-label-mono text-body-sm font-bold">8</span>
+</div>
+<div class="flex flex-col gap-1 text-right">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Updated</span>
+<span class="font-label-mono text-body-sm">3d ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Space Card 4 -->
+<div class="h-64 border border-charcoal-ink rounded bg-white flex flex-col hover:border-technical-blue transition-colors cursor-pointer group">
+<div class="p-4 border-b border-charcoal-ink flex justify-between items-start">
+<div class="w-10 h-10 rounded border border-charcoal-ink flex items-center justify-center bg-surface group-hover:bg-technical-blue group-hover:text-white transition-colors group-hover:border-technical-blue">
+<span class="material-symbols-outlined text-[20px]">campaign</span>
+</div>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-[18px] font-bold text-charcoal-ink mb-1 truncate">2024 Brand Refresh</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Marketing Assets</p>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Docs</span>
+<span class="font-label-mono text-body-sm font-bold">24</span>
+</div>
+<div class="flex flex-col gap-1 text-right">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Updated</span>
+<span class="font-label-mono text-body-sm">1w ago</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

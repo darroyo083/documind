@@ -1,0 +1,159 @@
+{
+  "project": {
+    "id": "9185568505600455027",
+    "title": "DocuMind UX Redesign",
+    "name": "projects/9185568505600455027"
+  },
+  "retrievedAt": "2026-08-18",
+  "designSystemAsset": {
+    "id": "assets_6bdaad0638984f33ba6174077c62db6a",
+    "sourceAsset": "assets/6bdaad0638984f33ba6174077c62db6a",
+    "structuredDesignSystem": true,
+    "renderedAssetUrl": null
+  },
+  "screens": [
+    {
+      "id": "0f92344f4c354043a9842a981a61dd1a",
+      "title": "Intelligence - Desktop",
+      "width": 1280,
+      "height": 1024,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": null,
+      "referenceCodeUrl": null,
+      "referenceCodeSource": "inline-mcp",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "9bd5bae2c7784d5a9b72b927b21400ad",
+      "title": "Ask - Mobile",
+      "width": 390,
+      "height": 884,
+      "deviceType": "MOBILE",
+      "screenshotUrl": null,
+      "referenceCodeUrl": null,
+      "referenceCodeSource": "inline-mcp",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "81e5cec2c0fc4b0096d835ffac6ac562",
+      "title": "Dashboard - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtfpDolChsuVElBmazzunhWi2Fjc9YzdFFTSzLjXi_9Z32rBBzNTjf5_7ri_ygkeOGy1dNDGmo0bEEBQNC9Jk84Pgo-6yBXKIj6IsMzCHiHiR6upHiDxVCKZXPEPA_8TZJNu06gMfcuZmhtIWw0B4ShgGj4sTR46aylAxjBbJ_SOYzDcenl75eIh3I7TuZm_AE8LnCRbDT-WNBNFAM1Lzxstkr8w60QpjhTDCr-I4VQvxEbDRlfyVSc98Q",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NmIyMzI2Y2YwNDRmNTE2OTllMjhmN2E5EgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "1a5fb31efc504f1a96dab6eea8144659",
+      "title": "Overview - Desktop",
+      "width": 2560,
+      "height": 2250,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvRr3KqasshHuQJjFZp_puTJxeKw7yvL2M60l5lhNCJXFm9ETH_QNtgPTz3mFElJb_EllGt2RIfRLtrHQ8TlDb2SXdvD4Uv8SmFTvM-wr9Z7B3g3if6klbCSzZMF-1k92EhhZejEH1Ezoixnua-IF1wlnNQmyWAlRrqcUXPGANxFHwXldbv5UHlXZoQqDMa9LQYqpnuw0zKnWuy_ih7tXuUrI1iDXHlcGTMUmE7oWet5xGsvWj77KlWXTY",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NmU1NDE5OGYwOTY4OWUzZjNkM2JmMDZmEgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "b457a41d48db4917a4ec6dc5f8570ab7",
+      "title": "Workspace - Mobile",
+      "width": 390,
+      "height": 884,
+      "deviceType": "MOBILE",
+      "screenshotUrl": null,
+      "referenceCodeUrl": null,
+      "referenceCodeSource": "inline-mcp",
+      "directGetScreen": "invalid-argument-on-get_screen; metadata/list artifact available"
+    },
+    {
+      "id": "ca7be7dfafcf4a498c80ea1a495b1f3e",
+      "title": "Register - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtvx3hyzY0Wh1ZvsroMlZeH-YMDanGe1gRChEqiHlxvqth9tkpf7EPBfk_ycTbOmcsXEwg0cFnrpHwUdAblcK59DXmKf65B_JH0IpWSIZUUTzG5z0CLNTvIqGWqrGIJrJp1XrheGid9pNfhh3xi73-tsddn1uOuveF4n5QmATopW-XUMeomqyyH8KHA4GZs2XzsVxTTyf-vP4VXkgPYnPS2mP_oNxGe7Yvk23Nb1RMSLQQI6AB-WHmUaSo",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NjgxZGQ2NDYwOTY4OWUzZjNkM2JmMDZmEgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "acb73c34c36e49efbef1187de55af9fc",
+      "title": "Compare - Desktop",
+      "width": 2570,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuFSn2nDDYxxJYH-7RQXrCeyz5GW-xMdbO8gCvEW7XVaHXMZ2aJfphn1700gvLiHxNmmh6P8LEyNeYoErvyrgumKJBTxWRzB7a1hkrNPOSkuVfBQW5Mfrin8bZ4bQuDpkx35HuSOUl8ACvuvSKprGKx_J2vZvEI_O7sQqR5j9PZZFal5SALRhaubr0DnZ7uJAlvuOwaJFTl_p8gDHmhbUrFICrtGyU4-4fooo4AxQVEInN1DMrdHlG2nJQ",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NzE1MGFlMWMwNWYxMTA3YzUzMTIxMjgxEgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "17bf944c503e41c1b8bcbae4dba9fdb7",
+      "title": "Empty Space - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtF4uHlnGqu5vagSdpD_IqIjCRs1URE4-SpO-T9m4jfLrRHqcHFBcd_ytJlFs8yHAtDT8V6su8Av36jDTXOtMJ7Buuf1zufCw-vwuW_hOzvhTv5K9pR2WkXqxhzKHVYn4xbFl2KiSDVgW1f_XTaSpgouMPrHF5ERSC7SDt868pY9xyU5qbhLcFTSL_gq8sl531x3t5Lc519mWfTtntbfOH1DtCce8rKvRRYLTqaVC_Zb0hnWi_YRtxI7oQ",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NmFiNDAwYzIwNGU3NGJkZDVkMDYzOWFjEgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "f8dd2844a8e044f988749833da04cec9",
+      "title": "Actions - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsCB6r6SKSfwKAR60nT8e9is5qalPfx2sJywskO2XrM7QIM5901qoo-LzESD9nhsN_4M-wA6vhvgFf7aB9nhNXKnnxY_IO9QA69BMhFOkwGg22ZLM52WiuNESW08IXlb-xYxsSl3p9Q2R4Yt-y3Is8f6atQmnZR7vbIlkpLo6qXK8-2KZHjYC-rEvRVykDBRYefSQqGYZOE_KVI3qWlTC1WoCsOnHZUvX4shHh3bud6v70Bhtx2t2eMoAc",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NzBlYzc1YjMwNGU3NGQ5YWI2MGFhOWI1EgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "invalid-argument-on-get_screen; metadata/list artifact available"
+    },
+    {
+      "id": "a0c03fded36143bf9cd3945b112156bd",
+      "title": "Space with Documents - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvEh8AcOBjUXkaMmaZRXZRmwnL9OmqKYB9DVEJXZ_MWrc-MuUnThcKXnkfJggN1CNIqWimnw4qyPRYnJVDzLKdDILYRNFk70qXbIR9qZsjjyiUcWdipsOk4zF-0w4jabeNxD4wpoaDjt3tjLuyaLYdhHR8woCY1qGFo8RKtWkq7pqw0upi0FhjTkJFTsPOMVboEflZwIMWucptr_8HtDR22t5NDgKAJRw-q9xk6sDNYqIv4tlWUkxfzD7w",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0NmU2NjI3OTcwNGU3NGQ5YWI2MGFhOWI1EgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "e10fb57b8f4d435aa694b344820396d0",
+      "title": "Ask - Desktop",
+      "width": 1280,
+      "height": 1024,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": null,
+      "referenceCodeUrl": null,
+      "referenceCodeSource": "inline-mcp",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "87d0da6772364d4bbfb4c382e14e2f7f",
+      "title": "Landing Page - Desktop",
+      "width": 2560,
+      "height": 3640,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsgGMBf_hwQVfzjZthpoXP1zByU1ZAU1KrcKgZ2X054htqSCeW5iNh_jgqqiWhuB9PApCWHKEKhtWROa3zKDuPQ7kybZxxZFVsDWJTZXILpsH8JM3SoMeu91xGdzixhMhTkKWiy9DUx-qE6RV47THZ9fKYL-ThMENMen0rM-VXnCZ0LQRPLYd67KGq1LH9fE4p6Nu7axSRJ8azTbeQAQK5CghFWr4iL1HeLwvLLFjF6QariEuCXV4mi9vc",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0Njg1ZThmYmIwNGU3NGYxMWE1MzEzNzc2EgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    },
+    {
+      "id": "84ba77d9d7b44743af53ac697e530973",
+      "title": "Login - Desktop",
+      "width": 2560,
+      "height": 2048,
+      "deviceType": "DESKTOP",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu8obS2r-iZHQ2Pos62sMkAOfENLLvHUE9PQ5_CS1dc3HYjmiaGL9qaG3nukaJ6O2WmjoZwfzUgD5DR47whnZ0hf33g2S2Poqg9s4zACegGGLC9b_J2KRWyHw87NtsltBV22Cb-bOhpbZwn7pwclKQCI4U1cLPkWq3fCGJiqF2PCqI7DSVpHi8GXYhB--_eziF0BHABGKs_H8lCJlcmgIRTSQ4cOdyE_3ht6jm1D1qKr_RJfcy0Bx1bn9w",
+      "referenceCodeUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1OTU0Njc3OTQ3ZTcwNGU3NGQ5YWI2MGFhOWI1EgsSBxC0-4qtvAcYAZIBIwoKcHJvamVjdF9pZBIVQhM5MTg1NTY4NTA1NjAwNDU1MDI3&filename=&opi=89354086",
+      "referenceCodeSource": "hosted-download",
+      "directGetScreen": "ok"
+    }
+  ]
+}

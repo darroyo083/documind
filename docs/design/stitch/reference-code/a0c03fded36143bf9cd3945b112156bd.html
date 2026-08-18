@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DocuMind - Space: Project Phoenix</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#1a1c1c",
+                        "surface-tint": "#5b5e66",
+                        "tertiary": "#000000",
+                        "surface": "#f9f9f8",
+                        "surface-container-low": "#f3f4f3",
+                        "charcoal-ink": "#0D1117",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#dfe3ff",
+                        "tertiary-fixed-dim": "#d6c3b7",
+                        "surface-container-high": "#e8e8e7",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-primary-container": "#80848c",
+                        "inverse-on-surface": "#f1f1f0",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f9f9f8",
+                        "on-surface-variant": "#45474b",
+                        "on-tertiary-fixed": "#231a12",
+                        "technical-blue": "#0052FF",
+                        "border-muted": "#D1D5DB",
+                        "secondary-container": "#0052fe",
+                        "error": "#ba1a1a",
+                        "archival-paper": "#F9F9F8",
+                        "primary-fixed-dim": "#c3c6cf",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#dde1ff",
+                        "inverse-surface": "#2f3130",
+                        "tertiary-fixed": "#f3dfd2",
+                        "on-secondary-fixed-variant": "#0038b6",
+                        "primary": "#000000",
+                        "on-primary-fixed": "#181c22",
+                        "on-tertiary-container": "#918176",
+                        "outline": "#76777b",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9f8",
+                        "primary-fixed": "#dfe2eb",
+                        "on-tertiary-fixed-variant": "#51443b",
+                        "surface-variant": "#e2e2e2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#43474e",
+                        "surface-container": "#eeeeed",
+                        "on-surface": "#1a1c1c",
+                        "primary-container": "#181c22",
+                        "on-secondary-fixed": "#001452",
+                        "outline-variant": "#c6c6cb",
+                        "surface-dim": "#dadad9",
+                        "tertiary-container": "#231a12",
+                        "inverse-primary": "#c3c6cf",
+                        "secondary": "#003ec6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin": "32px",
+                        "sidebar-width": "280px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom thin scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: transparent; }
+        *:hover::-webkit-scrollbar-thumb { background: #0D1117; }
+        
+        /* Grid styling */
+        .doc-grid {
+            display: grid;
+            grid-template-columns: minmax(300px, 2fr) 150px 100px 150px 80px;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .row-hover:hover {
+            background-color: #f3f4f3;
+        }
+        
+        /* Active row styling matching design tokens */
+        .row-active {
+            border-left: 2px solid #0052FF;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-archival-paper text-charcoal-ink font-body-md h-full flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-archival-paper dark:bg-charcoal-ink h-screen w-sidebar-width flex-col border-r border-charcoal-ink fixed left-0 top-0 h-full flex flex-col p-margin z-20 hidden md:flex">
+<div class="mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-charcoal-ink dark:text-surface">DocuMind</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant mt-1">Intelligence Workspace</p>
+</div>
+<button class="w-full bg-charcoal-ink text-white font-label-caps text-label-caps py-3 px-4 mb-8 flex items-center justify-center gap-2 hover:bg-surface-container-high hover:text-charcoal-ink transition-colors border border-charcoal-ink">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">upload</span>
+            Upload Document
+        </button>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-charcoal-ink text-white dark:bg-white dark:text-charcoal-ink font-bold hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_shared</span>
+<span class="font-label-caps text-label-caps">Spaces</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-caps text-label-caps">Search</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-8 border-t border-charcoal-ink">
+<div class="flex items-center gap-3">
+<img alt="User profile picture" class="w-10 h-10 object-cover border border-charcoal-ink rounded-none" data-alt="A professional headshot of a person looking directly at the camera, conveying intelligence and authority. High contrast black and white photography, sharp focus, minimalist background. Clean, high-end architectural vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyJd8am6RRawZMt8x0iExVpUGiyqteaKYAyYIM8oVqGVw3j3HadQjljTodjeR5ZqfZBb3JN3grUPuY6MA7C0Eh9H9XsFCW8ga4llX5WX6V2c9esFfW-32BUrGu0o_ysHEmIdj4fwTSi0MhEq8QYdc520UsmxR1J8p6CVUwT7GNFI4ZpXH1_IG9iUDgqCjiM-A32TkqMRN4S1gfxkJ49SSQNEGbg0stvReQycI2I-dII9IlCzdYK3Xb"/>
+<div>
+<p class="font-label-caps text-label-caps font-bold">A. SMITH</p>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Archivist</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full ml-0 md:ml-sidebar-width w-full md:w-[calc(100%-280px)] bg-archival-paper">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-charcoal-ink docked full-width top-0 border-b border-charcoal-ink flex justify-between items-center h-16 px-gutter z-10 shrink-0">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-headline-md font-bold text-charcoal-ink dark:text-white">Project: Phoenix</h2>
+<nav class="hidden lg:flex items-center gap-6 ml-8 mt-1">
+<a class="font-label-caps text-label-caps text-technical-blue border-b-2 border-technical-blue pb-1 hover:text-technical-blue transition-opacity" href="#">Overview</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-outline-variant pb-1 hover:text-technical-blue transition-opacity" href="#">Actions</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-outline-variant pb-1 hover:text-technical-blue transition-opacity" href="#">Compare</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-outline-variant pb-1 hover:text-technical-blue transition-opacity" href="#">Intelligence</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-outline-variant pb-1 hover:text-technical-blue transition-opacity" href="#">Ask</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-charcoal-ink transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="font-label-caps text-label-caps border border-charcoal-ink px-4 py-2 hover:bg-charcoal-ink hover:text-white transition-colors">Invite</button>
+<button class="font-label-caps text-label-caps bg-charcoal-ink text-white px-4 py-2 hover:bg-surface-container-high hover:text-charcoal-ink border border-charcoal-ink transition-colors">Upload</button>
+<img alt="User avatar" class="w-8 h-8 object-cover border border-charcoal-ink block md:hidden rounded-none" data-alt="A small circular avatar placeholder image. Very simple, black outline on white background, abstract representation of a person. High contrast, minimalist." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHDbW2Typ3PWgI7XN_ULo3P7hppnJgtHxnFffejF8-fz-P7gT6wCKOOFMhgIYl8F-1V-TB0UKZYzYT6th28cVCAXFAIZa-_GA-jagV--Vpxp8fyY25KIjaBhAUfubJhFjYaDA04dyM72VXbzFfCBiH4X4HAcLwql2U-3XCkbpUBt7fENIYrGM8UotuvLEuonyjzN_JTUeIgTYjNNtw9UEXtBOfVcpe_9w0Yz2nqmhm8wxa6-d2WuV1"/>
+</div>
+</header>
+<!-- Workspace Area -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Document List -->
+<div class="flex-1 flex flex-col bg-white overflow-hidden border-r border-charcoal-ink">
+<!-- Table Header -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink bg-surface-container-low shrink-0">
+<div class="font-label-caps text-label-caps text-on-surface-variant">Document Name</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Date Added</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Size</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Status</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant text-right">Actions</div>
+</div>
+<!-- Table Body (Scrollable) -->
+<div class="flex-1 overflow-y-auto">
+<!-- Row 1 (Active) -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink row-hover row-active cursor-pointer relative">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-technical-blue">picture_as_pdf</span>
+<span class="font-body-sm text-body-sm font-bold truncate">PHX_Q3_Financial_Projections_v2.pdf</span>
+</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">2023-10-27</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">4.2 MB</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-charcoal-ink"></div>
+<span class="font-label-caps text-label-caps">Ready</span>
+</div>
+<div class="text-right">
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink row-hover cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">picture_as_pdf</span>
+<span class="font-body-sm text-body-sm truncate">Architecture_Blueprint_Section_A.pdf</span>
+</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">2023-10-26</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">12.8 MB</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-charcoal-ink"></div>
+<span class="font-label-caps text-label-caps">Ready</span>
+</div>
+<div class="text-right">
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Row 3 (Processing) -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink row-hover cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">picture_as_pdf</span>
+<span class="font-body-sm text-body-sm truncate text-on-surface-variant">Merger_Agreement_Draft_FINAL.pdf</span>
+</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">2023-10-28</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">1.5 MB</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-technical-blue animate-pulse"></div>
+<span class="font-label-caps text-label-caps text-technical-blue">Processing</span>
+</div>
+<div class="text-right">
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink row-hover cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">picture_as_pdf</span>
+<span class="font-body-sm text-body-sm truncate">Executive_Summary_Deck.pdf</span>
+</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">2023-10-25</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">8.9 MB</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-charcoal-ink"></div>
+<span class="font-label-caps text-label-caps">Ready</span>
+</div>
+<div class="text-right">
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Row 5 (Failed) -->
+<div class="doc-grid px-gutter py-4 border-b border-charcoal-ink row-hover cursor-pointer bg-error-container bg-opacity-20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error">error</span>
+<span class="font-body-sm text-body-sm truncate text-error">Corrupted_Data_Dump_09.pdf</span>
+</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">2023-10-24</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">0.0 MB</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-error"></div>
+<span class="font-label-caps text-label-caps text-error">Failed</span>
+</div>
+<div class="text-right">
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">refresh</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Preview Panel (Hidden on smaller screens, visible on LG) -->
+<aside class="hidden lg:flex w-96 flex-col bg-archival-paper border-l border-charcoal-ink">
+<!-- Panel Header -->
+<div class="p-gutter border-b border-charcoal-ink shrink-0 bg-white">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2 text-technical-blue">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="font-label-caps text-label-caps">Document Details</span>
+</div>
+<button class="text-on-surface-variant hover:text-charcoal-ink"><span class="material-symbols-outlined">close</span></button>
+</div>
+<h3 class="font-headline-md text-headline-md font-bold text-charcoal-ink leading-tight break-words">PHX_Q3_Financial_Projections_v2.pdf</h3>
+</div>
+<!-- Panel Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-gutter space-y-8 bg-surface-container-low">
+<!-- Meta Data -->
+<section class="space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Author</p>
+<p class="font-body-sm text-body-sm text-charcoal-ink font-bold">Finance Team</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Last Modified</p>
+<p class="font-label-mono text-label-mono text-charcoal-ink">2023-10-27 14:32</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Pages</p>
+<p class="font-label-mono text-label-mono text-charcoal-ink">42</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Extracted Entities</p>
+<p class="font-label-mono text-label-mono text-technical-blue font-bold">156</p>
+</div>
+</div>
+</section>
+<hr class="border-charcoal-ink"/>
+<!-- AI Summary -->
+<section>
+<h4 class="font-label-caps text-label-caps text-charcoal-ink mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-technical-blue text-sm">auto_awesome</span>
+                            Intelligence Summary
+                        </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                            This document outlines the revised Q3 financial projections for Project Phoenix, adjusting for the recent supply chain disruptions. Key adjustments include a 15% reduction in expected gross margin for hardware components and a revised timeline for the Phase 2 rollout.
+                        </p>
+</section>
+<hr class="border-charcoal-ink"/>
+<!-- Actions -->
+<section class="flex flex-col gap-3">
+<button class="w-full font-label-caps text-label-caps border border-charcoal-ink bg-white text-charcoal-ink px-4 py-3 hover:bg-charcoal-ink hover:text-white transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">open_in_new</span> Open in Reader
+                        </button>
+<button class="w-full font-label-caps text-label-caps border border-charcoal-ink bg-white text-charcoal-ink px-4 py-3 hover:bg-charcoal-ink hover:text-white transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span> Download PDF
+                        </button>
+</section>
+</div>
+</aside>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-charcoal-ink flex justify-around items-center h-16 z-20 shrink-0">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps text-[9px]">Dash</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-charcoal-ink font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_shared</span>
+<span class="font-label-caps text-label-caps text-[9px]">Spaces</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-caps text-label-caps text-[9px]">Search</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps text-[9px]">Settings</span>
+</a>
+</nav>
+<script>
+        // Simple row selection logic for demonstration
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('.doc-grid.cursor-pointer');
+            rows.forEach(row => {
+                row.addEventListener('click', () => {
+                    // Remove active class from all
+                    rows.forEach(r => r.classList.remove('row-active', 'bg-white'));
+                    // Add to clicked
+                    row.classList.add('row-active', 'bg-white');
+                    
+                    // In a real app, this would update the preview panel content
+                });
+            });
+        });
+    </script>
+</body></html>

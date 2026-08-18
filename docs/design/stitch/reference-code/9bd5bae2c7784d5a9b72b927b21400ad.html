@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DocuMind - Mobile Ask</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-background": "#1a1c1c",
+                      "surface-tint": "#5b5e66",
+                      "tertiary": "#000000",
+                      "surface": "#f9f9f8",
+                      "surface-container-low": "#f3f4f3",
+                      "charcoal-ink": "#0D1117",
+                      "on-error": "#ffffff",
+                      "on-secondary-container": "#dfe3ff",
+                      "tertiary-fixed-dim": "#d6c3b7",
+                      "surface-container-high": "#e8e8e7",
+                      "surface-container-highest": "#e2e2e2",
+                      "on-primary-container": "#80848c",
+                      "inverse-on-surface": "#f1f1f0",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f9f9f8",
+                      "on-surface-variant": "#45474b",
+                      "on-tertiary-fixed": "#231a12",
+                      "technical-blue": "#0052FF",
+                      "border-muted": "#D1D5DB",
+                      "secondary-container": "#0052fe",
+                      "error": "#ba1a1a",
+                      "archival-paper": "#F9F9F8",
+                      "primary-fixed-dim": "#c3c6cf",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#dde1ff",
+                      "inverse-surface": "#2f3130",
+                      "tertiary-fixed": "#f3dfd2",
+                      "on-secondary-fixed-variant": "#0038b6",
+                      "primary": "#000000",
+                      "on-primary-fixed": "#181c22",
+                      "on-tertiary-container": "#918176",
+                      "outline": "#76777b",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed-dim": "#b7c4ff",
+                      "on-primary": "#ffffff",
+                      "background": "#f9f9f8",
+                      "primary-fixed": "#dfe2eb",
+                      "on-tertiary-fixed-variant": "#51443b",
+                      "surface-variant": "#e2e2e2",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#43474e",
+                      "surface-container": "#eeeeed",
+                      "on-surface": "#1a1c1c",
+                      "primary-container": "#181c22",
+                      "on-secondary-fixed": "#001452",
+                      "outline-variant": "#c6c6cb",
+                      "surface-dim": "#dadad9",
+                      "tertiary-container": "#231a12",
+                      "inverse-primary": "#c3c6cf",
+                      "secondary": "#003ec6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "margin": "32px",
+                      "sidebar-width": "280px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c6c6cb;
+            border-radius: 0;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background: #0D1117;
+        }
+      </style>
+</head>
+<body class="bg-archival-paper text-on-surface font-body-md min-h-screen flex flex-col w-full md:max-w-md mx-auto md:border-x md:border-charcoal-ink relative h-[100dvh] overflow-hidden">
+<!-- Mobile Top App Bar (Simplified for mobile) -->
+<header class="flex justify-between items-center h-16 px-4 bg-white border-b border-charcoal-ink shrink-0">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 text-charcoal-ink hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<span class="font-headline-md text-headline-md text-charcoal-ink font-bold">Ask</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-charcoal-ink hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-charcoal-ink flex items-center justify-center overflow-hidden">
+<img class="object-cover w-full h-full" data-alt="A highly detailed close-up portrait of a professional individual serving as a user profile avatar. The person has neutral, intellectual expression, suitable for a minimalist corporate environment. The background is a solid, pristine white, enhancing the high-contrast light-mode aesthetic. Lighting is bright, soft, and even, reflecting a clean, architectural design style." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+</div>
+</header>
+<!-- Chat Area -->
+<main class="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-6 bg-archival-paper">
+<!-- Document Context Header -->
+<div class="flex items-center gap-2 p-3 bg-white border border-charcoal-ink mx-auto text-center sticky top-0 z-10 shadow-sm">
+<span class="material-symbols-outlined text-technical-blue text-[18px]" data-icon="description">description</span>
+<span class="font-label-mono text-label-mono text-charcoal-ink">Project_Q3_Financials.pdf</span>
+<button class="ml-2 text-outline-variant hover:text-charcoal-ink">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- System Message / Intro -->
+<div class="text-center mt-4">
+<div class="w-12 h-12 bg-charcoal-ink rounded-none mx-auto flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-white" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-charcoal-ink mb-1">How can I help?</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ask questions about the current document or your entire workspace.</p>
+</div>
+<!-- Suggestion Chips -->
+<div class="flex flex-wrap gap-2 justify-center mt-2 mb-4">
+<button class="px-3 py-2 border border-charcoal-ink bg-white font-label-mono text-label-mono text-charcoal-ink hover:bg-surface-container-high transition-colors text-left">
+                Summarize key findings
+            </button>
+<button class="px-3 py-2 border border-charcoal-ink bg-white font-label-mono text-label-mono text-charcoal-ink hover:bg-surface-container-high transition-colors text-left">
+                Extract Q3 Revenue
+            </button>
+</div>
+<!-- User Message -->
+<div class="flex flex-col items-end gap-1 w-full">
+<div class="bg-charcoal-ink text-white p-4 border border-charcoal-ink max-w-[85%] rounded-none">
+<p class="font-body-sm text-body-sm">What were the main factors driving revenue growth in the third quarter according to this report?</p>
+</div>
+<span class="font-label-mono text-label-mono text-outline-variant text-[10px]">10:42 AM</span>
+</div>
+<!-- AI Response -->
+<div class="flex flex-col items-start gap-1 w-full">
+<div class="bg-white text-charcoal-ink p-4 border border-charcoal-ink max-w-[95%] rounded-none relative">
+<!-- Connector Line indicating AI processing -->
+<div class="absolute left-0 top-0 w-1 h-full bg-technical-blue"></div>
+<div class="flex items-center gap-2 mb-3 border-b border-surface-container-high pb-2">
+<span class="material-symbols-outlined text-technical-blue text-[16px]" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">DocuMind Intelligence</span>
+</div>
+<p class="font-body-sm text-body-sm mb-3">Based on the provided document, revenue growth in Q3 was primarily driven by two key factors:</p>
+<ul class="list-disc pl-5 font-body-sm text-body-sm space-y-2 mb-4 text-on-surface-variant">
+<li><strong class="text-charcoal-ink">Enterprise Software Expansion:</strong> A 24% increase in enterprise licensing renewals <span class="inline-flex items-center justify-center w-4 h-4 bg-surface-container-high border border-charcoal-ink text-[10px] font-label-mono ml-1 cursor-pointer hover:bg-technical-blue hover:text-white transition-colors">1</span>.</li>
+<li><strong class="text-charcoal-ink">New Market Penetration:</strong> Successful launch in the APAC region contributing $4.2M in net new ARR <span class="inline-flex items-center justify-center w-4 h-4 bg-surface-container-high border border-charcoal-ink text-[10px] font-label-mono ml-1 cursor-pointer hover:bg-technical-blue hover:text-white transition-colors">2</span>.</li>
+</ul>
+<!-- Citations/Sources Section -->
+<div class="bg-archival-paper border border-surface-dim p-3 mt-4">
+<span class="font-label-caps text-label-caps text-outline-variant block mb-2">Sources</span>
+<div class="flex flex-col gap-2">
+<button class="flex items-center justify-between p-2 border border-surface-dim hover:border-technical-blue bg-white transition-colors group text-left">
+<div class="flex items-center gap-2 truncate">
+<span class="inline-flex items-center justify-center w-4 h-4 bg-charcoal-ink text-white text-[10px] font-label-mono shrink-0">1</span>
+<span class="material-symbols-outlined text-[14px] text-outline-variant shrink-0" data-icon="article">article</span>
+<span class="font-label-mono text-[10px] text-charcoal-ink truncate">Pg 4: Section 2.1 - Core Revenue Streams</span>
+</div>
+<span class="material-symbols-outlined text-[14px] text-transparent group-hover:text-technical-blue transition-colors shrink-0" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="flex items-center justify-between p-2 border border-surface-dim hover:border-technical-blue bg-white transition-colors group text-left">
+<div class="flex items-center gap-2 truncate">
+<span class="inline-flex items-center justify-center w-4 h-4 bg-charcoal-ink text-white text-[10px] font-label-mono shrink-0">2</span>
+<span class="material-symbols-outlined text-[14px] text-outline-variant shrink-0" data-icon="article">article</span>
+<span class="font-label-mono text-[10px] text-charcoal-ink truncate">Pg 7: APAC Expansion Summary</span>
+</div>
+<span class="material-symbols-outlined text-[14px] text-transparent group-hover:text-technical-blue transition-colors shrink-0" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-surface-container-high justify-end">
+<button class="p-1 text-outline-variant hover:text-charcoal-ink transition-colors" title="Copy">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1 text-outline-variant hover:text-charcoal-ink transition-colors" title="Thumbs up">
+<span class="material-symbols-outlined text-[16px]" data-icon="thumb_up">thumb_up</span>
+</button>
+<button class="p-1 text-outline-variant hover:text-charcoal-ink transition-colors" title="Thumbs down">
+<span class="material-symbols-outlined text-[16px]" data-icon="thumb_down">thumb_down</span>
+</button>
+</div>
+</div>
+<span class="font-label-mono text-label-mono text-outline-variant text-[10px]">10:42 AM</span>
+</div>
+<!-- Spacer to ensure content doesn't hide behind fixed input -->
+<div class="h-4"></div>
+</main>
+<!-- Stable Input Area -->
+<footer class="bg-white border-t border-charcoal-ink p-3 shrink-0">
+<!-- Knowledge Scope Toggle -->
+<div class="flex items-center gap-2 mb-3 overflow-x-auto custom-scrollbar pb-1">
+<span class="font-label-caps text-label-caps text-outline-variant shrink-0 mr-1">Scope:</span>
+<button class="flex items-center gap-1 px-2 py-1 bg-charcoal-ink text-white border border-charcoal-ink text-[11px] font-label-mono shrink-0">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+                Current Doc
+            </button>
+<button class="flex items-center gap-1 px-2 py-1 bg-white text-on-surface-variant border border-surface-dim hover:border-charcoal-ink text-[11px] font-label-mono shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[14px]" data-icon="folder_shared">folder_shared</span>
+                Project Folder
+            </button>
+<button class="flex items-center gap-1 px-2 py-1 bg-white text-on-surface-variant border border-surface-dim hover:border-charcoal-ink text-[11px] font-label-mono shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[14px]" data-icon="language">language</span>
+                All Knowledge
+            </button>
+</div>
+<div class="relative flex items-end">
+<button class="absolute left-3 bottom-3 text-outline-variant hover:text-charcoal-ink transition-colors">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+<textarea class="w-full bg-archival-paper border border-charcoal-ink text-charcoal-ink placeholder-on-surface-variant font-body-sm p-3 pl-10 pr-12 focus:ring-0 focus:border-technical-blue resize-none min-h-[48px] max-h-[120px] overflow-y-auto custom-scrollbar" placeholder="Ask a question..." rows="1" style="field-sizing: content;"></textarea>
+<button class="absolute right-3 bottom-3 text-white bg-charcoal-ink hover:bg-technical-blue transition-colors w-7 h-7 flex items-center justify-center border border-charcoal-ink">
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_upward">arrow_upward</span>
+</button>
+</div>
+<div class="text-center mt-2">
+<span class="font-label-mono text-[9px] text-outline-variant uppercase tracking-widest">DocuMind AI can make mistakes. Verify important info.</span>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DocuMind - Project: Phoenix</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#1a1c1c",
+                        "surface-tint": "#5b5e66",
+                        "tertiary": "#000000",
+                        "surface": "#f9f9f8",
+                        "surface-container-low": "#f3f4f3",
+                        "charcoal-ink": "#0D1117",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#dfe3ff",
+                        "tertiary-fixed-dim": "#d6c3b7",
+                        "surface-container-high": "#e8e8e7",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-primary-container": "#80848c",
+                        "inverse-on-surface": "#f1f1f0",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f9f9f8",
+                        "on-surface-variant": "#45474b",
+                        "on-tertiary-fixed": "#231a12",
+                        "technical-blue": "#0052FF",
+                        "border-muted": "#D1D5DB",
+                        "secondary-container": "#0052fe",
+                        "error": "#ba1a1a",
+                        "archival-paper": "#F9F9F8",
+                        "primary-fixed-dim": "#c3c6cf",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#dde1ff",
+                        "inverse-surface": "#2f3130",
+                        "tertiary-fixed": "#f3dfd2",
+                        "on-secondary-fixed-variant": "#0038b6",
+                        "primary": "#000000",
+                        "on-primary-fixed": "#181c22",
+                        "on-tertiary-container": "#918176",
+                        "outline": "#76777b",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9f8",
+                        "primary-fixed": "#dfe2eb",
+                        "on-tertiary-fixed-variant": "#51443b",
+                        "surface-variant": "#e2e2e2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#43474e",
+                        "surface-container": "#eeeeed",
+                        "on-surface": "#1a1c1c",
+                        "primary-container": "#181c22",
+                        "on-secondary-fixed": "#001452",
+                        "outline-variant": "#c6c6cb",
+                        "surface-dim": "#dadad9",
+                        "tertiary-container": "#231a12",
+                        "inverse-primary": "#c3c6cf",
+                        "secondary": "#003ec6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin": "32px",
+                        "sidebar-width": "280px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F9F9F8; /* archival-paper */
+            color: #1a1c1c; /* on-background */
+        }
+        /* Custom thin scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+        *:hover::-webkit-scrollbar-thumb {
+            background: #0D1117; /* charcoal-ink */
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col p-margin w-sidebar-width border-r border-charcoal-ink bg-archival-paper font-body-md text-body-md">
+<!-- Header -->
+<div class="mb-12">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-charcoal-ink overflow-hidden shrink-0 flex items-center justify-center">
+<img alt="User profile picture" class="w-full h-full object-cover" data-alt="A minimalist architectural blueprint style avatar or logo, high contrast, clean lines, black and white aesthetic, professional and intellectual tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4qjMOh4LmVl5uo1wxJyR_QEQUCwvXDeUhJ2IORwJitjo-9w5nOi71ierupiAktd2zkNhnbaEwnrkmkzw0fb4Hbv2bO5McjgX9GPX_TNVIVa_HtOLLjqAn69UM-Gx2higojG8W1kl9nzJ96DXuu6VIMa8cD5OOgTuiqmq1Gr4eA8VuVnGxcxqe-M7091qrATAJVH4A9mjyTeyw4ENhwgKLVvmaAzbT99mhM5IsCE0r4MSaZhSzbMAD"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-charcoal-ink">DocuMind</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Intelligence Workspace</p>
+</div>
+</div>
+</div>
+<!-- CTA -->
+<button class="mb-8 w-full bg-charcoal-ink text-white font-label-caps text-label-caps py-3 px-4 rounded-none hover:bg-technical-blue transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+            Upload Document
+        </button>
+<!-- Navigation Links -->
+<div class="flex-1 space-y-2">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Active (Semantic match: Spaces) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-charcoal-ink text-white font-bold hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">folder_shared</span>
+<span>Spaces</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span>Search</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-sidebar-width flex flex-col h-screen bg-surface">
+<!-- Topbar for Space -->
+<header class="h-16 border-b border-charcoal-ink bg-white flex items-center px-gutter justify-between shrink-0">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">folder_open</span>
+<h2 class="font-headline-lg text-headline-lg text-charcoal-ink">Project: Phoenix</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-charcoal-ink transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">settings</span>
+                    Space Settings
+                </button>
+</div>
+</header>
+<!-- Empty State Workspace Area -->
+<div class="flex-1 flex items-center justify-center p-margin overflow-y-auto">
+<div class="max-w-2xl w-full bg-white border border-charcoal-ink p-16 flex flex-col items-center text-center">
+<!-- Subtle SVG Illustration (Document Stack) -->
+<div class="mb-8 opacity-80">
+<svg fill="none" height="120" viewbox="0 0 120 120" width="120" xmlns="http://www.w3.org/2000/svg">
+<rect fill="white" height="80" stroke="#0D1117" stroke-width="2" width="60" x="30" y="20"></rect>
+<rect fill="white" height="80" stroke="#0D1117" stroke-width="2" width="60" x="25" y="25"></rect>
+<rect fill="white" height="80" stroke="#0D1117" stroke-width="2" width="60" x="20" y="30"></rect>
+<line stroke="#0D1117" stroke-width="2" x1="32" x2="68" y1="45" y2="45"></line>
+<line stroke="#0D1117" stroke-width="2" x1="32" x2="68" y1="55" y2="55"></line>
+<line stroke="#0D1117" stroke-width="2" x1="32" x2="55" y1="65" y2="65"></line>
+<rect fill="#0052FF" height="12" width="12" x="32" y="75"></rect>
+</svg>
+</div>
+<h3 class="font-headline-md text-headline-md text-charcoal-ink mb-4">This space is empty.</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-12 max-w-md">
+                    Add your contracts, reports, or research to build a connected intelligence workspace.
+                </p>
+<!-- Refined Upload Area -->
+<div class="w-full border border-charcoal-ink bg-surface-container-low p-8 flex flex-col items-center justify-center hover:border-technical-blue hover:bg-white transition-all cursor-pointer group">
+<div class="w-12 h-12 bg-charcoal-ink text-white flex items-center justify-center mb-4 group-hover:bg-technical-blue transition-colors">
+<span class="material-symbols-outlined text-2xl">upload_file</span>
+</div>
+<span class="font-label-caps text-label-caps text-charcoal-ink mb-2">Upload PDFs to start your workspace analysis</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">Click to browse or drag &amp; drop files here</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

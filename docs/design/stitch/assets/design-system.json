@@ -1,0 +1,138 @@
+{
+  "name": "assets/6bdaad0638984f33ba6174077c62db6a",
+  "designSystem": {
+    "displayName": "The Modern Archivist",
+    "styleGuidelines": "## Brand & Style\n\nThe brand personality is intellectual, precise, and authoritative. It shifts the perception of AI from a \"magical black box\" to a professional tool of discovery and record-keeping. The design evokes the feeling of a well-organized digital archive or a high-end architectural blueprint.\n\nThe chosen style is **High-Contrast Minimalism with Swiss influence**. It relies on rigid structural integrity, mathematical spacing, and a total absence of decorative flourishes like gradients or soft shadows. Every element serves a functional purpose, prioritizing clarity and the relationships between complex data points.\n\n## Layout & Spacing\n\nThe layout is governed by a **Rigid 12-Column Grid** with visible or implied \"structural wires.\" \n\n- **The Multi-Pane System:** The UI is divided into functional panes (Library, Reader, Intelligence Workspace). Each pane is separated by a 1px solid border.\n- **Vertical Rhythm:** A strict 4px baseline grid ensures that text across different panes aligns perfectly, maintaining the professional \"Architectural\" feel.\n- **White Space:** Generous margins (32px) are used to prevent information density from becoming overwhelming, allowing the \"Archival Paper\" background to provide breathing room.\n\n## Elevation & Depth\n\nThis design system rejects shadows and physical depth. Hierarchies are communicated through **Tonal Layers** and **Line Weight**.\n\n- **Level 0 (Background):** Archival Paper (#F9F9F8).\n- **Level 1 (Panes/Containers):** Pure White (#FFFFFF) with a 1px Charcoal border.\n- **Active State:** Instead of a shadow, an active element (like a selected PDF) is indicated by a 2px Technical Blue border or a solid Charcoal fill with White text.\n- **Overlays:** Modals do not use blurs; they use a solid, semi-opaque Charcoal overlay (80% opacity) to completely isolate the task.\n\n## Components\n\n- **Buttons:** Primary buttons are solid Charcoal Ink with White text. Secondary buttons are 1px Charcoal borders with no fill. Interaction states use a solid Technical Blue fill.\n- **Inputs:** Simple bottom-border only or a full 1px border. Labels are always positioned above the input in `label-caps` typography.\n- **Cards:** Cards should not look like cards; they are \"Cells\" within the grid. They use 1px borders to separate content rather than shadows or background changes.\n- **Status Indicators:** Use small, square blocks of color (not circles) to indicate status (e.g., a Blue square for \"Processing\").\n- **Scrollbars:** Custom-styled to be thin, 4px wide Charcoal lines with no rounded ends, appearing only on hover to maintain the clean grid.\n- **Intelligence Markers:** When AI identifies a connection between PDFs, use a Technical Blue \"Connector Line\" (1px solid) to visually link the metadata points in the workspace.",
+    "theme": {
+      "colorMode": "LIGHT",
+      "font": "INTER",
+      "customColor": "#0d1117",
+      "headlineFont": "INTER",
+      "bodyFont": "INTER",
+      "labelFont": "JETBRAINS_MONO",
+      "namedColors": {
+        "archival-paper": "#F9F9F8",
+        "background": "#f9f9f8",
+        "border-muted": "#D1D5DB",
+        "charcoal-ink": "#0D1117",
+        "error": "#ba1a1a",
+        "error_container": "#ffdad6",
+        "inverse_on_surface": "#f1f1f0",
+        "inverse_primary": "#c3c6cf",
+        "inverse_surface": "#2f3130",
+        "on_background": "#1a1c1c",
+        "on_error": "#ffffff",
+        "on_error_container": "#93000a",
+        "on_primary": "#ffffff",
+        "on_primary_container": "#80848c",
+        "on_primary_fixed": "#181c22",
+        "on_primary_fixed_variant": "#43474e",
+        "on_secondary": "#ffffff",
+        "on_secondary_container": "#dfe3ff",
+        "on_secondary_fixed": "#001452",
+        "on_secondary_fixed_variant": "#0038b6",
+        "on_surface": "#1a1c1c",
+        "on_surface_variant": "#45474b",
+        "on_tertiary": "#ffffff",
+        "on_tertiary_container": "#918176",
+        "on_tertiary_fixed": "#231a12",
+        "on_tertiary_fixed_variant": "#51443b",
+        "outline": "#76777b",
+        "outline_variant": "#c6c6cb",
+        "primary": "#000000",
+        "primary_container": "#181c22",
+        "primary_fixed": "#dfe2eb",
+        "primary_fixed_dim": "#c3c6cf",
+        "secondary": "#003ec6",
+        "secondary_container": "#0052fe",
+        "secondary_fixed": "#dde1ff",
+        "secondary_fixed_dim": "#b7c4ff",
+        "surface": "#f9f9f8",
+        "surface_bright": "#f9f9f8",
+        "surface_container": "#eeeeed",
+        "surface_container_high": "#e8e8e7",
+        "surface_container_highest": "#e2e2e2",
+        "surface_container_low": "#f3f4f3",
+        "surface_container_lowest": "#ffffff",
+        "surface_dim": "#dadad9",
+        "surface_tint": "#5b5e66",
+        "surface_variant": "#e2e2e2",
+        "technical-blue": "#0052FF",
+        "tertiary": "#000000",
+        "tertiary_container": "#231a12",
+        "tertiary_fixed": "#f3dfd2",
+        "tertiary_fixed_dim": "#d6c3b7"
+      },
+      "designMd": "---\nname: The Modern Archivist\ncolors:\n  surface: '#f9f9f8'\n  surface-dim: '#dadad9'\n  surface-bright: '#f9f9f8'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f3f4f3'\n  surface-container: '#eeeeed'\n  surface-container-high: '#e8e8e7'\n  surface-container-highest: '#e2e2e2'\n  on-surface: '#1a1c1c'\n  on-surface-variant: '#45474b'\n  inverse-surface: '#2f3130'\n  inverse-on-surface: '#f1f1f0'\n  outline: '#76777b'\n  outline-variant: '#c6c6cb'\n  surface-tint: '#5b5e66'\n  primary: '#000000'\n  on-primary: '#ffffff'\n  primary-container: '#181c22'\n  on-primary-container: '#80848c'\n  inverse-primary: '#c3c6cf'\n  secondary: '#003ec6'\n  on-secondary: '#ffffff'\n  secondary-container: '#0052fe'\n  on-secondary-container: '#dfe3ff'\n  tertiary: '#000000'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#231a12'\n  on-tertiary-container: '#918176'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#dfe2eb'\n  primary-fixed-dim: '#c3c6cf'\n  on-primary-fixed: '#181c22'\n  on-primary-fixed-variant: '#43474e'\n  secondary-fixed: '#dde1ff'\n  secondary-fixed-dim: '#b7c4ff'\n  on-secondary-fixed: '#001452'\n  on-secondary-fixed-variant: '#0038b6'\n  tertiary-fixed: '#f3dfd2'\n  tertiary-fixed-dim: '#d6c3b7'\n  on-tertiary-fixed: '#231a12'\n  on-tertiary-fixed-variant: '#51443b'\n  background: '#f9f9f8'\n  on-background: '#1a1c1c'\n  surface-variant: '#e2e2e2'\n  archival-paper: '#F9F9F8'\n  technical-blue: '#0052FF'\n  charcoal-ink: '#0D1117'\n  border-muted: '#D1D5DB'\ntypography:\n  headline-xl:\n    fontFamily: Inter\n    fontSize: 40px\n    fontWeight: '700'\n    lineHeight: 48px\n    letterSpacing: -0.02em\n  headline-lg:\n    fontFamily: Inter\n    fontSize: 30px\n    fontWeight: '600'\n    lineHeight: 36px\n    letterSpacing: -0.01em\n  headline-md:\n    fontFamily: Inter\n    fontSize: 24px\n    fontWeight: '600'\n    lineHeight: 32px\n  body-lg:\n    fontFamily: Inter\n    fontSize: 18px\n    fontWeight: '400'\n    lineHeight: 28px\n  body-md:\n    fontFamily: Inter\n    fontSize: 16px\n    fontWeight: '400'\n    lineHeight: 24px\n  body-sm:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  label-mono:\n    fontFamily: JetBrains Mono\n    fontSize: 12px\n    fontWeight: '500'\n    lineHeight: 16px\n    letterSpacing: 0.05em\n  label-caps:\n    fontFamily: Inter\n    fontSize: 11px\n    fontWeight: '700'\n    lineHeight: 16px\n    letterSpacing: 0.1em\nspacing:\n  unit: 4px\n  gutter: 24px\n  margin: 32px\n  sidebar-width: 280px\n---\n\n## Brand & Style\n\nThe brand personality is intellectual, precise, and authoritative. It shifts the perception of AI from a \"magical black box\" to a professional tool of discovery and record-keeping. The design evokes the feeling of a well-organized digital archive or a high-end architectural blueprint.\n\nThe chosen style is **High-Contrast Minimalism with Swiss influence**. It relies on rigid structural integrity, mathematical spacing, and a total absence of decorative flourishes like gradients or soft shadows. Every element serves a functional purpose, prioritizing clarity and the relationships between complex data points.\n\n## Colors\n\nThe palette is monochromatic and functional. **Archival Paper** serves as the primary background to reduce eye strain compared to pure white, providing a sophisticated, tactile feel. **Charcoal Ink** is used for primary text and structural lines to maintain high contrast.\n\n**Technical Blue** is the sole chromatic accent, used surgically for interactive states, primary actions, and \"evidence\" highlights. This specific blue is reminiscent of architectural blueprints and schematic drawings, reinforcing the \"Technical\" aspect of the brand.\n\n## Typography\n\nThe system uses a pairing of **Inter** for its neutral, highly legible character and **JetBrains Mono** for metadata and technical details. \n\n- **Headlines:** Use tight letter spacing and heavy weights to create a strong visual anchor.\n- **Body:** Standardized on Inter for maximum readability across dense document content.\n- **Metadata:** All system-generated data, PDF coordinates, and timestamps must use JetBrains Mono to distinguish \"system\" information from \"user\" content.\n- **Labels:** Use uppercase Inter for navigation and category headers to reinforce the grid-heavy, archival layout.\n\n## Layout & Spacing\n\nThe layout is governed by a **Rigid 12-Column Grid** with visible or implied \"structural wires.\" \n\n- **The Multi-Pane System:** The UI is divided into functional panes (Library, Reader, Intelligence Workspace). Each pane is separated by a 1px solid border.\n- **Vertical Rhythm:** A strict 4px baseline grid ensures that text across different panes aligns perfectly, maintaining the professional \"Architectural\" feel.\n- **White Space:** Generous margins (32px) are used to prevent information density from becoming overwhelming, allowing the \"Archival Paper\" background to provide breathing room.\n\n## Elevation & Depth\n\nThis design system rejects shadows and physical depth. Hierarchies are communicated through **Tonal Layers** and **Line Weight**.\n\n- **Level 0 (Background):** Archival Paper (#F9F9F8).\n- **Level 1 (Panes/Containers):** Pure White (#FFFFFF) with a 1px Charcoal border.\n- **Active State:** Instead of a shadow, an active element (like a selected PDF) is indicated by a 2px Technical Blue border or a solid Charcoal fill with White text.\n- **Overlays:** Modals do not use blurs; they use a solid, semi-opaque Charcoal overlay (80% opacity) to completely isolate the task.\n\n## Shapes\n\nThe shape language is strictly **Sharp (0px)**. \n\nEvery element—buttons, input fields, cards, and panes—must have 90-degree corners. This reinforces the \"Modern Archivist\" aesthetic, moving away from the \"friendly\" consumer SaaS look and toward a serious, industrial-grade tool.\n\n## Components\n\n- **Buttons:** Primary buttons are solid Charcoal Ink with White text. Secondary buttons are 1px Charcoal borders with no fill. Interaction states use a solid Technical Blue fill.\n- **Inputs:** Simple bottom-border only or a full 1px border. Labels are always positioned above the input in `label-caps` typography.\n- **Cards:** Cards should not look like cards; they are \"Cells\" within the grid. They use 1px borders to separate content rather than shadows or background changes.\n- **Status Indicators:** Use small, square blocks of color (not circles) to indicate status (e.g., a Blue square for \"Processing\").\n- **Scrollbars:** Custom-styled to be thin, 4px wide Charcoal lines with no rounded ends, appearing only on hover to maintain the clean grid.\n- **Intelligence Markers:** When AI identifies a connection between PDFs, use a Technical Blue \"Connector Line\" (1px solid) to visually link the metadata points in the workspace.",
+      "colorVariant": "FIDELITY",
+      "overridePrimaryColor": "#0d1117",
+      "overrideSecondaryColor": "#0052ff",
+      "overrideNeutralColor": "#f9f9f8",
+      "spacingScale": 2,
+      "typography": {
+        "body-lg": {
+          "fontFamily": "Inter",
+          "fontSize": "18px",
+          "fontWeight": "400",
+          "lineHeight": "28px"
+        },
+        "body-md": {
+          "fontFamily": "Inter",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px"
+        },
+        "body-sm": {
+          "fontFamily": "Inter",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "20px"
+        },
+        "headline-lg": {
+          "fontFamily": "Inter",
+          "fontSize": "30px",
+          "fontWeight": "600",
+          "lineHeight": "36px",
+          "letterSpacing": "-0.01em"
+        },
+        "headline-md": {
+          "fontFamily": "Inter",
+          "fontSize": "24px",
+          "fontWeight": "600",
+          "lineHeight": "32px"
+        },
+        "headline-xl": {
+          "fontFamily": "Inter",
+          "fontSize": "40px",
+          "fontWeight": "700",
+          "lineHeight": "48px",
+          "letterSpacing": "-0.02em"
+        },
+        "label-caps": {
+          "fontFamily": "Inter",
+          "fontSize": "11px",
+          "fontWeight": "700",
+          "lineHeight": "16px",
+          "letterSpacing": "0.1em"
+        },
+        "label-mono": {
+          "fontFamily": "JetBrains Mono",
+          "fontSize": "12px",
+          "fontWeight": "500",
+          "lineHeight": "16px",
+          "letterSpacing": "0.05em"
+        }
+      },
+      "spacing": {
+        "gutter": "24px",
+        "margin": "32px",
+        "sidebar-width": "280px",
+        "unit": "4px"
+      },
+      "headlineFontFamily": "Inter",
+      "bodyFontFamily": "Inter",
+      "labelFontFamily": "Jetbrains Mono"
+    }
+  },
+  "version": "1"
+}

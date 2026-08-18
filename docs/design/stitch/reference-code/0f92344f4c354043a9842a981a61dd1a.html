@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DocuMind - Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-background": "#1a1c1c",
+                      "surface-tint": "#5b5e66",
+                      "tertiary": "#000000",
+                      "surface": "#f9f9f8",
+                      "surface-container-low": "#f3f4f3",
+                      "charcoal-ink": "#0D1117",
+                      "on-error": "#ffffff",
+                      "on-secondary-container": "#dfe3ff",
+                      "tertiary-fixed-dim": "#d6c3b7",
+                      "surface-container-high": "#e8e8e7",
+                      "surface-container-highest": "#e2e2e2",
+                      "on-primary-container": "#80848c",
+                      "inverse-on-surface": "#f1f1f0",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f9f9f8",
+                      "on-surface-variant": "#45474b",
+                      "on-tertiary-fixed": "#231a12",
+                      "technical-blue": "#0052FF",
+                      "border-muted": "#D1D5DB",
+                      "secondary-container": "#0052fe",
+                      "error": "#ba1a1a",
+                      "archival-paper": "#F9F9F8",
+                      "primary-fixed-dim": "#c3c6cf",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#dde1ff",
+                      "inverse-surface": "#2f3130",
+                      "tertiary-fixed": "#f3dfd2",
+                      "on-secondary-fixed-variant": "#0038b6",
+                      "primary": "#000000",
+                      "on-primary-fixed": "#181c22",
+                      "on-tertiary-container": "#918176",
+                      "outline": "#76777b",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed-dim": "#b7c4ff",
+                      "on-primary": "#ffffff",
+                      "background": "#f9f9f8",
+                      "primary-fixed": "#dfe2eb",
+                      "on-tertiary-fixed-variant": "#51443b",
+                      "surface-variant": "#e2e2e2",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#43474e",
+                      "surface-container": "#eeeeed",
+                      "on-surface": "#1a1c1c",
+                      "primary-container": "#181c22",
+                      "on-secondary-fixed": "#001452",
+                      "outline-variant": "#c6c6cb",
+                      "surface-dim": "#dadad9",
+                      "tertiary-container": "#231a12",
+                      "inverse-primary": "#c3c6cf",
+                      "secondary": "#003ec6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "margin": "32px",
+                      "sidebar-width": "280px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-archival-paper text-on-surface font-body-md text-body-md antialiased min-h-screen flex selection:bg-technical-blue selection:text-white">
+<!-- SideNavBar (Semantic Shell) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col p-margin w-sidebar-width border-r border-charcoal-ink bg-archival-paper z-20">
+<div class="mb-12">
+<h1 class="font-headline-md text-headline-md font-bold text-charcoal-ink tracking-tight">DocuMind</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant mt-1">Intelligence Workspace</p>
+</div>
+<ul class="flex flex-col gap-unit flex-grow">
+<!-- Spaces maps to the main concept of working within a space -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded bg-charcoal-ink text-white font-bold transform scale-98" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_shared</span>
+<span class="font-body-sm text-body-sm">Spaces</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+<span class="font-body-sm text-body-sm">Search</span>
+</a>
+</li>
+<li class="mt-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</li>
+</ul>
+<button class="mt-6 w-full py-3 bg-charcoal-ink text-white font-label-caps text-label-caps uppercase tracking-widest hover:bg-technical-blue transition-colors rounded-none flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">upload</span>
+            Upload Document
+        </button>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-sidebar-width flex flex-col min-h-screen">
+<!-- TopAppBar (Semantic Shell) -->
+<header class="flex justify-between items-center h-16 px-gutter border-b border-charcoal-ink bg-white sticky top-0 z-10 w-full">
+<nav class="flex gap-8 h-full">
+<a class="flex items-center h-full font-label-caps text-label-caps text-on-surface-variant hover:text-technical-blue transition-opacity uppercase pb-2 mt-2" href="#">Overview</a>
+<a class="flex items-center h-full font-label-caps text-label-caps text-on-surface-variant hover:text-technical-blue transition-opacity uppercase pb-2 mt-2" href="#">Actions</a>
+<a class="flex items-center h-full font-label-caps text-label-caps text-on-surface-variant hover:text-technical-blue transition-opacity uppercase pb-2 mt-2" href="#">Compare</a>
+<!-- Active State -->
+<a class="flex items-center h-full font-label-caps text-label-caps text-technical-blue border-b-2 border-technical-blue uppercase pb-2 mt-2" href="#">Intelligence</a>
+<a class="flex items-center h-full font-label-caps text-label-caps text-on-surface-variant hover:text-technical-blue transition-opacity uppercase pb-2 mt-2" href="#">Ask</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="font-label-caps text-label-caps uppercase text-charcoal-ink hover:text-technical-blue transition-colors">Upload</button>
+<div class="w-px h-4 bg-charcoal-ink"></div>
+<button class="font-label-caps text-label-caps uppercase text-charcoal-ink hover:text-technical-blue transition-colors">Invite</button>
+<div class="w-8 h-8 bg-surface-container-high rounded-full overflow-hidden border border-charcoal-ink ml-2">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="A minimalist, high-contrast monochrome portrait of a professional user in a well-lit modern architectural environment, fitting the intellectual light mode aesthetic." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+</div>
+</header>
+<!-- Intelligence Content -->
+<div class="flex-1 p-margin flex flex-col gap-8 max-w-6xl w-full mx-auto">
+<header class="mb-4">
+<h2 class="font-headline-xl text-headline-xl text-charcoal-ink mb-2">Project Phoenix Synthesis</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Cross-document analysis across 14 master files.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-charcoal-ink bg-white">
+<!-- Workspace Summary (Bento Cell 1 - Wide) -->
+<div class="lg:col-span-8 p-8 border-b lg:border-b-0 lg:border-r border-charcoal-ink flex flex-col">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-charcoal-ink">summarize</span>
+<h3 class="font-label-caps text-label-caps uppercase tracking-widest text-charcoal-ink">Executive Summary</h3>
+</div>
+<div class="prose max-w-none text-body-md font-body-md text-on-surface">
+<p class="mb-4 leading-relaxed">
+                            The analysis of the Project Phoenix documentation reveals a structured approach to the Q3 deliverables, primarily focused on architectural restructuring and backend optimization. The core objective, as outlined in the "Master_Plan_v2.pdf", is to reduce latency by 40% before the end of the fiscal year.
+                        </p>
+<p class="leading-relaxed">
+                            Furthermore, financial projections across the associated spreadsheets indicate a steady allocation of resources towards the cloud infrastructure phase, though there are minor discrepancies noted in the vendor contracts regarding SLA penalties.
+                        </p>
+</div>
+<!-- Intelligence Marker / Visualization -->
+<div class="mt-8 border-t border-dashed border-border-muted pt-6 relative">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 font-label-mono text-label-mono text-technical-blue flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                            AI Synthesized
+                        </div>
+<div class="grid grid-cols-3 gap-4">
+<div class="border border-charcoal-ink p-4">
+<span class="block font-headline-lg text-headline-lg text-charcoal-ink">14</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">Docs Analyzed</span>
+</div>
+<div class="border border-charcoal-ink p-4">
+<span class="block font-headline-lg text-headline-lg text-charcoal-ink">98%</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">Topic Cohesion</span>
+</div>
+<div class="border border-charcoal-ink p-4">
+<span class="block font-headline-lg text-headline-lg text-error">3</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">Critical Alerts</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Contradictions (Bento Cell 2 - High Vis) -->
+<div class="lg:col-span-4 p-8 bg-error-container/20 flex flex-col">
+<div class="flex items-center gap-2 mb-6 text-error">
+<span class="material-symbols-outlined">warning</span>
+<h3 class="font-label-caps text-label-caps uppercase tracking-widest">Contradictions Detected</h3>
+</div>
+<ul class="flex flex-col gap-4">
+<li class="border border-error/30 bg-white p-4 relative">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<p class="font-body-sm text-body-sm text-charcoal-ink font-bold mb-2">Budget Allocation Discrepancy</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Conflict regarding Q3 marketing spend limits.</p>
+<div class="flex flex-col gap-2 mt-3 pt-3 border-t border-border-muted">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[14px] text-technical-blue mt-0.5">description</span>
+<div>
+<span class="font-label-mono text-label-mono block text-charcoal-ink">Finance_Q3.xlsx</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">Caps spend at $45,000</span>
+</div>
+</div>
+<div class="w-px h-4 bg-border-muted ml-[7px]"></div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[14px] text-technical-blue mt-0.5">description</span>
+<div>
+<span class="font-label-mono text-label-mono block text-charcoal-ink">Marketing_Plan.pdf</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">Requests $60,000 baseline</span>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Lower Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-0 border border-charcoal-ink bg-white">
+<!-- Key Dates (Timeline) -->
+<div class="p-8 border-b md:border-b-0 md:border-r border-charcoal-ink">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-charcoal-ink">calendar_today</span>
+<h3 class="font-label-caps text-label-caps uppercase tracking-widest text-charcoal-ink">Key Dates</h3>
+</div>
+<div class="relative border-l border-charcoal-ink ml-2 pl-6 flex flex-col gap-6">
+<div class="relative">
+<div class="absolute w-2 h-2 bg-charcoal-ink -left-[29px] top-1.5 rounded-none"></div>
+<span class="font-label-mono text-label-mono text-technical-blue block mb-1">OCT 15, 2024</span>
+<h4 class="font-body-md text-body-md font-bold text-charcoal-ink">Phase 1 Delivery</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Source: Vendor_Agreement_Signed.pdf</p>
+</div>
+<div class="relative">
+<div class="absolute w-2 h-2 border border-charcoal-ink bg-white -left-[29px] top-1.5 rounded-none"></div>
+<span class="font-label-mono text-label-mono text-on-surface-variant block mb-1">NOV 01, 2024</span>
+<h4 class="font-body-md text-body-md font-bold text-charcoal-ink">Compliance Review</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Source: Legal_Memo_Q4.docx</p>
+</div>
+</div>
+</div>
+<!-- Open Questions -->
+<div class="p-8">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-charcoal-ink">help_outline</span>
+<h3 class="font-label-caps text-label-caps uppercase tracking-widest text-charcoal-ink">Open Questions</h3>
+</div>
+<div class="flex flex-col gap-4">
+<div class="border border-charcoal-ink p-4 flex gap-3 items-start hover:bg-surface transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-technical-blue opacity-50 group-hover:opacity-100 transition-opacity">contact_support</span>
+<div>
+<p class="font-body-md text-body-md text-charcoal-ink font-bold">Who is the final sign-off authority for the security audit?</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Multiple documents reference an 'Approval Committee' but no specific names are listed.</p>
+</div>
+</div>
+<div class="border border-charcoal-ink p-4 flex gap-3 items-start hover:bg-surface transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-technical-blue opacity-50 group-hover:opacity-100 transition-opacity">contact_support</span>
+<div>
+<p class="font-body-md text-body-md text-charcoal-ink font-bold">What is the contingency plan for API downtime?</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">SLA mentions penalties, but no technical fallback procedure is documented.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer (Semantic Shell) -->
+<footer class="w-full py-8 border-t border-charcoal-ink bg-archival-paper mt-auto">
+<div class="max-w-7xl mx-auto px-margin flex flex-col md:flex-row justify-between items-center gap-4">
+<span class="font-label-mono text-label-mono text-on-surface-variant">© 2024 DocuMind Intelligence. All rights reserved.</span>
+<div class="flex gap-6">
+</div></div></footer></main></body></html>

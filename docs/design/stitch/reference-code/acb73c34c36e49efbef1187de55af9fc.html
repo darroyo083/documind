@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Compare - DocuMind</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#1a1c1c",
+                    "surface-tint": "#5b5e66",
+                    "tertiary": "#000000",
+                    "surface": "#f9f9f8",
+                    "surface-container-low": "#f3f4f3",
+                    "charcoal-ink": "#0D1117",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#dfe3ff",
+                    "tertiary-fixed-dim": "#d6c3b7",
+                    "surface-container-high": "#e8e8e7",
+                    "surface-container-highest": "#e2e2e2",
+                    "on-primary-container": "#80848c",
+                    "inverse-on-surface": "#f1f1f0",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f9f9f8",
+                    "on-surface-variant": "#45474b",
+                    "on-tertiary-fixed": "#231a12",
+                    "technical-blue": "#0052FF",
+                    "border-muted": "#D1D5DB",
+                    "secondary-container": "#0052fe",
+                    "error": "#ba1a1a",
+                    "archival-paper": "#F9F9F8",
+                    "primary-fixed-dim": "#c3c6cf",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#dde1ff",
+                    "inverse-surface": "#2f3130",
+                    "tertiary-fixed": "#f3dfd2",
+                    "on-secondary-fixed-variant": "#0038b6",
+                    "primary": "#000000",
+                    "on-primary-fixed": "#181c22",
+                    "on-tertiary-container": "#918176",
+                    "outline": "#76777b",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed-dim": "#b7c4ff",
+                    "on-primary": "#ffffff",
+                    "background": "#f9f9f8",
+                    "primary-fixed": "#dfe2eb",
+                    "on-tertiary-fixed-variant": "#51443b",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#43474e",
+                    "surface-container": "#eeeeed",
+                    "on-surface": "#1a1c1c",
+                    "primary-container": "#181c22",
+                    "on-secondary-fixed": "#001452",
+                    "outline-variant": "#c6c6cb",
+                    "surface-dim": "#dadad9",
+                    "tertiary-container": "#231a12",
+                    "inverse-primary": "#c3c6cf",
+                    "secondary": "#003ec6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "margin": "32px",
+                    "sidebar-width": "280px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "label-mono": [
+                            "JetBrains Mono"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-xl": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-mono": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-caps": [
+                            "11px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-xl": [
+                            "40px",
+                            {
+                                    "lineHeight": "48px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "36px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Custom thin scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+        *:hover::-webkit-scrollbar-thumb {
+            background: #0D1117;
+        }
+    </style>
+</head>
+<body class="bg-archival-paper text-charcoal-ink font-body-md h-full flex flex-col antialiased selection:bg-technical-blue selection:text-white">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-charcoal-ink text-technical-blue dark:text-secondary-fixed font-label-caps text-label-caps docked full-width top-0 border-b border-charcoal-ink border-b border-charcoal-ink flat no shadows flex justify-between items-center h-16 px-gutter ml-sidebar-width w-[calc(100%-280px)] fixed z-50">
+<div class="flex items-center gap-8 h-full">
+<span class="font-headline-md text-headline-md text-charcoal-ink dark:text-white tracking-tight">DocuMind</span>
+<nav class="hidden md:flex items-end h-full gap-8">
+<a class="text-on-surface-variant dark:text-outline-variant pb-2 hover:text-technical-blue transition-opacity hover:opacity-80 flex items-center gap-2" href="#">
+                    Overview
+                </a>
+<a class="text-on-surface-variant dark:text-outline-variant pb-2 hover:text-technical-blue transition-opacity hover:opacity-80 flex items-center gap-2" href="#">
+                    Actions
+                </a>
+<a class="text-technical-blue border-b-2 border-technical-blue pb-2 hover:text-technical-blue transition-opacity hover:opacity-80 flex items-center gap-2" href="#">
+                    Compare
+                </a>
+<a class="text-on-surface-variant dark:text-outline-variant pb-2 hover:text-technical-blue transition-opacity hover:opacity-80 flex items-center gap-2" href="#">
+                    Intelligence
+                </a>
+<a class="text-on-surface-variant dark:text-outline-variant pb-2 hover:text-technical-blue transition-opacity hover:opacity-80 flex items-center gap-2" href="#">
+                    Ask
+                </a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block border-b border-charcoal-ink">
+<span class="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-charcoal-ink text-[18px]">search</span>
+<input class="pl-6 py-1 bg-transparent border-none focus:ring-0 text-charcoal-ink placeholder:text-on-surface-variant font-label-caps text-label-caps w-48" placeholder="SEARCH WORKSPACE..." type="text"/>
+</div>
+<button class="border border-charcoal-ink px-4 py-2 hover:bg-surface-container-high transition-colors uppercase">Invite</button>
+<button class="bg-charcoal-ink text-white px-4 py-2 hover:bg-technical-blue transition-colors uppercase">Upload</button>
+<div class="w-8 h-8 bg-surface-container-high overflow-hidden ml-2">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a person looking forward against a neutral background, highly detailed, realistic corporate portrait style, even lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCW2533ZBUm0w3mWVMQ89gtT-jofPdmO-Eu1Lot7SeD8sH7eCL6tmVlnqY54lXA2wGfhACVczFWCsTnHUbsJHEX0v6c-265bIDJEHHg3UtY_s-k-p-wLF7nWtrWBnYcAflwAJu1s8htg8UTpuNXxo1ef9Ew2NWNBzKdgJeXIAU1pMYWbK2kF1YiILCyAChUFSBOLQRWTdVCqchtvbmcifCDEDoyUtKeYLmpp2dKUEccov4b_lZ3csZ-"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="bg-archival-paper dark:bg-charcoal-ink text-primary dark:text-on-primary font-body-md text-body-md h-screen w-sidebar-width flex-col border-r border-charcoal-ink border-r border-charcoal-ink flat no shadows fixed left-0 top-0 h-full flex flex-col p-margin z-40 hidden md:flex">
+<div class="mb-12">
+<h2 class="font-headline-md text-headline-md font-bold text-charcoal-ink dark:text-surface tracking-tight">DocuMind</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant mt-1 uppercase tracking-wider">Intelligence Workspace</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors group" href="#">
+<span class="material-symbols-outlined group-active:scale-[0.98] transition-transform" data-weight="fill">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors group" href="#">
+<span class="material-symbols-outlined group-active:scale-[0.98] transition-transform" data-weight="fill">folder_shared</span>
+<span>Spaces</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-charcoal-ink text-white dark:bg-white dark:text-charcoal-ink font-bold hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors group" href="#">
+<span class="material-symbols-outlined group-active:scale-[0.98] transition-transform" data-weight="fill">search</span>
+<span>Search</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors group" href="#">
+<span class="material-symbols-outlined group-active:scale-[0.98] transition-transform" data-weight="fill">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<button class="mt-auto bg-charcoal-ink text-white px-4 py-3 w-full hover:bg-technical-blue transition-colors font-label-caps text-label-caps uppercase text-center group active:scale-[0.98]">
+            Upload Document
+        </button>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-sidebar-width mt-16 flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+<div class="flex-1 flex overflow-hidden">
+<!-- Document Selection Pane (Library) -->
+<div class="w-72 border-r border-charcoal-ink bg-white flex flex-col shrink-0 overflow-y-auto">
+<div class="p-4 border-b border-charcoal-ink bg-archival-paper">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Selection</h3>
+<div class="font-label-mono text-label-mono">2 Documents Selected</div>
+</div>
+<div class="p-4 flex flex-col gap-4">
+<div class="border border-charcoal-ink bg-surface-container-low p-3 relative cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="absolute -left-[1px] -top-[1px] w-2 h-full bg-technical-blue"></div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-technical-blue text-[16px]">description</span>
+<span class="font-label-mono text-label-mono text-charcoal-ink">DOC_A_MSA_2023.pdf</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Master Services Agreement for ACME Corp, finalized Q4 2023.</div>
+</div>
+<div class="border border-charcoal-ink bg-surface-container-low p-3 relative cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="absolute -left-[1px] -top-[1px] w-2 h-full bg-technical-blue"></div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-technical-blue text-[16px]">description</span>
+<span class="font-label-mono text-label-mono text-charcoal-ink">DOC_B_MSA_2024_DRAFT.pdf</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Draft MSA for ACME Corp renewal, pending legal review.</div>
+</div>
+<button class="border border-charcoal-ink border-dashed p-3 text-center text-on-surface-variant hover:text-technical-blue hover:border-technical-blue transition-colors flex items-center justify-center gap-2 font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[16px]">add</span> Add Document
+                    </button>
+</div>
+</div>
+<!-- Comparison Matrix Pane -->
+<div class="flex-1 bg-archival-paper overflow-auto p-margin">
+<div class="max-w-6xl mx-auto border border-charcoal-ink bg-white">
+<!-- Matrix Header -->
+<div class="grid grid-cols-[200px_1fr_1fr] border-b border-charcoal-ink bg-surface-container-low sticky top-0 z-10">
+<div class="p-4 border-r border-charcoal-ink flex items-end">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Comparison Criteria</span>
+</div>
+<div class="p-4 border-r border-charcoal-ink">
+<div class="font-label-mono text-label-mono text-on-surface-variant mb-1">Document A</div>
+<h4 class="font-headline-md text-body-md font-bold truncate text-charcoal-ink">DOC_A_MSA_2023.pdf</h4>
+</div>
+<div class="p-4">
+<div class="font-label-mono text-label-mono text-on-surface-variant mb-1">Document B</div>
+<h4 class="font-headline-md text-body-md font-bold truncate text-charcoal-ink">DOC_B_MSA_2024_DRAFT.pdf</h4>
+</div>
+</div>
+<!-- Matrix Row 1 -->
+<div class="grid grid-cols-[200px_1fr_1fr] border-b border-charcoal-ink hover:bg-surface-container-low transition-colors group">
+<div class="p-4 border-r border-charcoal-ink bg-archival-paper group-hover:bg-transparent transition-colors">
+<span class="font-label-mono text-label-mono text-charcoal-ink font-bold">Contractual Terms</span>
+</div>
+<div class="p-4 border-r border-charcoal-ink">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed">
+                                This Agreement shall commence on the Effective Date and continue for a period of <span class="bg-surface-dim px-1 border-b border-charcoal-ink">one (1) year</span>.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant">Page 2, Section 3.1</div>
+</div>
+<div class="p-4 bg-surface-bright">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed relative">
+<!-- Intelligence Connector implied connection -->
+                                This Agreement shall commence on the Effective Date and continue for a period of <span class="bg-secondary-fixed text-on-secondary-fixed px-1 border-b-2 border-technical-blue font-medium">two (2) years</span>.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-technical-blue inline-block"></span> Diff Detected • Page 2, Section 3.1
+                            </div>
+</div>
+</div>
+<!-- Matrix Row 2 -->
+<div class="grid grid-cols-[200px_1fr_1fr] border-b border-charcoal-ink hover:bg-surface-container-low transition-colors group">
+<div class="p-4 border-r border-charcoal-ink bg-archival-paper group-hover:bg-transparent transition-colors">
+<span class="font-label-mono text-label-mono text-charcoal-ink font-bold">Pricing</span>
+</div>
+<div class="p-4 border-r border-charcoal-ink">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed">
+                                Client agrees to pay Provider <span class="bg-surface-dim px-1 border-b border-charcoal-ink">$10,000 per month</span> for the Services.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant">Page 5, Exhibit A</div>
+</div>
+<div class="p-4 bg-surface-bright">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed">
+                                Client agrees to pay Provider <span class="bg-secondary-fixed text-on-secondary-fixed px-1 border-b-2 border-technical-blue font-medium">$12,500 per month</span> for the Services.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-technical-blue inline-block"></span> Diff Detected • Page 5, Exhibit A
+                            </div>
+</div>
+</div>
+<!-- Matrix Row 3 -->
+<div class="grid grid-cols-[200px_1fr_1fr] hover:bg-surface-container-low transition-colors group">
+<div class="p-4 border-r border-charcoal-ink bg-archival-paper group-hover:bg-transparent transition-colors">
+<span class="font-label-mono text-label-mono text-charcoal-ink font-bold">Cancellation Policy</span>
+</div>
+<div class="p-4 border-r border-charcoal-ink">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed">
+                                Either party may terminate this Agreement without cause upon <span class="bg-surface-dim px-1 border-b border-charcoal-ink">30 days</span> prior written notice.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant">Page 3, Section 4.2</div>
+</div>
+<div class="p-4 bg-surface-bright">
+<div class="font-body-sm text-body-sm text-charcoal-ink leading-relaxed">
+                                Either party may terminate this Agreement without cause upon <span class="bg-secondary-fixed text-on-secondary-fixed px-1 border-b-2 border-technical-blue font-medium">90 days</span> prior written notice.
+                            </div>
+<div class="mt-4 font-label-mono text-label-mono text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-technical-blue inline-block"></span> Diff Detected • Page 3, Section 4.2
+                            </div>
+</div>
+</div>
+</div>
+<div class="max-w-6xl mx-auto mt-4 text-right">
+<button class="bg-charcoal-ink text-white px-6 py-2 hover:bg-technical-blue transition-colors font-label-caps text-label-caps uppercase inline-flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">download</span> Export Diff Report
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
