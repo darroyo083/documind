@@ -725,7 +725,6 @@ export default function SpaceDetail() {
                         <div className={`dm-ask-history ${!question && !answer ? "dm-ask-history-empty" : ""}`} aria-live="polite">
                           {!question && !answer && (
                             <div className="dm-ask-empty">
-                              <p className="dm-kicker">Document intelligence</p>
                               <h2>How can I help?</h2>
                               <p>Ask a focused question and keep the supporting passages in view.</p>
                             </div>

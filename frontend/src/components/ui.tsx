@@ -341,12 +341,10 @@ export function AppShell({
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   description,
   actions,
 }: {
-  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
@@ -354,7 +352,6 @@ export function PageHeader({
   return (
     <div className="dm-page-heading">
       <div>
-        {eyebrow && <p className="dm-kicker">{eyebrow}</p>}
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
@@ -500,7 +497,6 @@ export function AuthFrame({
           <BrandMark />
         </Link>
         <div className="dm-auth-intro-copy">
-          <p className="dm-kicker">Document intelligence / grounded in evidence</p>
           <h1 id="auth-intro-title">A clearer way to work through documents.</h1>
           <p>
             Bring the source, the answer and the next decision into one focused workspace.
@@ -511,7 +507,6 @@ export function AuthFrame({
       <section className="dm-auth-panel" aria-labelledby="auth-title">
         <div className="dm-auth-card">
           <div className="dm-auth-heading">
-            <p className="dm-kicker">Welcome to DocuMind</p>
             <h2 id="auth-title">{title}</h2>
             <p>{description}</p>
           </div>

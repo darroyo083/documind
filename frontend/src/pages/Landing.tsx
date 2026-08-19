@@ -146,22 +146,20 @@ export default function Landing({
     <PublicLayout initialSignInOpen={initialSignInOpen} onSignInClose={onSignInClose}>
       <div className="dm-landing">
         <section className="dm-container dm-landing-hero" aria-labelledby="landing-title">
-        <div className="dm-landing-hero-copy">
-          <p className="dm-kicker">Document intelligence / grounded in evidence</p>
-          <h1 id="landing-title">Clarity from complexity. Document intelligence grounded in evidence.</h1>
-          <p>A workspace designed for precision. Extract, compare and trace critical data across documents.</p>
-          <div className="dm-landing-hero-actions">
-            <Link to="/register" className="dm-button dm-button-primary">Start analyzing</Link>
-            <Link to="/capabilities" className="dm-button dm-button-secondary">View capabilities</Link>
+          <div className="dm-landing-hero-copy">
+            <h1 id="landing-title">Clarity from complexity. Document intelligence grounded in evidence.</h1>
+            <p>A workspace designed for precision. Extract, compare and trace critical data across documents.</p>
+            <div className="dm-landing-hero-actions">
+              <Link to="/register" className="dm-button dm-button-primary">Start analyzing</Link>
+              <Link to="/capabilities" className="dm-button dm-button-secondary">View capabilities</Link>
+            </div>
+            <p className="dm-landing-hero-note">Keep the source close to every decision.</p>
           </div>
-          <p className="dm-landing-hero-note">Keep the source close to every decision.</p>
-        </div>
-        <ProductPreview />
+          <ProductPreview />
         </section>
 
         <section className="dm-container dm-landing-proof" aria-labelledby="proof-title">
           <div className="dm-landing-proof-heading">
-            <p className="dm-kicker">A calmer way to read</p>
             <h2 id="proof-title">Make the source part of the answer.</h2>
             <p>DocuMind keeps extraction, comparison and traceability in one deliberate workflow.</p>
           </div>
@@ -174,7 +172,7 @@ export default function Landing({
         </section>
 
         <section className="dm-container dm-landing-cta" aria-labelledby="deploy-title">
-          <div><p className="dm-kicker">Ready when the record matters</p><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
+          <div><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
           <Link to="/register" className="dm-button dm-button-primary">Create a workspace</Link>
         </section>
 

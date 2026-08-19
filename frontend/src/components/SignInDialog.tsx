@@ -100,7 +100,6 @@ export default function SignInDialog({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="dm-dialog-topline">
-          <p className="dm-kicker">Secure workspace access</p>
           <button type="button" className="dm-dialog-close" onClick={onClose}>
             Close
           </button>

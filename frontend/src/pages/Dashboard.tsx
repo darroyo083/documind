@@ -74,7 +74,6 @@ export default function Dashboard() {
 
       <main className="dm-container dm-page-main dm-dashboard-main">
         <PageHeader
-          eyebrow="Workspace / Spaces"
           title="My Spaces"
           description="Organize and analyze collections of documents."
           actions={
@@ -89,7 +88,6 @@ export default function Dashboard() {
         {showForm && (
           <form onSubmit={handleCreate} className="dm-create-space-panel">
             <div>
-              <p className="dm-kicker">New space</p>
               <h2>Start a focused workspace</h2>
             </div>
             <div className="dm-create-space-fields">

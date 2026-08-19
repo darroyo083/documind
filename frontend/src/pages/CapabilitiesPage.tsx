@@ -7,7 +7,6 @@ export default function CapabilitiesPage() {
       <div className="dm-public-page">
         <header className="dm-public-page-header dm-container">
           <div>
-            <p className="dm-kicker">Capabilities / one focused workspace</p>
             <h1>Move from document intake to decision with less friction.</h1>
             <p>Bring the work around a document into a single, structured surface designed for reading, comparison and follow-through.</p>
           </div>

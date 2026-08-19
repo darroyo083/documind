@@ -61,7 +61,6 @@ export default function SearchPage() {
       <AppHeader title="Search" backTo="/" />
       <main className="dm-container dm-page-main">
         <PageHeader
-          eyebrow="Across your spaces"
           title="Search documents"
           description="Find a passage, then return to the document and page where it belongs."
         />
@@ -77,7 +76,7 @@ export default function SearchPage() {
 
         {spaces.length > 0 && (
           <fieldset className="dm-search-filters">
-            <legend className="dm-kicker">Filter by space</legend>
+            <legend className="dm-search-filter-label">Filter by space</legend>
             <div className="mt-3 flex flex-wrap gap-2">
               {spaces.map((space) => (
                 <button
