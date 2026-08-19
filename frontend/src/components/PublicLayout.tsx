@@ -44,6 +44,14 @@ export default function PublicLayout({
         }
       />
       {children}
+      <footer className="dm-public-footer">
+        <div className="dm-container dm-public-footer-inner">
+          <span>DocuMind · Document intelligence grounded in evidence.</span>
+          <a href="https://github.com/darroyo083/documind" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+        </div>
+      </footer>
       <SignInDialog open={signInOpen} onClose={closeSignIn} />
     </main>
   );

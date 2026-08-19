@@ -1,14 +1,13 @@
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth";
-import Landing from "./Landing";
+import AuthExperience from "./AuthExperience";
 
 export default function Login() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   if (user) {
     return <Navigate to="/" replace />;
   }
 
-  return <Landing initialSignInOpen onSignInClose={() => navigate("/", { replace: true })} />;
+  return <AuthExperience mode="login" />;
 }

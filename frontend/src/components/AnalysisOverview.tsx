@@ -1,7 +1,7 @@
 import type { DocumentAnalysis, DocumentResponse } from "../api";
 import { formatIsoDate } from "../utils/date";
 import AnalysisSources from "./AnalysisSources";
-import DocumentTypeBadge from "./DocumentTypeBadge";
+import { getDocumentTypeLabel } from "./DocumentTypeBadge";
 
 export default function AnalysisOverview({
   analysis,
@@ -14,8 +14,13 @@ export default function AnalysisOverview({
     <div className="dm-brief">
       <header className="dm-brief-header">
         <h2>{analysis.normalized_title || "Untitled document"}</h2>
-        <p>{document.original_filename} / {document.page_count ?? "?"} pages</p>
-        <div className="mt-3"><DocumentTypeBadge documentType={analysis.document_type} /></div>
+        <p className="dm-brief-meta">
+          <span className="dm-brief-meta-type">{getDocumentTypeLabel(analysis.document_type)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{document.page_count ?? "?"} {document.page_count === 1 ? "page" : "pages"}</span>
+          <span aria-hidden="true">·</span>
+          <span>{document.original_filename}</span>
+        </p>
       </header>
 
       <div className="dm-brief-grid mt-6">

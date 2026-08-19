@@ -4,7 +4,7 @@ import PublicLayout from "../components/PublicLayout";
 function ProductPreview() {
   return (
     <figure className="dm-product-preview" aria-label="Document intelligence flow preview">
-      <div className="dm-product-preview-bar"><span>DocuMind / evidence flow</span><span className="dm-preview-bar-code">READY</span></div>
+      <div className="dm-product-preview-bar"><span>DocuMind / evidence flow</span><span className="dm-preview-bar-code">Source linked</span></div>
       <div className="dm-product-preview-body">
         <aside className="dm-product-preview-sidebar" aria-label="Preview stages">
           <p>Workspace</p>
@@ -54,7 +54,7 @@ export default function Landing({
             <Link to="/register" className="dm-button dm-button-primary">Start analyzing</Link>
             <Link to="/capabilities" className="dm-button dm-button-secondary">View capabilities</Link>
           </div>
-          <p className="dm-landing-hero-note">Private by design / source passages stay close to the work.</p>
+          <p className="dm-landing-hero-note">Keep the source close to every decision.</p>
         </div>
         <ProductPreview />
         </section>
@@ -78,7 +78,6 @@ export default function Landing({
           <Link to="/register" className="dm-button dm-button-primary">Create a workspace</Link>
         </section>
 
-        <footer className="dm-landing-footer"><div className="dm-container">DocuMind / Focused document work / 2026</div></footer>
       </div>
     </PublicLayout>
   );

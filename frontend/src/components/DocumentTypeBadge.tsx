@@ -14,12 +14,16 @@ const TYPE_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
+export function getDocumentTypeLabel(documentType: string): string {
+  return TYPE_LABELS[documentType] ?? "Document";
+}
+
 export default function DocumentTypeBadge({
   documentType,
 }: {
   documentType: string;
 }) {
-  const label = TYPE_LABELS[documentType] ?? "Document";
+  const label = getDocumentTypeLabel(documentType);
   return (
     <span className="dm-document-type">
       {label}

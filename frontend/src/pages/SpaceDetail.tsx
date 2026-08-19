@@ -547,7 +547,7 @@ export default function SpaceDetail() {
                       <button
                         type="button"
                         onClick={() => handleDelete(document.id, document.original_filename)}
-                        className="text-sm font-medium text-red-600 hover:text-red-700"
+                        className="dm-document-delete text-sm font-medium text-red-600 hover:text-red-700"
                         aria-label={`Delete ${document.original_filename}`}
                       >
                         Delete

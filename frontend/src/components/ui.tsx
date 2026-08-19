@@ -1,6 +1,7 @@
 import {
   useState,
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
@@ -167,9 +168,9 @@ const STATUS_LABELS: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
   return (
-    <span className={`dm-status dm-status-${status}`} aria-label={label}>
-      <span className="dm-status-dot" aria-hidden="true" />
-      {label}
+      <span className={`dm-status dm-status-${status}`} aria-label={label}>
+        <span className="dm-status-dot" aria-hidden="true" />
+        {label}
     </span>
   );
 }
@@ -410,7 +411,16 @@ export function AppHeader({
           {title && <h1 className="dm-header-title">{title}</h1>}
         </div>
         {tabs && onTabChange && (
-          <nav className="dm-workspace-tabs" aria-label="Document sections">
+          <nav
+            className="dm-workspace-tabs"
+            aria-label="Document sections"
+            style={
+              {
+                "--dm-tab-index": Math.max(tabs.findIndex((tab) => tab.id === activeTab), 0),
+                "--dm-tab-count": tabs.length,
+              } as CSSProperties
+            }
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -486,13 +496,13 @@ export function AuthFrame({
           <BrandMark />
         </Link>
         <div className="dm-auth-intro-copy">
-          <p className="dm-kicker">System registration / set A</p>
-          <h1 id="auth-intro-title">Intelligence Workspace</h1>
+          <p className="dm-kicker">Document intelligence / grounded in evidence</p>
+          <h1 id="auth-intro-title">A clearer way to work through documents.</h1>
           <p>
-            Shift from manual searching to intelligent discovery. Join DocuMind to establish your precise, authoritative record-keeping system.
+            Bring the source, the answer and the next decision into one focused workspace.
           </p>
         </div>
-        <p className="dm-auth-note">Private local MVP. Built for careful reading.</p>
+        <p className="dm-auth-note">Keep the source close to every decision.</p>
       </section>
       <section className="dm-auth-panel" aria-labelledby="auth-title">
         <div className="dm-auth-card">
