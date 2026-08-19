@@ -112,7 +112,9 @@ export default function SpaceDetail() {
           ) {
             return requestedDocument;
           }
-          return documentResponse[0]?.id ?? null;
+          return documentResponse.find((document) => document.status === "ready")?.id
+            ?? documentResponse[0]?.id
+            ?? null;
         });
       })
       .catch((err: unknown) => {
