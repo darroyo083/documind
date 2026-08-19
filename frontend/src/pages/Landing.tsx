@@ -1,7 +1,68 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicLayout from "../components/PublicLayout";
 
+type PreviewStepId = "source" | "extract" | "verify";
+type PreviewTabId = "overview" | "compare" | "ask";
+
+const PREVIEW_STEPS: Array<{
+  id: PreviewStepId;
+  label: string;
+  status: string;
+}> = [
+  { id: "source", label: "Source", status: "Page 04 linked" },
+  { id: "extract", label: "Extract", status: "3 facts ready" },
+  { id: "verify", label: "Verify", status: "Trace confirmed" },
+];
+
+const PREVIEW_TABS: Record<PreviewTabId, {
+  label: string;
+  title: string;
+  description: string;
+  insights: Array<[string, string]>;
+  sourceLabel: string;
+  sourceText: string;
+}> = {
+  overview: {
+    label: "Overview",
+    title: "Evidence, in context.",
+    description: "Find the source passage behind a fact, a date or a decision before you move on.",
+    insights: [["Document type", "Agreement"], ["Source trace", "Page 04 / verified"]],
+    sourceLabel: "Supporting source / page 04",
+    sourceText: "The renewal notice must be delivered before the final quarter.",
+  },
+  compare: {
+    label: "Compare",
+    title: "Compare without losing the trail.",
+    description: "Keep shared terms and meaningful differences in the same reading frame.",
+    insights: [["Documents in view", "3 linked"], ["Shared fact", "Renewal terms"]],
+    sourceLabel: "Compared source / page 04",
+    sourceText: "The same renewal window appears across the selected documents.",
+  },
+  ask: {
+    label: "Ask",
+    title: "Ask with the evidence close.",
+    description: "Turn a focused question into an answer that still points back to the record.",
+    insights: [["Question", "Why does it matter?"], ["Answer status", "3 passages ready"]],
+    sourceLabel: "Answer support / page 04",
+    sourceText: "The notice changes the decision window for the member.",
+  },
+};
+
 function ProductPreview() {
+  const [activeStep, setActiveStep] = useState<PreviewStepId>("extract");
+  const [activeTab, setActiveTab] = useState<PreviewTabId>("overview");
+  const step = PREVIEW_STEPS.find((item) => item.id === activeStep) ?? PREVIEW_STEPS[1];
+  const tab = PREVIEW_TABS[activeTab];
+
+  function activateStep(stepId: PreviewStepId) {
+    setActiveStep(stepId);
+  }
+
+  function activateTab(tabId: PreviewTabId) {
+    setActiveTab(tabId);
+  }
+
   return (
     <figure className="dm-product-preview" aria-label="Document intelligence flow preview">
       <div className="dm-product-preview-bar">
@@ -17,30 +78,57 @@ function ProductPreview() {
           <div className="dm-preview-doc"><i aria-hidden="true" /> Trace</div>
         </aside>
         <div className="dm-product-preview-content">
-          <div className="dm-preview-flow" aria-label="Source to decision flow">
-            <div className="dm-preview-flow-step dm-preview-flow-step-active">
-              <span className="dm-flow-node dm-flow-node-blue">01</span>
-              <strong>Source</strong>
-            </div>
-            <span className="dm-flow-line" aria-hidden="true" />
-            <div className="dm-preview-flow-step">
-              <span className="dm-flow-node">02</span>
-              <strong>Extract</strong>
-            </div>
-            <span className="dm-flow-line dm-flow-line-blue" aria-hidden="true" />
-            <div className="dm-preview-flow-step">
-              <span className="dm-flow-node dm-flow-node-outline">03</span>
-              <strong>Verify</strong>
-            </div>
+          <div className="dm-preview-flow" role="group" aria-label="Source to decision flow">
+            {PREVIEW_STEPS.map((previewStep, index) => (
+              <span className="dm-preview-flow-segment" key={previewStep.id}>
+                <button
+                  type="button"
+                  className={`dm-preview-flow-step ${activeStep === previewStep.id ? "dm-preview-flow-step-active" : ""}`.trim()}
+                  aria-pressed={activeStep === previewStep.id}
+                  onClick={() => activateStep(previewStep.id)}
+                  onFocus={() => activateStep(previewStep.id)}
+                  onMouseEnter={() => activateStep(previewStep.id)}
+                >
+                  <span className={`dm-flow-node ${activeStep === previewStep.id ? "dm-flow-node-blue" : ""} ${previewStep.id === "verify" ? "dm-flow-node-outline" : ""}`.trim()}>
+                    0{index + 1}
+                  </span>
+                  <strong>{previewStep.label}</strong>
+                </button>
+                {index < PREVIEW_STEPS.length - 1 && <span className="dm-flow-line" aria-hidden="true" />}
+              </span>
+            ))}
           </div>
-          <div className="dm-preview-tabs" aria-label="Preview sections"><span className="dm-preview-tab-active">Overview</span><span>Compare</span><span>Ask</span></div>
-          <h2>Evidence, in context.</h2>
-          <p>Find the source passage behind a fact, a date or a decision before you move on.</p>
+          <p className="dm-preview-step-status"><span>{step.label}</span>{step.status}</p>
+          <div className="dm-preview-tabs" role="tablist" aria-label="Preview sections">
+            {(Object.keys(PREVIEW_TABS) as PreviewTabId[]).map((tabId) => (
+              <button
+                type="button"
+                key={tabId}
+                className={activeTab === tabId ? "dm-preview-tab-active" : ""}
+                role="tab"
+                aria-selected={activeTab === tabId}
+                onClick={() => activateTab(tabId)}
+                onFocus={() => activateTab(tabId)}
+                onMouseEnter={() => activateTab(tabId)}
+              >
+                {PREVIEW_TABS[tabId].label}
+              </button>
+            ))}
+          </div>
+          <h2>{tab.title}</h2>
+          <p>{tab.description}</p>
           <div className="dm-preview-insights">
-            <div className="dm-preview-insight"><span>Document type</span><strong>Agreement</strong></div>
-            <div className="dm-preview-insight"><span>Source trace</span><strong>Page 04 / verified</strong></div>
+            {tab.insights.map(([label, value]) => (
+              <div className="dm-preview-insight" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
           </div>
-          <div className="dm-preview-source"><span>Supporting source / page 04</span><p>“The renewal notice must be delivered before the final quarter.”</p></div>
+          <div className="dm-preview-source">
+            <span>{tab.sourceLabel}</span>
+            <p>“{tab.sourceText}”</p>
+          </div>
         </div>
       </div>
     </figure>
