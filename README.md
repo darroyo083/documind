@@ -19,6 +19,20 @@ docker compose up --build
 - **API docs**: http://localhost:8000/docs
 - **Health check**: http://localhost:8000/health
 
+## Public portfolio demo
+
+The zero-cost, read-only portfolio deployment uses the production containers
+and deterministic synthetic fixtures documented in
+[`docs/public-demo.md`](docs/public-demo.md):
+
+```bash
+PUBLIC_DEMO_MODE=true SECRET_KEY="replace-with-a-long-random-value" \
+  docker compose -f docker-compose.demo.yml up --build -d
+```
+
+The demo does not require PostgreSQL or any AI/provider credential. Normal
+development remains on `docker-compose.yml` with `PUBLIC_DEMO_MODE=false`.
+
 ## Project Structure
 
 ```
