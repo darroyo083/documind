@@ -1355,27 +1355,33 @@
   .dm-evidence-page-main::before,
   .dm-capabilities-page-main::before {
     position: absolute;
-    top: -24px;
-    right: -24px;
-    width: min(44vw, 520px);
-    height: 300px;
-    background-image: var(--dm-halftone-dots);
-    background-position: 4px 0, -8px 7px;
-    background-size: 5px 5px, 9px 9px;
+    top: 28px;
+    right: 22px;
+    width: 220px;
+    height: 132px;
+    border: 1px solid rgb(0 82 255 / 0.12);
+    border-radius: 38% 62% 46% 54% / 56% 42% 58% 44%;
     content: "";
     pointer-events: none;
     z-index: 0;
-    animation: dm-halftone-idle 16s ease-in-out infinite;
-    mask-image: linear-gradient(135deg, rgb(0 0 0 / 0.9), rgb(0 0 0 / 0.42) 48%, transparent 88%);
-    clip-path: polygon(0 0, 90% 0, 100% 18%, 100% 72%, 70% 72%, 58% 100%, 12% 100%);
+    opacity: 0.68;
+    animation: dm-soft-shape 18s ease-in-out infinite;
   }
 
-  .dm-evidence-page-main:hover::before,
-  .dm-evidence-page-main:focus-within::before,
-  .dm-capabilities-page-main:hover::before,
-  .dm-capabilities-page-main:focus-within::before {
-    animation-name: dm-halftone-hover;
-    animation-duration: 4.8s;
+  .dm-evidence-page-main::after,
+  .dm-capabilities-page-main::after {
+    position: absolute;
+    top: 128px;
+    right: 188px;
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgb(0 82 255 / 0.11);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.58;
+    animation: dm-soft-shape-small 12s ease-in-out infinite;
   }
 
   .dm-evidence-page-main > *,
@@ -1489,10 +1495,20 @@
 
   .dm-evidence-page-main::before,
   .dm-capabilities-page-main::before {
-    right: 0;
-    width: 220px;
-    height: 140px;
-    opacity: 0.34;
+    top: 36px;
+    right: 12px;
+    width: 148px;
+    height: 92px;
+    opacity: 0.54;
+  }
+
+  .dm-evidence-page-main::after,
+  .dm-capabilities-page-main::after {
+    top: 104px;
+    right: 132px;
+    width: 14px;
+    height: 14px;
+    opacity: 0.46;
   }
 }
 
@@ -1565,16 +1581,26 @@
   flex-basis: 18px;
 }
 
+@keyframes dm-soft-shape {
+  0%, 100% { opacity: 0.56; transform: translate3d(0, 0, 0); }
+  50% { opacity: 0.72; transform: translate3d(-4px, 4px, 0); }
+}
+
+@keyframes dm-soft-shape-small {
+  0%, 100% { opacity: 0.42; transform: translate3d(0, 0, 0); }
+  50% { opacity: 0.62; transform: translate3d(3px, -3px, 0); }
+}
+
 @keyframes dm-halftone-idle {
-  0% { background-position: 0 0, 12px 4px; opacity: 0.64; transform: translate3d(0, 0, 0) rotate(-2deg); }
-  50% { background-position: 16px 7px, -5px 11px; opacity: 0.84; transform: translate3d(-2px, 1px, 0) rotate(-2deg); }
-  100% { background-position: 32px 14px, -22px 18px; opacity: 0.68; transform: translate3d(0, 0, 0) rotate(-2deg); }
+  0% { background-position: 0 0, 12px 4px; opacity: 0.64; transform: translate3d(0, 0, 0); }
+  50% { background-position: 16px 7px, -5px 11px; opacity: 0.84; transform: translate3d(-2px, 1px, 0); }
+  100% { background-position: 32px 14px, -22px 18px; opacity: 0.68; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes dm-halftone-hover {
-  0% { background-position: 0 0, 12px 4px; opacity: 0.88; transform: translate3d(-4px, 2px, 0) scale(1.01) rotate(-2deg); }
-  50% { background-position: -28px 16px, 20px -12px; opacity: 1; transform: translate3d(-10px, 4px, 0) scale(1.03) rotate(-2deg); }
-  100% { background-position: 22px -12px, -18px 22px; opacity: 0.92; transform: translate3d(-6px, 1px, 0) scale(1.015) rotate(-2deg); }
+  0% { background-position: 0 0, 12px 4px; opacity: 0.88; transform: translate3d(-4px, 2px, 0) scale(1.01); }
+  50% { background-position: -28px 16px, 20px -12px; opacity: 1; transform: translate3d(-10px, 4px, 0) scale(1.03); }
+  100% { background-position: 22px -12px, -18px 22px; opacity: 0.92; transform: translate3d(-6px, 1px, 0) scale(1.015); }
 }
 
 .dm-landing-hero::before {
@@ -2008,6 +2034,8 @@
   .dm-landing-cta::before,
   .dm-evidence-page-main::before,
   .dm-capabilities-page-main::before,
+  .dm-evidence-page-main::after,
+  .dm-capabilities-page-main::after,
   .dm-auth-intro::before,
   .dm-product-preview::before { animation: none; }
 
