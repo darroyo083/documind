@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import PublicLayout from "../components/PublicLayout";
 import ScrollReveal from "../components/ScrollReveal";
+import { PUBLIC_DEMO_MODE } from "../demo";
 
 export default function EvidencePage() {
   return (
@@ -18,7 +19,7 @@ export default function EvidencePage() {
             <ScrollReveal className="dm-evidence-feature-copy">
               <h2 id="evidence-feature-title">An answer is only as useful as the passage behind it.</h2>
               <p>Every useful finding stays connected to its document and page, so review remains part of the workflow instead of a separate audit step.</p>
-              <Link to="/register" className="dm-text-link">Start with your documents <span aria-hidden="true">→</span></Link>
+              <Link to={PUBLIC_DEMO_MODE ? "/spaces/demo" : "/register"} className="dm-text-link">{PUBLIC_DEMO_MODE ? "Explore the demo workspace" : "Start with your documents"} <span aria-hidden="true">→</span></Link>
             </ScrollReveal>
             <ScrollReveal className="dm-evidence-ledger" delay={100} aria-label="Evidence ledger example">
               <div className="dm-evidence-ledger-top"><span>CLAIM / 014</span><span className="dm-ledger-status">VERIFIED</span></div>

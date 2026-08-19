@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicLayout from "../components/PublicLayout";
 import ScrollReveal from "../components/ScrollReveal";
+import DemoVideo from "../components/DemoVideo";
+import { PUBLIC_DEMO_MODE } from "../demo";
 
 type PreviewStepId = "source" | "extract" | "verify";
 type PreviewTabId = "overview" | "compare" | "ask";
@@ -151,7 +153,7 @@ export default function Landing({
             <h1 id="landing-title">Clarity from complexity. Document intelligence grounded in evidence.</h1>
             <p>A workspace designed for precision. Extract, compare and trace critical data across documents.</p>
             <div className="dm-landing-hero-actions">
-              <Link to="/register" className="dm-button dm-button-primary">Start analyzing</Link>
+              <Link to={PUBLIC_DEMO_MODE ? "/spaces/demo" : "/register"} className="dm-button dm-button-primary">{PUBLIC_DEMO_MODE ? "Explore demo" : "Start analyzing"}</Link>
               <Link to="/capabilities" className="dm-button dm-button-secondary">View capabilities</Link>
             </div>
             <p className="dm-landing-hero-note">Keep the source close to every decision.</p>
@@ -174,8 +176,10 @@ export default function Landing({
 
         <ScrollReveal as="section" className="dm-container dm-landing-cta" aria-labelledby="deploy-title" delay={180}>
           <div><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
-          <Link to="/register" className="dm-button dm-button-primary">Create a workspace</Link>
+          <Link to={PUBLIC_DEMO_MODE ? "/spaces/demo" : "/register"} className="dm-button dm-button-primary">{PUBLIC_DEMO_MODE ? "Open the workspace" : "Create a workspace"}</Link>
         </ScrollReveal>
+
+        <DemoVideo />
 
       </div>
     </PublicLayout>

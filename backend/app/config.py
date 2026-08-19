@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     app_name: str = "DocuMind"
     app_version: str = "0.1.0"
     debug: bool = False
+    public_demo_mode: bool = False
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:4173"
 
     database_url: str = "postgresql+asyncpg://documind:documind@localhost:5432/documind"
 

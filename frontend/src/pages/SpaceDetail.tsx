@@ -14,6 +14,7 @@ import {
   StatusBadge,
   type WorkspaceTab,
 } from "../components/ui";
+import { DEMO_ASK_QUESTIONS, DEMO_SPACE_ID, isDemoSpaceId } from "../demo";
 
 const SCOPE_LABELS: Record<api.KnowledgeScope, string> = {
   private: "My documents",
@@ -58,8 +59,10 @@ function mapAnalysisError(status: number, detail: string): string {
   return detail || "Document analysis could not be completed.";
 }
 
-export default function SpaceDetail() {
-  const { id } = useParams<{ id: string }>();
+export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
+  const { id: routeId } = useParams<{ id: string }>();
+  const id = routeId ?? (demo ? DEMO_SPACE_ID : undefined);
+  const readOnlyDemo = isDemoSpaceId(id ?? "");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [space, setSpace] = useState<api.SpaceResponse | null>(null);
@@ -219,7 +222,7 @@ export default function SpaceDetail() {
   }, [id, selectedDocumentId]);
 
   const handleGenerateActions = useCallback(async () => {
-    if (!id || !selectedDocumentId) return;
+    if (readOnlyDemo || !id || !selectedDocumentId) return;
     setActionsView({ kind: "starting" });
     try {
       const data = await api.generateActions(id, selectedDocumentId);
@@ -238,11 +241,11 @@ export default function SpaceDetail() {
         });
       }
     }
-  }, [id, selectedDocumentId]);
+  }, [id, readOnlyDemo, selectedDocumentId]);
 
   const handleToggleAction = useCallback(
     async (actionId: string, status: "pending" | "completed") => {
-      if (!id || !selectedDocumentId) return;
+      if (readOnlyDemo || !id || !selectedDocumentId) return;
       const documentId = selectedDocumentId;
       const updated = await api.updateActionStatus(id, documentId, actionId, status);
       if (actionsDocRef.current !== documentId) return;
@@ -259,11 +262,11 @@ export default function SpaceDetail() {
         };
       });
     },
-    [id, selectedDocumentId]
+    [id, readOnlyDemo, selectedDocumentId]
   );
 
   const handleAnalyze = useCallback(async () => {
-    if (!id || !selectedDocumentId) return;
+    if (readOnlyDemo || !id || !selectedDocumentId) return;
     setAnalysisView({ kind: "starting" });
     try {
       const analysis = await api.analyzeDocument(id, selectedDocumentId);
@@ -282,7 +285,7 @@ export default function SpaceDetail() {
         });
       }
     }
-  }, [id, selectedDocumentId]);
+  }, [id, readOnlyDemo, selectedDocumentId]);
 
   const handleDocumentAdded = useCallback(
     (document: api.DocumentResponse) => {
@@ -302,7 +305,7 @@ export default function SpaceDetail() {
 
   const handleRetryDocument = useCallback(
     async (documentId: string) => {
-      if (!id) return;
+      if (readOnlyDemo || !id) return;
       setUploadError("");
       try {
         const updated = await api.retryDocument(id, documentId);
@@ -319,11 +322,11 @@ export default function SpaceDetail() {
         );
       }
     },
-    [id]
+    [id, readOnlyDemo]
   );
 
   async function handleDelete(documentId: string, filename: string) {
-    if (!id) return;
+    if (readOnlyDemo || !id) return;
     if (!window.confirm(`Delete "${filename}"? This cannot be undone.`)) return;
     setUploadError("");
     try {
@@ -420,6 +423,11 @@ export default function SpaceDetail() {
       />
 
       <main className="dm-container dm-page-main">
+        {readOnlyDemo && (
+          <p className="dm-demo-banner" role="status">
+            Public demo · pre-generated evidence · AI generation disabled · read-only
+          </p>
+        )}
         {space.description && (
           <p className="dm-space-description mb-7 max-w-prose text-gray-600">{space.description}</p>
         )}
@@ -429,13 +437,13 @@ export default function SpaceDetail() {
               <EmptyState
                 title="This space is empty"
                 description="Add contracts, reports or research to build a connected intelligence workspace."
-                action={
+                action={!readOnlyDemo && (
                   <DocumentUpload
                     spaceId={id as string}
                     onDocumentAdded={handleDocumentAdded}
                     onUploadingChange={handleUploadingChange}
                   />
-                }
+                )}
               />
               {uploadError && (
                 <p role="alert" className="dm-empty-space-error">
@@ -464,11 +472,15 @@ export default function SpaceDetail() {
                 </div>
               </div>
               <div className="mt-4">
-                <DocumentUpload
-                  spaceId={id as string}
-                  onDocumentAdded={handleDocumentAdded}
-                  onUploadingChange={handleUploadingChange}
-                />
+                {readOnlyDemo ? (
+                  <p className="dm-demo-readonly-note">This prepared workspace cannot be changed.</p>
+                ) : (
+                  <DocumentUpload
+                    spaceId={id as string}
+                    onDocumentAdded={handleDocumentAdded}
+                    onUploadingChange={handleUploadingChange}
+                  />
+                )}
               </div>
               {uploadError && (
                 <p role="alert" className="mt-3 text-sm text-red-600">
@@ -535,7 +547,7 @@ export default function SpaceDetail() {
                           </span>
                         </div>
                       </button>
-                      {document.status === "failed" && (
+                      {document.status === "failed" && !readOnlyDemo && (
                         <button
                           type="button"
                           onClick={() => handleRetryDocument(document.id)}
@@ -544,14 +556,14 @@ export default function SpaceDetail() {
                           Retry
                         </button>
                       )}
-                      <button
+                      {!readOnlyDemo && <button
                         type="button"
                         onClick={() => handleDelete(document.id, document.original_filename)}
                         className="dm-document-delete text-sm font-medium text-red-600 hover:text-red-700"
                         aria-label={`Delete ${document.original_filename}`}
                       >
                         Delete
-                      </button>
+                      </button>}
                     </div>
                     {document.error_message && (
                       <p className="mt-2 text-sm text-red-600">
@@ -679,6 +691,7 @@ export default function SpaceDetail() {
                       document={selectedDocument}
                       view={analysisView}
                       onAnalyze={handleAnalyze}
+                      readOnly={readOnlyDemo}
                     />
                   </div>
                 ) : section === "actions" ? (
@@ -693,6 +706,7 @@ export default function SpaceDetail() {
                       view={actionsView}
                       onGenerate={handleGenerateActions}
                       onToggleStatus={handleToggleAction}
+                      readOnly={readOnlyDemo}
                     />
                   </div>
                 ) : section === "compare" ? (
@@ -702,7 +716,7 @@ export default function SpaceDetail() {
                     id="section-panel-compare"
                     aria-labelledby="section-tab-compare"
                   >
-                    <ComparePanel key={id} spaceId={id as string} documents={documents} />
+                    <ComparePanel key={id} spaceId={id as string} documents={documents} readOnly={readOnlyDemo} />
                   </div>
                 ) : section === "intelligence" ? (
                   <div
@@ -711,7 +725,7 @@ export default function SpaceDetail() {
                     id="section-panel-intelligence"
                     aria-labelledby="section-tab-intelligence"
                   >
-                    <IntelligencePanel spaceId={id as string} />
+                    <IntelligencePanel spaceId={id as string} readOnly={readOnlyDemo} />
                   </div>
                 ) : (
                   <div
@@ -739,6 +753,18 @@ export default function SpaceDetail() {
                           )}
                           {askError && <p role="alert" className="dm-error-state mt-4">{askError}</p>}
                         </div>
+                        {readOnlyDemo && (
+                          <div className="dm-ask-suggestions" aria-label="Suggested demo questions">
+                            <p>Try a prepared question</p>
+                            <div>
+                              {DEMO_ASK_QUESTIONS.map((suggestion) => (
+                                <button type="button" key={suggestion} onClick={() => setQuestion(suggestion)}>
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <form onSubmit={handleAsk} className="dm-ask-composer">
                           <fieldset
                             className="dm-ask-scope"
@@ -813,10 +839,12 @@ function AnalysisPanel({
   document,
   view,
   onAnalyze,
+  readOnly = false,
 }: {
   document: api.DocumentResponse;
   view: AnalysisView;
   onAnalyze: () => void;
+  readOnly?: boolean;
 }) {
   if (view.kind === "loading") {
     return (
@@ -835,13 +863,7 @@ function AnalysisPanel({
         <p className="mt-1 text-xs text-gray-400">
           The structured overview will appear once it completes.
         </p>
-        <Button
-          type="button"
-          onClick={onAnalyze}
-          className="mt-4"
-        >
-          Try again
-        </Button>
+        {!readOnly && <Button type="button" onClick={onAnalyze} className="mt-4">Try again</Button>}
       </div>
     );
   }
@@ -862,13 +884,7 @@ function AnalysisPanel({
         <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
           {view.message}
         </p>
-        <Button
-          type="button"
-          onClick={onAnalyze}
-          className="mt-4"
-        >
-          Try again
-        </Button>
+        {!readOnly && <Button type="button" onClick={onAnalyze} className="mt-4">Try again</Button>}
       </div>
     );
   }
@@ -896,13 +912,7 @@ function AnalysisPanel({
         Generate a structured overview with key facts, important dates and source
         references.
       </p>
-      <Button
-        type="button"
-        onClick={onAnalyze}
-        className="mt-4"
-      >
-        Analyze document
-      </Button>
+      {!readOnly && <Button type="button" onClick={onAnalyze} className="mt-4">Analyze document</Button>}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import * as api from "./api";
+import { PUBLIC_DEMO_MODE } from "./demo";
 
 interface User {
   id: string;
@@ -33,6 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (PUBLIC_DEMO_MODE) {
+      api.clearToken();
+      setLoading(false);
+      return;
+    }
     const token = localStorage.getItem("access_token");
     if (!token) {
       setLoading(false);

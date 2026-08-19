@@ -24,10 +24,12 @@ export default function ActionChecklist({
   actions,
   busy,
   onToggle,
+  readOnly = false,
 }: {
   actions: ActionItem[];
   busy: Set<string>;
   onToggle: (actionId: string, status: "pending" | "completed") => void;
+  readOnly?: boolean;
 }) {
   if (actions.length === 0) {
     return <p className="dm-analysis-empty">No actionable items were identified in this document.</p>;
@@ -44,7 +46,7 @@ export default function ActionChecklist({
               type="checkbox"
               id={`action-${action.id}`}
               checked={checked}
-              disabled={busy.has(action.id)}
+              disabled={readOnly || busy.has(action.id)}
               onChange={() => onToggle(action.id, checked ? "pending" : "completed")}
               aria-label={`${checked ? "Mark as pending" : "Mark as completed"}: ${action.title}`}
             />

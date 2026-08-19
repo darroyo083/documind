@@ -32,6 +32,7 @@ export default function ActionsPanel({
   view,
   onGenerate,
   onToggleStatus,
+  readOnly = false,
 }: {
   document: DocumentResponse;
   view: ActionsView;
@@ -40,6 +41,7 @@ export default function ActionsPanel({
     actionId: string,
     status: "pending" | "completed"
   ) => Promise<void>;
+  readOnly?: boolean;
 }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
@@ -81,13 +83,13 @@ export default function ActionsPanel({
         <p className="mt-1 text-xs text-gray-400">
           The checklist will appear once it completes.
         </p>
-        <button
+        {!readOnly && <button
           type="button"
           onClick={onGenerate}
           className="dm-button dm-button-primary mt-4"
         >
           Retry
-        </button>
+        </button>}
       </div>
     );
   }
@@ -108,13 +110,13 @@ export default function ActionsPanel({
         <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
           {view.message}
         </p>
-        <button
+        {!readOnly && <button
           type="button"
           onClick={onGenerate}
           className="dm-button dm-button-primary mt-4"
         >
           Retry
-        </button>
+        </button>}
       </div>
     );
   }
@@ -132,6 +134,7 @@ export default function ActionsPanel({
           actions={view.data.actions}
           busy={busy}
           onToggle={handleToggle}
+          readOnly={readOnly}
         />
       </div>
     );
@@ -156,13 +159,13 @@ export default function ActionsPanel({
         Find deadlines, required actions and important reminders supported by this
         document.
       </p>
-      <button
+      {!readOnly && <button
         type="button"
         onClick={onGenerate}
       className="dm-button dm-button-primary mt-4"
       >
         Extract actions
-      </button>
+      </button>}
     </div>
   );
 }

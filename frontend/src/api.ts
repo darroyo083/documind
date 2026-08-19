@@ -1,3 +1,5 @@
+import { DEMO_READ_ONLY_MESSAGE, DEMO_SPACE_ID, PUBLIC_DEMO_MODE, isDemoSpaceId } from "./demo";
+
 const API_BASE = "/api";
 
 interface RequestOptions {
@@ -129,6 +131,9 @@ export function clearToken(): void {
 }
 
 export function register(data: RegisterRequest): Promise<TokenResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<TokenResponse>("/auth/register", {
     method: "POST",
     body: data,
@@ -136,6 +141,9 @@ export function register(data: RegisterRequest): Promise<TokenResponse> {
 }
 
 export function login(data: LoginRequest): Promise<TokenResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<TokenResponse>("/auth/login", {
     method: "POST",
     body: data,
@@ -167,6 +175,9 @@ export interface UpdateSpaceRequest {
 }
 
 export function createSpace(data: CreateSpaceRequest): Promise<SpaceResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<SpaceResponse>("/knowledge-spaces", {
     method: "POST",
     body: data,
@@ -174,10 +185,16 @@ export function createSpace(data: CreateSpaceRequest): Promise<SpaceResponse> {
 }
 
 export function listSpaces(): Promise<SpaceResponse[]> {
+  if (PUBLIC_DEMO_MODE) {
+    return request<SpaceResponse>("/public-demo/space").then((space) => [space]);
+  }
   return request<SpaceResponse[]>("/knowledge-spaces");
 }
 
 export function getSpace(id: string): Promise<SpaceResponse> {
+  if (isDemoSpaceId(id)) {
+    return request<SpaceResponse>("/public-demo/space");
+  }
   return request<SpaceResponse>(`/knowledge-spaces/${id}`);
 }
 
@@ -185,6 +202,9 @@ export function updateSpace(
   id: string,
   data: UpdateSpaceRequest
 ): Promise<SpaceResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<SpaceResponse>(`/knowledge-spaces/${id}`, {
     method: "PATCH",
     body: data,
@@ -192,6 +212,9 @@ export function updateSpace(
 }
 
 export function deleteSpace(id: string): Promise<void> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<void>(`/knowledge-spaces/${id}`, {
     method: "DELETE",
   });
@@ -246,6 +269,9 @@ export function uploadDocument(
   spaceId: string,
   file: File
 ): Promise<DocumentResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   const body = new FormData();
   body.append("file", file);
   return request<DocumentResponse>(`/knowledge-spaces/${spaceId}/documents`, {
@@ -255,6 +281,9 @@ export function uploadDocument(
 }
 
 export function listDocuments(spaceId: string): Promise<DocumentResponse[]> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<DocumentResponse[]>("/public-demo/space/documents");
+  }
   return request<DocumentResponse[]>(`/knowledge-spaces/${spaceId}/documents`);
 }
 
@@ -262,6 +291,9 @@ export function deleteDocument(
   spaceId: string,
   documentId: string
 ): Promise<void> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<void>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}`,
     { method: "DELETE" }
@@ -272,6 +304,9 @@ export function retryDocument(
   spaceId: string,
   documentId: string
 ): Promise<DocumentResponse> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<DocumentResponse>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/retry`,
     { method: "POST" }
@@ -283,6 +318,12 @@ export function askDocuments(
   question: string,
   knowledgeScope: KnowledgeScope = "private"
 ): Promise<AnswerResponse> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<AnswerResponse>("/public-demo/space/ask", {
+      method: "POST",
+      body: { question, knowledge_scope: knowledgeScope },
+    });
+  }
   return request<AnswerResponse>(`/knowledge-spaces/${spaceId}/ask`, {
     method: "POST",
     body: { question, knowledge_scope: knowledgeScope },
@@ -290,6 +331,7 @@ export function askDocuments(
 }
 
 export function getReferenceLibrary(): Promise<ReferenceDocumentResponse[]> {
+  if (PUBLIC_DEMO_MODE) return Promise.resolve([]);
   return request<ReferenceDocumentResponse[]>("/reference-library");
 }
 
@@ -334,6 +376,12 @@ export function getDocumentAnalysis(
   documentId: string,
   signal?: AbortSignal
 ): Promise<DocumentAnalysis> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<DocumentAnalysis>(
+      `/public-demo/space/documents/${documentId}/analysis`,
+      { signal },
+    );
+  }
   return request<DocumentAnalysis>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/analysis`,
     { signal }
@@ -344,6 +392,9 @@ export function analyzeDocument(
   spaceId: string,
   documentId: string
 ): Promise<DocumentAnalysis> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<DocumentAnalysis>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/analysis`,
     { method: "POST" }
@@ -386,6 +437,12 @@ export function getDocumentActions(
   documentId: string,
   signal?: AbortSignal
 ): Promise<DocumentActions> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<DocumentActions>(
+      `/public-demo/space/documents/${documentId}/actions`,
+      { signal },
+    );
+  }
   return request<DocumentActions>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/actions`,
     { signal }
@@ -396,6 +453,9 @@ export function generateActions(
   spaceId: string,
   documentId: string
 ): Promise<DocumentActions> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<DocumentActions>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/actions`,
     { method: "POST" }
@@ -408,6 +468,9 @@ export function updateActionStatus(
   actionId: string,
   status: "pending" | "completed"
 ): Promise<ActionItem> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<ActionItem>(
     `/knowledge-spaces/${spaceId}/documents/${documentId}/actions/${actionId}`,
     { method: "PATCH", body: { status } }
@@ -493,6 +556,9 @@ export function createComparison(
   spaceId: string,
   body: CreateComparisonRequest
 ): Promise<DocumentComparison> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<DocumentComparison>(`/knowledge-spaces/${spaceId}/comparisons`, {
     method: "POST",
     body,
@@ -503,6 +569,9 @@ export function listComparisons(
   spaceId: string,
   signal?: AbortSignal
 ): Promise<ComparisonSummary[]> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<ComparisonSummary[]>("/public-demo/space/comparisons", { signal });
+  }
   return request<ComparisonSummary[]>(`/knowledge-spaces/${spaceId}/comparisons`, {
     signal,
   });
@@ -513,6 +582,12 @@ export function getComparison(
   comparisonId: string,
   signal?: AbortSignal
 ): Promise<DocumentComparison> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<DocumentComparison>(
+      `/public-demo/space/comparisons/${comparisonId}`,
+      { signal },
+    );
+  }
   return request<DocumentComparison>(
     `/knowledge-spaces/${spaceId}/comparisons/${comparisonId}`,
     { signal }
@@ -578,12 +653,18 @@ export function getIntelligence(
   spaceId: string,
   signal?: AbortSignal
 ): Promise<SpaceIntelligence> {
+  if (isDemoSpaceId(spaceId)) {
+    return request<SpaceIntelligence>("/public-demo/space/intelligence", { signal });
+  }
   return request<SpaceIntelligence>(`/knowledge-spaces/${spaceId}/intelligence`, {
     signal,
   });
 }
 
 export function generateIntelligence(spaceId: string): Promise<SpaceIntelligence> {
+  if (PUBLIC_DEMO_MODE) {
+    return Promise.reject(new ApiError(403, DEMO_READ_ONLY_MESSAGE));
+  }
   return request<SpaceIntelligence>(`/knowledge-spaces/${spaceId}/intelligence`, {
     method: "POST",
   });
@@ -613,6 +694,11 @@ export function searchDocuments(
   if (limit !== undefined) params.set("limit", String(limit));
   for (const spaceId of spaceIds ?? []) {
     params.append("space_ids", spaceId);
+  }
+  if (PUBLIC_DEMO_MODE) {
+    return request<GlobalSearchHit[]>(`/public-demo/search?${params.toString()}`, { signal }).then(
+      (results) => results.map((result) => ({ ...result, space_id: DEMO_SPACE_ID })),
+    );
   }
   return request<GlobalSearchHit[]>(`/search?${params.toString()}`, { signal });
 }

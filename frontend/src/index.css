@@ -1012,6 +1012,90 @@
   .dm-product-preview, .dm-button, .dm-text-link, .dm-space-cell, .dm-space-delete, .dm-search-result { transition: none; }
 }
 
+.dm-demo-indicator {
+  color: var(--dm-muted, #667085);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dm-demo-banner {
+  margin: 0 0 1.5rem;
+  border-left: 2px solid var(--dm-accent, #2563eb);
+  padding: 0.7rem 0.9rem;
+  color: var(--dm-muted, #667085);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dm-demo-readonly-note {
+  border: 1px solid color-mix(in srgb, var(--dm-accent, #2563eb) 18%, transparent);
+  background: color-mix(in srgb, var(--dm-accent, #2563eb) 5%, transparent);
+  color: var(--dm-muted, #667085);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.8rem 1rem;
+}
+
+.dm-ask-suggestions {
+  margin: 1rem 0;
+}
+
+.dm-ask-suggestions > p {
+  color: var(--dm-muted, #667085);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.dm-ask-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dm-ask-suggestions button {
+  border: 1px solid var(--dm-line, #d8dde6);
+  border-radius: 999px;
+  background: var(--dm-surface, #fff);
+  color: var(--dm-ink, #172033);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.dm-ask-suggestions button:hover,
+.dm-ask-suggestions button:focus-visible {
+  border-color: var(--dm-accent, #2563eb);
+  color: var(--dm-accent, #2563eb);
+}
+
+.dm-demo-video {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 4rem;
+  padding-top: 2rem;
+}
+
+.dm-demo-video-label {
+  color: var(--dm-muted, #667085);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.dm-demo-video h2 {
+  font-size: clamp(1.5rem, 2vw, 2.2rem);
+  margin: 0;
+}
+
+.dm-demo-video video {
+  width: 100%;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Second visual polish pass                                                  */
 /* -------------------------------------------------------------------------- */

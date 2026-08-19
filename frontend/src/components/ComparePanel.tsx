@@ -33,9 +33,11 @@ export function mapComparisonError(status: number, detail: string): string {
 export default function ComparePanel({
   spaceId,
   documents,
+  readOnly = false,
 }: {
   spaceId: string;
   documents: api.DocumentResponse[];
+  readOnly?: boolean;
 }) {
   const [history, setHistory] = useState<api.ComparisonSummary[] | null>(null);
   const [historyError, setHistoryError] = useState("");
@@ -59,7 +61,13 @@ export default function ComparePanel({
     setHistoryError("");
     api
       .listComparisons(spaceId, controller.signal)
-      .then((items) => setHistory(items))
+      .then(async (items) => {
+        setHistory(items);
+        if (readOnly && items[0]) {
+          const comparison = await api.getComparison(spaceId, items[0].id, controller.signal);
+          setView({ kind: "ready", comparison });
+        }
+      })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
         setHistoryError(
@@ -67,7 +75,7 @@ export default function ComparePanel({
         );
       });
     return () => controller.abort();
-  }, [spaceId]);
+  }, [readOnly, spaceId]);
 
   const readyDocuments = documents.filter(
     (document) => document.status === "ready"
@@ -171,6 +179,11 @@ export default function ComparePanel({
   return (
     <div className="dm-compare-panel space-y-6">
       <section aria-labelledby="compare-heading">
+        {readOnly ? (
+          <div className="dm-demo-readonly-note">
+            This comparison is pre-generated from the synthetic document set. Select a source below to inspect its evidence.
+          </div>
+        ) : <>
         <h2 id="compare-heading" className="text-lg font-semibold text-gray-900">
           Compare documents
         </h2>
@@ -268,6 +281,7 @@ export default function ComparePanel({
         >
           Compare selected
         </button>
+      </>}
       </section>
 
       {view.kind === "generating" && (
@@ -279,13 +293,13 @@ export default function ComparePanel({
           <p role="status" className="text-sm text-gray-600">
             A comparison for these documents is currently in progress.
           </p>
-          <button
+          {!readOnly && <button
             type="button"
             onClick={handleRetry}
             className="dm-button dm-button-primary mt-4"
           >
             Try again
-          </button>
+          </button>}
         </div>
       )}
 
@@ -294,13 +308,13 @@ export default function ComparePanel({
           <p role="alert" className="mx-auto max-w-md text-sm text-red-600">
             {view.message}
           </p>
-          <button
+          {!readOnly && <button
             type="button"
             onClick={handleRetry}
             className="dm-button dm-button-primary mt-4"
           >
             Try again
-          </button>
+          </button>}
         </div>
       )}
 

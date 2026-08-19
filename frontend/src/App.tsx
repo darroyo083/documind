@@ -9,6 +9,7 @@ import SearchPage from "./pages/SearchPage";
 import SpaceDetail from "./pages/SpaceDetail";
 import EvidencePage from "./pages/EvidencePage";
 import CapabilitiesPage from "./pages/CapabilitiesPage";
+import { PUBLIC_DEMO_MODE } from "./demo";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -53,23 +54,23 @@ export default function App() {
         element={<HomeRoute />}
       />
       <Route
+        path="/spaces/demo"
+        element={PUBLIC_DEMO_MODE ? <SpaceDetail demo /> : <Navigate to="/" replace />}
+      />
+      <Route
         path="/spaces/:id"
         element={
-          <ProtectedRoute>
-            <SpaceDetail />
-          </ProtectedRoute>
+          <ProtectedRoute><SpaceDetail /></ProtectedRoute>
         }
       />
       <Route
         path="/search"
         element={
-          <ProtectedRoute>
-            <SearchPage />
-          </ProtectedRoute>
+          PUBLIC_DEMO_MODE ? <SearchPage /> : <ProtectedRoute><SearchPage /></ProtectedRoute>
         }
       />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={PUBLIC_DEMO_MODE ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/register" element={PUBLIC_DEMO_MODE ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/evidence" element={<EvidencePage />} />
       <Route path="/capabilities" element={<CapabilitiesPage />} />
     </Routes>

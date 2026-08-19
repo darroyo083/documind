@@ -47,7 +47,7 @@ function QuestionRow({ item }: { item: api.IntelligenceOpenQuestion }) {
   return <li className="dm-intelligence-row"><h4>{cleanIntelligenceText(item.question)}</h4>{item.explanation && <p>{cleanIntelligenceText(item.explanation)}</p>}<IntelligenceSources sources={item.sources} /></li>;
 }
 
-export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
+export default function IntelligencePanel({ spaceId, readOnly = false }: { spaceId: string; readOnly?: boolean }) {
   const [view, setView] = useState<IntelligenceView>({ kind: "loading" });
   const busyRef = useRef(false);
 
@@ -83,16 +83,16 @@ export default function IntelligencePanel({ spaceId }: { spaceId: string }) {
 
   if (view.kind === "loading") return <LoadingState message="Loading workspace intelligence..." />;
   if (view.kind === "no_documents") return <EmptyState title="Intelligence needs a ready document" description="Upload and process at least one document to generate a cross-document view of this space." />;
-  if (view.kind === "none") return <div className="dm-feature-state"><h2>Workspace intelligence</h2><p>Synthesize key facts, contradictions, dates and open questions across every ready document in this space.</p><Button type="button" onClick={refresh} className="mt-4">Generate intelligence</Button></div>;
-  if (view.kind === "generating" || view.kind === "processing") return <div className="dm-feature-state"><p role="status">{view.kind === "generating" ? "Generating workspace intelligence..." : "Intelligence generation is in progress."}</p>{view.kind === "processing" && <Button type="button" onClick={refresh} className="mt-4">Try again</Button>}</div>;
-  if (view.kind === "failed") return <div className="dm-feature-state"><p role="alert">{view.message}</p><Button type="button" onClick={refresh} className="mt-4">Try again</Button></div>;
+  if (view.kind === "none") return <div className="dm-feature-state"><h2>Workspace intelligence</h2><p>Synthesize key facts, contradictions, dates and open questions across every ready document in this space.</p>{!readOnly && <Button type="button" onClick={refresh} className="mt-4">Generate intelligence</Button>}</div>;
+  if (view.kind === "generating" || view.kind === "processing") return <div className="dm-feature-state"><p role="status">{view.kind === "generating" ? "Generating workspace intelligence..." : "Intelligence generation is in progress."}</p>{view.kind === "processing" && !readOnly && <Button type="button" onClick={refresh} className="mt-4">Try again</Button>}</div>;
+  if (view.kind === "failed") return <div className="dm-feature-state"><p role="alert">{view.message}</p>{!readOnly && <Button type="button" onClick={refresh} className="mt-4">Try again</Button>}</div>;
 
   const { data } = view;
   return (
     <div className="dm-intelligence">
       <header className="dm-brief-header flex items-start justify-between gap-4">
         <div><h2>Workspace intelligence</h2><p>{data.updated_at ? `Last generated ${new Date(data.updated_at).toLocaleString()}` : ""}</p></div>
-        <Button type="button" onClick={refresh}>Refresh</Button>
+        {!readOnly && <Button type="button" onClick={refresh}>Refresh</Button>}
       </header>
       {data.is_stale && <p className="dm-status-banner mt-4" role="status">Documents changed since this snapshot was generated. Refresh to update.</p>}
       <div className="dm-intelligence-hero mt-6">

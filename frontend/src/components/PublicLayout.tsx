@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PublicHeader } from "./ui";
 import SignInDialog from "./SignInDialog";
+import { PUBLIC_DEMO_MODE } from "../demo";
 
 export type PublicSection = "home" | "evidence" | "capabilities";
 
@@ -16,7 +17,7 @@ export default function PublicLayout({
   initialSignInOpen?: boolean;
   onSignInClose?: () => void;
 }) {
-  const [signInOpen, setSignInOpen] = useState(initialSignInOpen);
+  const [signInOpen, setSignInOpen] = useState(initialSignInOpen && !PUBLIC_DEMO_MODE);
 
   function closeSignIn() {
     setSignInOpen(false);
@@ -34,12 +35,24 @@ export default function PublicLayout({
             <Link to="/capabilities" aria-current={active === "capabilities" ? "page" : undefined}>
               Capabilities
             </Link>
-            <button type="button" className="dm-public-signin" onClick={() => setSignInOpen(true)}>
-              Sign in
-            </button>
-            <Link to="/register" className="dm-button dm-button-primary dm-button-small">
-              Get started
-            </Link>
+            {!PUBLIC_DEMO_MODE && (
+              <>
+                <button type="button" className="dm-public-signin" onClick={() => setSignInOpen(true)}>
+                  Sign in
+                </button>
+                <Link to="/register" className="dm-button dm-button-primary dm-button-small">
+                  Get started
+                </Link>
+              </>
+            )}
+            {PUBLIC_DEMO_MODE && (
+              <>
+                <span className="dm-demo-indicator">Public demo · AI disabled</span>
+                <Link to="/spaces/demo" className="dm-button dm-button-primary dm-button-small">
+                  Explore demo
+                </Link>
+              </>
+            )}
           </>
         }
       />
@@ -52,7 +65,7 @@ export default function PublicLayout({
           </a>
         </div>
       </footer>
-      <SignInDialog open={signInOpen} onClose={closeSignIn} />
+      {!PUBLIC_DEMO_MODE && <SignInDialog open={signInOpen} onClose={closeSignIn} />}
     </main>
   );
 }
