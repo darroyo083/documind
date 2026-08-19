@@ -4,12 +4,14 @@ DocuMind has a separate production Compose file for the portfolio demo:
 
 ```bash
 PUBLIC_DEMO_MODE=true SECRET_KEY="replace-with-a-long-random-value" \
-  docker compose -f docker-compose.demo.yml up --build -d
+  docker compose -f docker-compose.demo.yml \
+    -f docker-compose.demo.local.yml up --build -d
 ```
 
-The stack serves the frontend at `http://localhost:8080`. Only the frontend
-publishes a host port. Nginx serves the built React application, proxies
-`/api/` to the internal backend, and provides SPA fallback routing.
+The local override serves the frontend at `http://localhost:8080`. The base
+production stack publishes no host port. Nginx serves the built React
+application, proxies `/api/` to the internal backend, and provides SPA
+fallback routing.
 
 ## Architecture
 
@@ -29,6 +31,19 @@ The frontend reuses the existing `SpaceDetail`, Overview, Actions, Compare,
 Intelligence, Ask, evidence, and Search components. `frontend/src/api.ts`
 adapts those reads to the public-demo endpoints. No separate fake workspace is
 maintained.
+
+## Shared reverse proxy
+
+The production cutover uses the existing external Docker network named
+`nginx-proxy` through `docker-compose.demo.proxy.yml`. Only the static frontend
+joins that network and advertises `PUBLIC_DEMO_DOMAIN` plus
+`PUBLIC_DEMO_WWW_DOMAIN` to `jwilder/nginx-proxy` and its Let's Encrypt
+companion. The backend remains reachable only on the private Compose network.
+
+The proxy vhost snippet at
+`deploy/nginx-proxy/vhost.d/www.withdocumind.com` permanently redirects the
+secondary hostname to `https://withdocumind.com$request_uri`, while leaving
+the ACME challenge path available for certificate issuance.
 
 ## Cost and mutation protection
 

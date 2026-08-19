@@ -1,0 +1,14 @@
+services:
+  frontend:
+    environment:
+      VIRTUAL_HOST: ${PUBLIC_DEMO_DOMAIN:-withdocumind.com},${PUBLIC_DEMO_WWW_DOMAIN:-www.withdocumind.com}
+      LETSENCRYPT_HOST: ${PUBLIC_DEMO_DOMAIN:-withdocumind.com},${PUBLIC_DEMO_WWW_DOMAIN:-www.withdocumind.com}
+      VIRTUAL_PORT: "80"
+    networks:
+      default: {}
+      proxy: {}
+
+networks:
+  proxy:
+    name: ${PUBLIC_PROXY_NETWORK:-nginx-proxy}
+    external: true

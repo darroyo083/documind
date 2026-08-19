@@ -27,11 +27,22 @@ and deterministic synthetic fixtures documented in
 
 ```bash
 PUBLIC_DEMO_MODE=true SECRET_KEY="replace-with-a-long-random-value" \
-  docker compose -f docker-compose.demo.yml up --build -d
+  docker compose -f docker-compose.demo.yml \
+    -f docker-compose.demo.local.yml up --build -d
 ```
 
 The demo does not require PostgreSQL or any AI/provider credential. Normal
 development remains on `docker-compose.yml` with `PUBLIC_DEMO_MODE=false`.
+
+For the shared production reverse proxy, use the proxy override. It connects
+only the static frontend to the existing `nginx-proxy` network and publishes
+no host port:
+
+```bash
+PUBLIC_DEMO_MODE=true SECRET_KEY="replace-with-a-long-random-value" \
+  docker compose -f docker-compose.demo.yml \
+    -f docker-compose.demo.proxy.yml up --build -d
+```
 
 ## Project Structure
 
