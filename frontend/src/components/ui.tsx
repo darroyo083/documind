@@ -233,7 +233,11 @@ export function EvidenceSource({ source }: { source: SourceItem }) {
 export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`dm-brand ${compact ? "dm-brand-compact" : ""}`.trim()}>
-      <span className="dm-brand-mark" aria-hidden="true" />
+      <svg className="dm-brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5.5 2.75h8l5 5v13.5h-13z" fill="currentColor" />
+        <path d="M13.5 2.75v5h5" fill="var(--dm-bg)" />
+        <path d="M9 13h5.5M9 16.75h4" stroke="var(--dm-bg)" strokeLinecap="square" strokeWidth="1.5" />
+      </svg>
       DocuMind
     </span>
   );

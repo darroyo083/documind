@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
   <title>DocuMind</title>
-  <rect x="2" y="2" width="28" height="28" fill="#0052ff" stroke="#0d1117" stroke-width="2"/>
-  <path d="M8 8h7v16H8zM17 8h7v16h-7z" fill="#ffffff"/>
-  <path d="M10.5 12h2M10.5 16h2M19.5 12h2M19.5 16h2" stroke="#0052ff" stroke-linecap="round" stroke-width="1.5"/>
+  <path d="M7.5 3.5h10l7 7v18h-17z" fill="#0052ff" stroke="#0d1117" stroke-width="1.5"/>
+  <path d="M17.5 3.5v7h7" fill="#f9f9f8"/>
+  <path d="M11 16h8M11 21h5.5" stroke="#f9f9f8" stroke-linecap="square" stroke-width="2"/>
 </svg>

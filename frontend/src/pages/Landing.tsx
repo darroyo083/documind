@@ -4,7 +4,10 @@ import PublicLayout from "../components/PublicLayout";
 function ProductPreview() {
   return (
     <figure className="dm-product-preview" aria-label="Document intelligence flow preview">
-      <div className="dm-product-preview-bar"><span>DocuMind / evidence flow</span><span className="dm-preview-bar-code">Source linked</span></div>
+      <div className="dm-product-preview-bar">
+        <span className="dm-preview-bar-title">DocuMind / evidence flow</span>
+        <span className="dm-preview-bar-code"><i aria-hidden="true" /> Source linked</span>
+      </div>
       <div className="dm-product-preview-body">
         <aside className="dm-product-preview-sidebar" aria-label="Preview stages">
           <p>Workspace</p>
@@ -14,12 +17,21 @@ function ProductPreview() {
           <div className="dm-preview-doc"><i aria-hidden="true" /> Trace</div>
         </aside>
         <div className="dm-product-preview-content">
-          <div className="dm-preview-flow" aria-hidden="true">
-            <span className="dm-flow-node dm-flow-node-blue">01</span>
-            <span className="dm-flow-line" />
-            <span className="dm-flow-node">02</span>
-            <span className="dm-flow-line dm-flow-line-blue" />
-            <span className="dm-flow-node dm-flow-node-outline">03</span>
+          <div className="dm-preview-flow" aria-label="Source to decision flow">
+            <div className="dm-preview-flow-step dm-preview-flow-step-active">
+              <span className="dm-flow-node dm-flow-node-blue">01</span>
+              <strong>Source</strong>
+            </div>
+            <span className="dm-flow-line" aria-hidden="true" />
+            <div className="dm-preview-flow-step">
+              <span className="dm-flow-node">02</span>
+              <strong>Extract</strong>
+            </div>
+            <span className="dm-flow-line dm-flow-line-blue" aria-hidden="true" />
+            <div className="dm-preview-flow-step">
+              <span className="dm-flow-node dm-flow-node-outline">03</span>
+              <strong>Verify</strong>
+            </div>
           </div>
           <div className="dm-preview-tabs" aria-label="Preview sections"><span className="dm-preview-tab-active">Overview</span><span>Compare</span><span>Ask</span></div>
           <h2>Evidence, in context.</h2>
