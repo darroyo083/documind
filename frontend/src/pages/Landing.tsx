@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicLayout from "../components/PublicLayout";
+import ScrollReveal from "../components/ScrollReveal";
 
 type PreviewStepId = "source" | "extract" | "verify";
 type PreviewTabId = "overview" | "compare" | "ask";
@@ -145,7 +146,7 @@ export default function Landing({
   return (
     <PublicLayout initialSignInOpen={initialSignInOpen} onSignInClose={onSignInClose}>
       <div className="dm-landing">
-        <section className="dm-container dm-landing-hero" aria-labelledby="landing-title">
+        <ScrollReveal as="section" className="dm-container dm-landing-hero" aria-labelledby="landing-title">
           <div className="dm-landing-hero-copy">
             <h1 id="landing-title">Clarity from complexity. Document intelligence grounded in evidence.</h1>
             <p>A workspace designed for precision. Extract, compare and trace critical data across documents.</p>
@@ -156,9 +157,9 @@ export default function Landing({
             <p className="dm-landing-hero-note">Keep the source close to every decision.</p>
           </div>
           <ProductPreview />
-        </section>
+        </ScrollReveal>
 
-        <section className="dm-container dm-landing-proof" aria-labelledby="proof-title">
+        <ScrollReveal as="section" className="dm-container dm-landing-proof" aria-labelledby="proof-title" delay={100}>
           <div className="dm-landing-proof-heading">
             <h2 id="proof-title">Make the source part of the answer.</h2>
             <p>DocuMind keeps extraction, comparison and traceability in one deliberate workflow.</p>
@@ -169,12 +170,12 @@ export default function Landing({
             <article><span>03</span><h3>Verify</h3><p>Return to the page behind the claim before you decide.</p></article>
           </div>
           <Link to="/evidence" className="dm-text-link">Explore the evidence layer <span aria-hidden="true">→</span></Link>
-        </section>
+        </ScrollReveal>
 
-        <section className="dm-container dm-landing-cta" aria-labelledby="deploy-title">
+        <ScrollReveal as="section" className="dm-container dm-landing-cta" aria-labelledby="deploy-title" delay={180}>
           <div><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
           <Link to="/register" className="dm-button dm-button-primary">Create a workspace</Link>
-        </section>
+        </ScrollReveal>
 
       </div>
     </PublicLayout>
