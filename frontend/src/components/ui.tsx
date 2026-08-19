@@ -150,9 +150,6 @@ export function EmptyState({
 }) {
   return (
     <div className={`dm-empty-state ${className}`.trim()}>
-      <div className="dm-empty-mark" aria-hidden="true">
-        +
-      </div>
       <h2>{title}</h2>
       <p>{description}</p>
       {action && <div className="dm-empty-action">{action}</div>}
@@ -250,7 +247,6 @@ export function SidebarNavItem({ item }: { item: ShellNavItem }) {
         cx("dm-sidebar-link", isActive && "dm-sidebar-link-active")
       }
     >
-      <span className="dm-sidebar-link-mark" aria-hidden="true" />
       <span>{item.label}</span>
     </NavLink>
   );

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PublicHeader } from "../components/ui";
+import PublicLayout from "../components/PublicLayout";
 
 function ProductPreview() {
   return (
@@ -35,56 +35,51 @@ function ProductPreview() {
   );
 }
 
-export default function Landing() {
+export default function Landing({
+  initialSignInOpen = false,
+  onSignInClose,
+}: {
+  initialSignInOpen?: boolean;
+  onSignInClose?: () => void;
+}) {
   return (
-    <main className="dm-landing">
-      <PublicHeader
-        actions={
-          <>
-            <a href="#evidence">Evidence</a>
-            <a href="#capabilities">Capabilities</a>
-            <Link to="/login">Sign in</Link>
-            <Link to="/register" className="dm-button dm-button-primary dm-button-small">Get started</Link>
-          </>
-        }
-      />
-
-      <section className="dm-container dm-landing-hero" aria-labelledby="landing-title">
+    <PublicLayout initialSignInOpen={initialSignInOpen} onSignInClose={onSignInClose}>
+      <div className="dm-landing">
+        <section className="dm-container dm-landing-hero" aria-labelledby="landing-title">
         <div className="dm-landing-hero-copy">
           <p className="dm-kicker">Document intelligence / grounded in evidence</p>
           <h1 id="landing-title">Clarity from complexity. Document intelligence grounded in evidence.</h1>
           <p>A workspace designed for precision. Extract, compare and trace critical data across documents.</p>
           <div className="dm-landing-hero-actions">
             <Link to="/register" className="dm-button dm-button-primary">Start analyzing</Link>
-            <a href="#capabilities" className="dm-button dm-button-secondary">View capabilities</a>
+            <Link to="/capabilities" className="dm-button dm-button-secondary">View capabilities</Link>
           </div>
+          <p className="dm-landing-hero-note">Private by design / source passages stay close to the work.</p>
         </div>
         <ProductPreview />
-      </section>
+        </section>
 
-      <section className="dm-landing-section" id="capabilities" aria-labelledby="capabilities-title">
-        <div className="dm-landing-section-header">
-          <h2 id="capabilities-title">System capabilities</h2>
-          <p className="dm-kicker dm-capability-kicker">MODULE_01 / INTELLIGENCE_ROUTING</p>
-        </div>
-        <div className="dm-capability-layout">
-          <div className="dm-capability-lead"><h3>Built for the work around a document.</h3><p>Keep extraction, comparison and source traceability in one focused workspace.</p></div>
-          <div className="dm-capability-list">
-            <article className="dm-capability-item"><h3>Bulk ingestion</h3><p>Bring text-based PDFs into a Space and keep processing states visible.</p></article>
-            <article className="dm-capability-item"><h3>Cross-reference</h3><p>Compare ready documents and surface differences with the evidence beside them.</p></article>
-            <article className="dm-capability-item"><h3>Source traceability</h3><p>Return to the document and page behind every useful answer.</p></article>
+        <section className="dm-container dm-landing-proof" aria-labelledby="proof-title">
+          <div className="dm-landing-proof-heading">
+            <p className="dm-kicker">A calmer way to read</p>
+            <h2 id="proof-title">Make the source part of the answer.</h2>
+            <p>DocuMind keeps extraction, comparison and traceability in one deliberate workflow.</p>
           </div>
-        </div>
-      </section>
+          <div className="dm-landing-proof-list">
+            <article><span>01</span><h3>Collect</h3><p>Bring related text-based PDFs into a focused Space.</p></article>
+            <article><span>02</span><h3>Understand</h3><p>Extract facts, dates and actions without losing context.</p></article>
+            <article><span>03</span><h3>Verify</h3><p>Return to the page behind the claim before you decide.</p></article>
+          </div>
+          <Link to="/evidence" className="dm-text-link">Explore the evidence layer <span aria-hidden="true">→</span></Link>
+        </section>
 
-      <section className="dm-container dm-landing-section dm-landing-deploy" id="evidence" aria-labelledby="deploy-title">
-        <div className="dm-landing-cta">
-          <div><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
+        <section className="dm-container dm-landing-cta" aria-labelledby="deploy-title">
+          <div><p className="dm-kicker">Ready when the record matters</p><h2 id="deploy-title">Deploy intelligence securely.</h2><p>Keep your files close to the workspace where the decisions are made.</p></div>
           <Link to="/register" className="dm-button dm-button-primary">Create a workspace</Link>
-        </div>
-      </section>
+        </section>
 
-      <footer className="dm-landing-footer"><div className="dm-container">DocuMind / Focused document work / 2026</div></footer>
-    </main>
+        <footer className="dm-landing-footer"><div className="dm-container">DocuMind / Focused document work / 2026</div></footer>
+      </div>
+    </PublicLayout>
   );
 }

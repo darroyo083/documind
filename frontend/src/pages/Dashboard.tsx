@@ -72,7 +72,7 @@ export default function Dashboard() {
         }
       />
 
-      <main className="dm-container dm-page-main">
+      <main className="dm-container dm-page-main dm-dashboard-main">
         <PageHeader
           eyebrow="Workspace / Spaces"
           title="My Spaces"
@@ -126,15 +126,15 @@ export default function Dashboard() {
             action={<Button onClick={() => setShowForm(true)}>Create space</Button>}
           />
         ) : (
+          <>
+          <div className="dm-space-grid-meta" aria-live="polite">
+            <span>{spaces.length} {spaces.length === 1 ? "space" : "spaces"}</span>
+            <span>Ready to explore</span>
+          </div>
           <div className="dm-space-grid">
-            <button type="button" className="dm-space-cell dm-space-create-cell" onClick={() => setShowForm(true)}>
-              <span className="dm-space-cell-mark" aria-hidden="true">+</span>
-              <span>Create new space</span>
-            </button>
             {spaces.map((space) => (
               <article key={space.id} className="dm-space-cell">
                 <div className="dm-space-cell-topline">
-                  <span className="dm-space-cell-mark" aria-hidden="true">□</span>
                   <span className="dm-space-cell-state">Active</span>
                 </div>
                 <Link to={`/spaces/${space.id}`} className="dm-space-cell-link">
@@ -155,6 +155,7 @@ export default function Dashboard() {
               </article>
             ))}
           </div>
+          </>
         )}
       </main>
     </div>

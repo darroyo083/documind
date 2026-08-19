@@ -7,6 +7,8 @@ import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import SearchPage from "./pages/SearchPage";
 import SpaceDetail from "./pages/SpaceDetail";
+import EvidencePage from "./pages/EvidencePage";
+import CapabilitiesPage from "./pages/CapabilitiesPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -68,6 +70,8 @@ export default function App() {
       />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/evidence" element={<EvidencePage />} />
+      <Route path="/capabilities" element={<CapabilitiesPage />} />
     </Routes>
   );
 }

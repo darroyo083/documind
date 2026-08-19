@@ -668,6 +668,7 @@ export default function SpaceDetail() {
 
                 {section === "overview" ? (
                   <div
+                    className="dm-tab-panel"
                     role="tabpanel"
                     id="section-panel-overview"
                     aria-labelledby="section-tab-overview"
@@ -680,6 +681,7 @@ export default function SpaceDetail() {
                   </div>
                 ) : section === "actions" ? (
                   <div
+                    className="dm-tab-panel"
                     role="tabpanel"
                     id="section-panel-actions"
                     aria-labelledby="section-tab-actions"
@@ -693,6 +695,7 @@ export default function SpaceDetail() {
                   </div>
                 ) : section === "compare" ? (
                   <div
+                    className="dm-tab-panel"
                     role="tabpanel"
                     id="section-panel-compare"
                     aria-labelledby="section-tab-compare"
@@ -701,6 +704,7 @@ export default function SpaceDetail() {
                   </div>
                 ) : section === "intelligence" ? (
                   <div
+                    className="dm-tab-panel"
                     role="tabpanel"
                     id="section-panel-intelligence"
                     aria-labelledby="section-tab-intelligence"
@@ -709,13 +713,14 @@ export default function SpaceDetail() {
                   </div>
                 ) : (
                   <div
+                    className="dm-tab-panel"
                     role="tabpanel"
                     id="section-panel-ask"
                     aria-labelledby="section-tab-ask"
                   >
                     <div className="dm-ask-workspace">
                       <section className="dm-ask-conversation" aria-label="Ask conversation">
-                        <div className="dm-ask-history" aria-live="polite">
+                        <div className={`dm-ask-history ${!question && !answer ? "dm-ask-history-empty" : ""}`} aria-live="polite">
                           {!question && !answer && (
                             <div className="dm-ask-empty">
                               <p className="dm-kicker">Document intelligence</p>
@@ -775,7 +780,7 @@ export default function SpaceDetail() {
                       </section>
                       <aside className="dm-ask-sources" aria-label="Active citations">
                         <header>Active citations</header>
-                        <div className="dm-ask-sources-body">
+                        <div className={`dm-ask-sources-body ${answer && answer.citations.length > 0 ? "" : "dm-ask-sources-body-empty"}`}>
                           {answer && answer.citations.length > 0 ? answer.citations.map((citation, index) => (
                             <article className="dm-ask-source" key={citation.source_id}>
                               <strong>[{index + 1}] {citation.document_name} / page {citation.page_number}</strong>
