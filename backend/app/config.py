@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 10
     chunk_size: int = 800
     chunk_overlap: int = 120
+    document_stale_after_seconds: int = Field(
+        default=900,
+        gt=0,
+        description=(
+            "A document PROCESSING claim older than this can be atomically "
+            "reclaimed by a retry; values <= 0 would allow duplicate processing."
+        ),
+    )
 
     generation_provider: str = "mock"
     generation_model: str = "mock-model"

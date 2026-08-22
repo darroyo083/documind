@@ -935,9 +935,20 @@ async def test_claim_predicate_rejects_ready_fresh_and_accepts_claimable(
     """
     token = await register_user(async_client, "recovery-predicate@test.com")
     space = await create_space(async_client, token)
+    seed_counter = {"n": 0}
 
     async def seeded(status: str, started_at, attempt_id):
-        doc = (await upload_pdf(async_client, token, space["id"], ["alpha beta gamma"])).json()
+        # Each seeded row needs its own document; duplicate content within one
+        # Space is rejected by design.
+        seed_counter["n"] += 1
+        doc = (
+            await upload_pdf(
+                async_client,
+                token,
+                space["id"],
+                [f"alpha beta gamma variant {seed_counter['n']}"],
+            )
+        ).json()
         row = await seed_analysis(
             db_session,
             uuid.UUID(doc["id"]),

@@ -20,6 +20,7 @@ from app.application.retrieval import answer_question, resolve_top_k, search_spa
 from app.auth import get_current_user
 from app.domain.errors import (
     DocumentStateError,
+    DuplicateDocumentError,
     InvalidDocumentError,
     ProviderError,
     TextExtractionError,
@@ -55,6 +56,14 @@ async def upload_document(
     await require_owned_space(db, space_id, current_user.id)
     try:
         return await ingest_document(db, space_id, file, storage, embedding_provider)
+    except DuplicateDocumentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": str(exc),
+                "existing_document_id": exc.existing_document_id,
+            },
+        ) from exc
     except (InvalidDocumentError, TextExtractionError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ProviderError as exc:

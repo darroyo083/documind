@@ -1,16 +1,19 @@
+import hashlib
 import logging
 import time
 import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import PurePath
 
 from fastapi import UploadFile
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.chunking import chunk_pages
 from app.config import settings
 from app.domain.errors import (
     DocumentStateError,
+    DuplicateDocumentError,
     InvalidDocumentError,
     ProviderError,
     TextExtractionError,
@@ -90,6 +93,20 @@ async def read_pdf_upload(upload: UploadFile) -> bytes:
     return data
 
 
+async def find_duplicate(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    content_sha256: str,
+) -> Document | None:
+    result = await db.execute(
+        select(Document).where(
+            Document.knowledge_space_id == space_id,
+            Document.content_sha256 == content_sha256,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def ingest_document(
     db: AsyncSession,
     space_id: uuid.UUID,
@@ -106,8 +123,16 @@ async def ingest_document(
         storage_key=storage_key,
         media_type="application/pdf",
         file_size=len(data),
+        content_sha256=hashlib.sha256(data).hexdigest(),
         status=DocumentStatus.PROCESSING.value,
+        processing_started_at=func.now(),
     )
+
+    duplicate = await find_duplicate(db, space_id, document.content_sha256 or "")
+    if duplicate is not None:
+        await storage.delete(storage_key)
+        raise DuplicateDocumentError(str(duplicate.id))
+
     db.add(document)
     try:
         await db.commit()
@@ -133,6 +158,12 @@ def failure_code_for(error: Exception) -> str:
     if isinstance(error, InvalidDocumentError):
         return FAILURE_CODE_EXTRACTION_FAILED
     return FAILURE_CODE_PROCESSING_FAILED
+
+
+def _mark_failed(document: Document, exc: Exception) -> None:
+    document.status = DocumentStatus.FAILED.value
+    document.error_message = str(exc)
+    document.failure_code = failure_code_for(exc)
 
 
 async def _process_document(
@@ -194,9 +225,7 @@ async def _process_document(
         )
     except (InvalidDocumentError, TextExtractionError, ProviderError) as exc:
         await db.rollback()
-        document.status = DocumentStatus.FAILED.value
-        document.error_message = str(exc)
-        document.failure_code = failure_code_for(exc)
+        _mark_failed(document, exc)
         await db.commit()
         log_event(
             logger,
@@ -205,6 +234,22 @@ async def _process_document(
             document_id=str(document.id),
             failure_code=document.failure_code,
             duration_ms=monotonic_ms(started),
+        )
+    except Exception as exc:
+        # Unexpected failures must still reach a terminal state instead of
+        # leaving the document stuck in PROCESSING forever. The storage file is
+        # kept so the document can be retried.
+        await db.rollback()
+        _mark_failed(document, exc)
+        await db.commit()
+        log_event(
+            logger,
+            logging.ERROR,
+            "ingestion_unexpected_failure",
+            document_id=str(document.id),
+            error_type=type(exc).__name__,
+            duration_ms=monotonic_ms(started),
+            exc_info=True,
         )
 
 
@@ -216,27 +261,36 @@ async def retry_document(
     storage: DocumentStorage,
     embedding_provider: EmbeddingProvider,
 ) -> Document | None:
-    """Reprocess a FAILED document's existing file in place.
+    """Reprocess a FAILED (or stale-PROCESSING) document's existing file in place.
 
     Returns ``None`` when the document is not the user's (reported as 404).
-    Raises :class:`DocumentStateError` when the document is not FAILED. The
-    FAILED -> PROCESSING transition is a compare-and-set UPDATE so concurrent
-    retries never launch duplicate processing.
+    Raises :class:`DocumentStateError` when the document cannot be retried. The
+    transition into PROCESSING is a compare-and-set UPDATE so concurrent
+    retries never launch duplicate processing, and a PROCESSING claim older
+    than ``DOCUMENT_STALE_AFTER_SECONDS`` is reclaimed atomically - a crash can
+    no longer strand a document in an unrecoverable state.
     """
     document = await get_owned_document(db, space_id, document_id, user_id)
     if document is None:
         return None
 
+    cutoff = datetime.now(UTC) - timedelta(seconds=settings.document_stale_after_seconds)
     result = await db.execute(
         update(Document)
         .where(
             Document.id == document.id,
-            Document.status == DocumentStatus.FAILED.value,
+            (Document.status == DocumentStatus.FAILED.value)
+            | (
+                (Document.status == DocumentStatus.PROCESSING.value)
+                & Document.processing_started_at.is_not(None)
+                & (Document.processing_started_at < cutoff)
+            ),
         )
         .values(
             status=DocumentStatus.PROCESSING.value,
             error_message=None,
             failure_code=None,
+            processing_started_at=func.now(),
         )
         .returning(Document.id)
         .execution_options(synchronize_session=False)

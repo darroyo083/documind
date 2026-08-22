@@ -59,6 +59,10 @@ class Document(Base):
     storage_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     media_type: Mapped[str] = mapped_column(String(100), nullable=False)
     file_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=DocumentStatus.PROCESSING.value
@@ -128,4 +132,12 @@ Index(
     "ix_document_chunks_search_vector",
     DocumentChunk.search_vector,
     postgresql_using="gin",
+)
+
+Index(
+    "uq_documents_space_content_hash",
+    Document.knowledge_space_id,
+    Document.content_sha256,
+    unique=True,
+    postgresql_where=Document.content_sha256.is_not(None),
 )

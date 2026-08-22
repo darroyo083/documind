@@ -6,6 +6,14 @@ class InvalidDocumentError(DocumentError):
     pass
 
 
+class DuplicateDocumentError(DocumentError):
+    """An identical file already exists in the target Space."""
+
+    def __init__(self, existing_document_id: str) -> None:
+        super().__init__("An identical file already exists in this Space")
+        self.existing_document_id = existing_document_id
+
+
 class DocumentStateError(DocumentError):
     pass
 

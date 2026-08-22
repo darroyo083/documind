@@ -102,8 +102,19 @@ def new_request_id() -> str:
 
 
 def log_event(logger: logging.Logger, level: int, event: str, **fields: object) -> None:
-    """Emit a structured event; ``fields`` must contain safe metadata only."""
-    logger.log(level, event, extra={key: value for key, value in fields.items()})
+    """Emit a structured event; ``fields`` must contain safe metadata only.
+
+    ``exc_info=True`` is supported and forwarded to the logging machinery
+    instead of ``extra`` (where it would collide with a reserved attribute).
+    """
+    exc_info = fields.pop("exc_info", None)
+    safe_fields = {key: value for key, value in fields.items() if key not in _RESERVED_RECORD_KEYS}
+    logger.log(
+        level,
+        event,
+        exc_info=exc_info if isinstance(exc_info, (bool, BaseException, tuple)) else None,
+        extra=safe_fields,
+    )
 
 
 def monotonic_ms(start: float) -> float:
