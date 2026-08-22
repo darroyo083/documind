@@ -1,17 +1,40 @@
+"""Grounded retrieval over private and reference knowledge.
+
+Two retrieval modes are supported:
+
+* ``vector`` — pure semantic similarity (cosine distance against pgvector).
+* ``hybrid`` (default) — semantic similarity fused with PostgreSQL full-text
+  relevance (``tsvector`` + GIN index) via Reciprocal Rank Fusion.
+
+Hybrid retrieval closes a documented semantic-only weakness: exact terms,
+names, identifiers, and unusual technical vocabulary often rank poorly under
+embedding similarity even when a chunk contains them verbatim. Lexical
+matching recovers those cases while semantic ranking keeps paraphrases strong.
+
+Every channel enforces identical ownership/status filters in SQL, so neither
+mode can surface chunks outside the caller's authorization scope. Fusion
+operates on ranks only; each candidate keeps its true cosine similarity as
+``score`` for citations and diagnostics.
+"""
+
 import re
 import uuid
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.fusion import reciprocal_rank_fusion, suppress_redundant_candidates
 from app.config import settings
 from app.domain.errors import ProviderError
 from app.domain.rag import (
     AnswerProvider,
     EmbeddingProvider,
     KnowledgeScope,
+    RetrievalMode,
     RetrievedChunk,
     SourceKind,
+    parse_retrieval_mode,
 )
 from app.infrastructure.models import (
     Document,
@@ -38,12 +61,12 @@ def resolve_top_k(requested: int | None) -> int:
     return top_k
 
 
-async def _retrieve_private(
+async def _fetch_private_vector(
     db: AsyncSession,
     space_id: uuid.UUID,
     user_id: uuid.UUID,
     query_embedding: list[float],
-    top_k: int,
+    limit: int,
 ) -> list[RetrievedChunk]:
     distance = DocumentChunk.embedding.cosine_distance(query_embedding)
     result = await db.execute(
@@ -57,32 +80,23 @@ async def _retrieve_private(
             distance <= 1 - settings.default_similarity_threshold,
         )
         .order_by(distance, DocumentChunk.chunk_index)
-        .limit(top_k)
+        .limit(limit)
     )
-    return [
-        RetrievedChunk(
-            source_id=f"private:{chunk.id}",
-            source_kind=SourceKind.PRIVATE.value,
-            document_id=str(document.id),
-            document_name=document.original_filename,
-            page_number=chunk.page_number,
-            chunk_id=str(chunk.id),
-            content=chunk.content,
-            score=float(score),
-            chunk_index=chunk.chunk_index,
-        )
-        for chunk, document, score in result.all()
-    ]
+    return [_chunk_row(row) for row in result.all()]
 
 
-async def _retrieve_reference(
+async def _fetch_reference_vector(
     db: AsyncSession,
     query_embedding: list[float],
-    top_k: int,
+    limit: int,
 ) -> list[RetrievedChunk]:
     distance = ReferenceDocumentChunk.embedding.cosine_distance(query_embedding)
     result = await db.execute(
-        select(ReferenceDocumentChunk, ReferenceDocument, (1 - distance).label("score"))
+        select(
+            ReferenceDocumentChunk,
+            ReferenceDocument,
+            (1 - distance).label("score"),
+        )
         .join(
             ReferenceDocument,
             ReferenceDocumentChunk.reference_document_id == ReferenceDocument.id,
@@ -92,7 +106,7 @@ async def _retrieve_reference(
             distance <= 1 - settings.default_similarity_threshold,
         )
         .order_by(distance, ReferenceDocumentChunk.chunk_index)
-        .limit(top_k)
+        .limit(limit)
     )
     return [
         RetrievedChunk(
@@ -110,15 +124,107 @@ async def _retrieve_reference(
     ]
 
 
+async def _fetch_private_lexical(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    user_id: uuid.UUID,
+    query_embedding: list[float],
+    query: str,
+    limit: int,
+) -> list[RetrievedChunk]:
+    """Lexically relevant private chunks under the same ownership filters.
+
+    An empty ``websearch_to_tsquery`` (stop-word-only or blank queries) matches
+    no rows, so the lexical channel degrades to zero candidates instead of
+    returning arbitrary documents.
+    """
+    tsquery = func.websearch_to_tsquery("english", query)
+    rank = func.ts_rank_cd(DocumentChunk.search_vector, tsquery)
+    distance = DocumentChunk.embedding.cosine_distance(query_embedding)
+    result = await db.execute(
+        select(DocumentChunk, Document, (1 - distance).label("score"))
+        .join(Document, DocumentChunk.document_id == Document.id)
+        .join(KnowledgeSpace, Document.knowledge_space_id == KnowledgeSpace.id)
+        .where(
+            KnowledgeSpace.id == space_id,
+            KnowledgeSpace.user_id == user_id,
+            Document.status == DocumentStatus.READY.value,
+            DocumentChunk.search_vector.op("@@")(tsquery),
+        )
+        .order_by(rank.desc(), DocumentChunk.chunk_index)
+        .limit(limit)
+    )
+    return [_chunk_row(row) for row in result.all()]
+
+
+async def _fetch_reference_lexical(
+    db: AsyncSession,
+    query_embedding: list[float],
+    query: str,
+    limit: int,
+) -> list[RetrievedChunk]:
+    tsquery = func.websearch_to_tsquery("english", query)
+    rank = func.ts_rank_cd(ReferenceDocumentChunk.search_vector, tsquery)
+    distance = ReferenceDocumentChunk.embedding.cosine_distance(query_embedding)
+    result = await db.execute(
+        select(
+            ReferenceDocumentChunk,
+            ReferenceDocument,
+            (1 - distance).label("score"),
+        )
+        .join(
+            ReferenceDocument,
+            ReferenceDocumentChunk.reference_document_id == ReferenceDocument.id,
+        )
+        .where(
+            ReferenceDocument.status == "ready",
+            ReferenceDocumentChunk.search_vector.op("@@")(tsquery),
+        )
+        .order_by(rank.desc(), ReferenceDocumentChunk.chunk_index)
+        .limit(limit)
+    )
+    return [
+        RetrievedChunk(
+            source_id=f"reference:{chunk.id}",
+            source_kind=SourceKind.REFERENCE.value,
+            document_id=str(reference_document.id),
+            document_name=reference_document.title,
+            page_number=chunk.page_number,
+            chunk_id=str(chunk.id),
+            content=chunk.content,
+            score=float(score),
+            chunk_index=chunk.chunk_index,
+        )
+        for chunk, reference_document, score in result.all()
+    ]
+
+
+def _chunk_row(row: Any) -> RetrievedChunk:
+    chunk, document, score = row
+    return RetrievedChunk(
+        source_id=f"private:{chunk.id}",
+        source_kind=SourceKind.PRIVATE.value,
+        document_id=str(document.id),
+        document_name=document.original_filename,
+        page_number=chunk.page_number,
+        chunk_id=str(chunk.id),
+        content=chunk.content,
+        score=float(score),
+        chunk_index=chunk.chunk_index,
+    )
+
+
 def _merge_candidates(
     private_candidates: list[RetrievedChunk],
     reference_candidates: list[RetrievedChunk],
-    top_k: int,
+    top_k: int | None,
 ) -> list[RetrievedChunk]:
     """Merge private + reference candidates, sort globally by score, apply global top_k.
 
     Tie-breaking is deterministic: score descending, then source kind, document id,
-    page number, chunk index. No score boosts or reranking are applied.
+    page number, chunk index. No score boosts or reranking are applied. ``top_k``
+    may be ``None`` to keep the full merged ordering (used before diversity
+    suppression in hybrid combined-scope retrieval).
     """
     combined = [*private_candidates, *reference_candidates]
     combined.sort(
@@ -131,7 +237,13 @@ def _merge_candidates(
             candidate.chunk_id,
         )
     )
+    if top_k is None:
+        return combined
     return combined[:top_k]
+
+
+def _candidate_limit(top_k: int) -> int:
+    return top_k * settings.retrieval_candidate_multiplier
 
 
 async def retrieve_chunks(
@@ -147,15 +259,84 @@ async def retrieve_chunks(
     if len(query_embedding) != settings.embedding_dimension:
         raise ProviderError("Embedding provider returned an invalid vector shape")
 
+    try:
+        mode = parse_retrieval_mode(settings.retrieval_mode)
+    except ValueError as exc:
+        raise ProviderError(str(exc)) from exc
+
+    if mode is RetrievalMode.VECTOR:
+        return await _retrieve_vector(db, space_id, user_id, query_embedding, top_k, scope)
+    return await _retrieve_hybrid(db, space_id, user_id, query_embedding, query, top_k, scope)
+
+
+async def _retrieve_vector(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    user_id: uuid.UUID,
+    query_embedding: list[float],
+    top_k: int,
+    scope: KnowledgeScope,
+) -> list[RetrievedChunk]:
     if scope == KnowledgeScope.PRIVATE:
-        return await _retrieve_private(db, space_id, user_id, query_embedding, top_k)
+        return await _fetch_private_vector(db, space_id, user_id, query_embedding, top_k)
     if scope == KnowledgeScope.REFERENCE:
-        return await _retrieve_reference(db, query_embedding, top_k)
+        return await _fetch_reference_vector(db, query_embedding, top_k)
     if scope == KnowledgeScope.COMBINED:
-        private_candidates = await _retrieve_private(db, space_id, user_id, query_embedding, top_k)
-        reference_candidates = await _retrieve_reference(db, query_embedding, top_k)
+        private_candidates = await _fetch_private_vector(
+            db, space_id, user_id, query_embedding, top_k
+        )
+        reference_candidates = await _fetch_reference_vector(db, query_embedding, top_k)
         return _merge_candidates(private_candidates, reference_candidates, top_k)
     raise ProviderError("Unsupported knowledge scope")
+
+
+async def _retrieve_hybrid(
+    db: AsyncSession,
+    space_id: uuid.UUID,
+    user_id: uuid.UUID,
+    query_embedding: list[float],
+    query: str,
+    top_k: int,
+    scope: KnowledgeScope,
+) -> list[RetrievedChunk]:
+    limit = _candidate_limit(top_k)
+    lexical_weight = settings.retrieval_lexical_weight
+
+    async def fused_private() -> list[RetrievedChunk]:
+        return reciprocal_rank_fusion(
+            [
+                await _fetch_private_vector(db, space_id, user_id, query_embedding, limit),
+                await _fetch_private_lexical(db, space_id, user_id, query_embedding, query, limit),
+            ],
+            k=settings.retrieval_rrf_k,
+            weights=[1.0, lexical_weight],
+        )
+
+    async def fused_reference() -> list[RetrievedChunk]:
+        return reciprocal_rank_fusion(
+            [
+                await _fetch_reference_vector(db, query_embedding, limit),
+                await _fetch_reference_lexical(db, query_embedding, query, limit),
+            ],
+            k=settings.retrieval_rrf_k,
+            weights=[1.0, lexical_weight],
+        )
+
+    if scope == KnowledgeScope.PRIVATE:
+        candidates = await fused_private()
+    elif scope == KnowledgeScope.REFERENCE:
+        candidates = await fused_reference()
+    elif scope == KnowledgeScope.COMBINED:
+        # Fusion happens WITHIN each source kind; cross-kind ordering uses the
+        # proven global cosine-score merge. Per-channel ranks from different
+        # corpora are not directly comparable, and measuring equal-weight RRF
+        # across kinds showed it displaces correct reference/private winners.
+        candidates = _merge_candidates(await fused_private(), await fused_reference(), None)
+    else:
+        raise ProviderError("Unsupported knowledge scope")
+
+    diversified = suppress_redundant_candidates(candidates)
+    return diversified[:top_k]
 
 
 def citation_from_chunk(chunk: RetrievedChunk) -> CitationResponse:

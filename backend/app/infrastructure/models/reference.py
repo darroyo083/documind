@@ -4,15 +4,17 @@ from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.config import settings
@@ -80,6 +82,18 @@ class ReferenceDocumentChunk(Base):
     embedding: Mapped[list[float]] = mapped_column(
         Vector(settings.embedding_dimension), nullable=False
     )
+    search_vector: Mapped[object] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', content)", persisted=True),
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reference_document: Mapped[ReferenceDocument] = relationship(back_populates="chunks")
+
+
+Index(
+    "ix_reference_document_chunks_search_vector",
+    ReferenceDocumentChunk.search_vector,
+    postgresql_using="gin",
+)

@@ -43,6 +43,7 @@ def build_json_report(
     threshold_sweep: list[dict[str, Any]] | None,
     runtime_seconds: float | None,
     git_commit: str | None,
+    retrieval_mode: str | None = None,
 ) -> dict[str, Any]:
     queries = []
     for result in sorted(evaluation.results, key=lambda r: r.id):
@@ -83,6 +84,7 @@ def build_json_report(
             "embedding_provider": embedding_provider,
             "embedding_model": embedding_model,
             "embedding_dimension": embedding_dimension,
+            "retrieval_mode": retrieval_mode,
             "top_k": top_k,
             "similarity_threshold": threshold,
             "query_count": len(evaluation.results),

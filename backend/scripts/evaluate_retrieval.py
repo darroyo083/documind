@@ -9,6 +9,7 @@ Usage:
     python scripts/evaluate_retrieval.py
     python scripts/evaluate_retrieval.py --embedding-provider mock --no-sweeps
     python scripts/evaluate_retrieval.py --top-k 5 --threshold 0.5
+    python scripts/evaluate_retrieval.py --mode both  # vector vs hybrid comparison
 
 The default embedding provider is the real local FastEmbed model
 (BAAI/bge-small-en-v1.5). No paid LLM API is ever called.
@@ -16,6 +17,7 @@ The default embedding provider is the real local FastEmbed model
 
 import argparse
 import asyncio
+import contextlib
 import re
 import subprocess
 import sys
@@ -67,6 +69,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--top-k", type=int, default=None)
     parser.add_argument("--threshold", type=float, default=None)
+    parser.add_argument(
+        "--mode",
+        choices=["vector", "hybrid", "both"],
+        default=None,
+        help=(
+            "Retrieval mode under test. Default: the configured "
+            "RETRIEVAL_MODE. 'both' runs vector and hybrid and prints a comparison."
+        ),
+    )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--no-sweeps", action="store_true", help="Skip top_k/threshold sweeps")
@@ -155,6 +166,37 @@ def build_embedding_provider(choice: str, model_name: str):
     return FastEmbedProvider(model_name, settings.embedding_dimension)
 
 
+@contextlib.contextmanager
+def retrieval_mode_override(value: str):
+    """Temporarily pin the production retrieval mode for one evaluation run."""
+    original = settings.retrieval_mode
+    settings.retrieval_mode = value
+    try:
+        yield
+    finally:
+        settings.retrieval_mode = original
+
+
+def print_mode_comparison(vector_metrics: dict, hybrid_metrics: dict) -> None:
+    fields = [
+        ("Hit@1", "hit_at_1"),
+        ("Hit@3", "hit_at_3"),
+        ("Hit@5", "hit_at_5"),
+        ("Recall@3", "recall_at_3"),
+        ("Recall@5", "recall_at_5"),
+        ("MRR", "mrr"),
+    ]
+    print("")
+    print("Mode comparison (overall):")
+    for label, key in fields:
+        print(f"  {label:<12} vector={vector_metrics[key]:<8} hybrid={hybrid_metrics[key]:<8}")
+    print(
+        "  Unanswerable FP  "
+        f"vector={vector_metrics['unanswerable_false_positives']:<4} "
+        f"hybrid={hybrid_metrics['unanswerable_false_positives']:<4}"
+    )
+
+
 async def main() -> int:
     args = parse_args()
     source_url = make_url(settings.database_url)
@@ -165,6 +207,7 @@ async def main() -> int:
     threshold = (
         args.threshold if args.threshold is not None else settings.default_similarity_threshold
     )
+    modes = ["vector", "hybrid"] if args.mode == "both" else [args.mode or settings.retrieval_mode]
     dataset_data = dataset.load_dataset(args.dataset)
 
     engine = None
@@ -191,62 +234,90 @@ async def main() -> int:
                     f"{corpus.counts['chunks']} chunks"
                 )
 
-                baseline = await runner.run_evaluation(
-                    db, corpus, dataset_data, embedding_provider, top_k, threshold
-                )
-                top_k_sweep = None
-                threshold_sweep = None
-                if not args.no_sweeps:
-                    top_k_sweep = await runner.run_top_k_sweep(
-                        db, corpus, dataset_data, embedding_provider, threshold, [1, 3, 5, 8, 10]
+                mode_reports: dict[str, dict] = {}
+                mode_evaluations: dict[str, runner.EvaluationResults] = {}
+                for mode in modes:
+                    with retrieval_mode_override(mode):
+                        evaluation = await runner.run_evaluation(
+                            db, corpus, dataset_data, embedding_provider, top_k, threshold
+                        )
+                        top_k_sweep = None
+                        threshold_sweep = None
+                        if not args.no_sweeps and len(modes) == 1:
+                            top_k_sweep = await runner.run_top_k_sweep(
+                                db,
+                                corpus,
+                                dataset_data,
+                                embedding_provider,
+                                threshold,
+                                [1, 3, 5, 8, 10],
+                            )
+                            threshold_sweep = await runner.run_threshold_sweep(
+                                db,
+                                corpus,
+                                dataset_data,
+                                embedding_provider,
+                                top_k,
+                                [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+                            )
+
+                    mode_evaluations[mode] = evaluation
+                    runtime_seconds = time.perf_counter() - started
+                    report = reporting.build_json_report(
+                        dataset_version=dataset_data["dataset_version"],
+                        embedding_provider=args.embedding_provider,
+                        embedding_model=embed_model,
+                        embedding_dimension=embed_dimension,
+                        top_k=top_k,
+                        threshold=threshold,
+                        corpus_counts=corpus.counts,
+                        evaluation=evaluation,
+                        top_k_sweep=top_k_sweep,
+                        threshold_sweep=threshold_sweep,
+                        runtime_seconds=runtime_seconds,
+                        git_commit=git_commit(),
+                        retrieval_mode=mode,
                     )
-                    threshold_sweep = await runner.run_threshold_sweep(
-                        db,
-                        corpus,
-                        dataset_data,
-                        embedding_provider,
-                        top_k,
-                        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+                    if cached is not None:
+                        report["benchmark"]["model_previously_cached"] = cached
+                    suffix = "" if len(modes) == 1 else f"_{mode}"
+                    mode_reports[mode] = report
+
+                    args.output_dir.mkdir(parents=True, exist_ok=True)
+                    json_path = args.output_dir / f"report{suffix}.json"
+                    md_path = args.output_dir / f"report{suffix}.md"
+                    reporting.write_json_report(report, json_path)
+                    (md_path).write_text(reporting.render_markdown(report), encoding="utf-8")
+
+                if len(modes) == 1:
+                    reporting.print_console_summary(mode_reports[modes[0]])
+                    print("")
+                    print("Reports:")
+                    print(f"  {args.output_dir / 'report.json'}")
+                    print(f"  {args.output_dir / 'report.md'}")
+                else:
+                    print_mode_comparison(
+                        mode_reports["vector"]["metrics"]["overall"],
+                        mode_reports["hybrid"]["metrics"]["overall"],
                     )
+                    print("")
+                    print("Reports:")
+                    for mode in modes:
+                        print(f"  {args.output_dir / f'report_{mode}.json'}")
 
-        runtime_seconds = time.perf_counter() - started
-        report = reporting.build_json_report(
-            dataset_version=dataset_data["dataset_version"],
-            embedding_provider=args.embedding_provider,
-            embedding_model=embed_model,
-            embedding_dimension=embed_dimension,
-            top_k=top_k,
-            threshold=threshold,
-            corpus_counts=corpus.counts,
-            evaluation=baseline,
-            top_k_sweep=top_k_sweep,
-            threshold_sweep=threshold_sweep,
-            runtime_seconds=runtime_seconds,
-            git_commit=git_commit(),
-        )
-        if cached is not None:
-            report["benchmark"]["model_previously_cached"] = cached
-
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        json_path = args.output_dir / "report.json"
-        md_path = args.output_dir / "report.md"
-        reporting.write_json_report(report, json_path)
-        (md_path).write_text(reporting.render_markdown(report), encoding="utf-8")
-
-        reporting.print_console_summary(report)
-        print("")
-        print("Reports:")
-        print(f"  {json_path}")
-        print(f"  {md_path}")
-
-        failures = runner.hard_invariants(baseline.results)
-        if failures:
-            print("")
-            print("SECURITY/INVARIANT FAILURES:")
-            for failure in failures:
-                print(f"  - {failure}")
-            return 1
-        return 0
+                failures: list[str] = []
+                for mode in modes:
+                    failures.extend(
+                        f"[{mode}] {failure}"
+                        for failure in runner.hard_invariants(mode_evaluations[mode].results)
+                    )
+                if failures:
+                    print("")
+                    print("SECURITY/INVARIANT FAILURES:")
+                    for failure in failures:
+                        print(f"  - {failure}")
+                    return 1
+                return 0
     finally:
         if engine is not None:
             await engine.dispose()

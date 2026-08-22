@@ -21,6 +21,19 @@ def parse_knowledge_scope(value: object) -> KnowledgeScope:
         raise ValueError("knowledge_scope must be one of: private, reference, combined") from None
 
 
+class RetrievalMode(StrEnum):
+    VECTOR = "vector"
+    HYBRID = "hybrid"
+
+
+def parse_retrieval_mode(value: str) -> RetrievalMode:
+    """Parse the configured retrieval mode; unknown values fail loudly at startup."""
+    try:
+        return RetrievalMode(value)
+    except ValueError:
+        raise ValueError("retrieval_mode must be one of: vector, hybrid") from None
+
+
 class SourceKind(StrEnum):
     PRIVATE = "private"
     REFERENCE = "reference"

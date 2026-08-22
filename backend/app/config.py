@@ -123,6 +123,25 @@ class Settings(BaseSettings):
     default_top_k: int = 5
     retrieval_max_top_k: int = 10
     default_similarity_threshold: float = 0.2
+    retrieval_mode: str = "hybrid"
+    retrieval_rrf_k: int = Field(
+        default=60,
+        gt=0,
+        description="Reciprocal Rank Fusion constant; larger values dampen rank differences.",
+    )
+    retrieval_lexical_weight: float = Field(
+        default=0.5,
+        gt=0,
+        description=(
+            "RRF channel weight for lexical relevance relative to semantic similarity. "
+            "Values below 1.0 keep strong semantic hits ahead of lexical-only matches."
+        ),
+    )
+    retrieval_candidate_multiplier: int = Field(
+        default=3,
+        gt=0,
+        description="Per-channel candidate overfetch factor before fusion and top_k.",
+    )
     max_question_length: int = 1000
 
     search_max_query_length: int = Field(default=500, gt=0)

@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings as runner_settings
 from app.evaluation import dataset as ds
 from app.evaluation import reporting, runner
 from app.infrastructure.models import ReferenceDocument, User
@@ -88,8 +89,11 @@ async def test_runner_exercises_production_retrieval_and_reports_scores(
     try:
         dataset_data, corpus, baseline = await _build_and_run(db_session, tmp_path)
         for result in baseline.results:
-            scores = result.candidate_scores
-            assert scores == sorted(scores, reverse=True), "scores must be ranked best-first"
+            # Hybrid fusion ranks by combined evidence relevance; per-candidate
+            # scores stay channel-native cosine similarities, so they are not
+            # required to be monotonic under hybrid retrieval.
+            for score in result.candidate_scores:
+                assert -1.0 <= score <= 1.0, "cosine scores must stay in range"
             for candidate_doc, kind in zip(
                 result.candidate_documents, result.candidate_kinds, strict=True
             ):
@@ -98,6 +102,22 @@ async def test_runner_exercises_production_retrieval_and_reports_scores(
         for page_id, chunk_ids in corpus.page_chunks.items():
             assert page_id.startswith(("private_", "reference_", "user_b_"))
             assert chunk_ids
+    finally:
+        await _cleanup(db_session)
+
+
+@pytest.mark.asyncio
+async def test_vector_mode_reports_scores_ranked_best_first(
+    db_session: AsyncSession, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(runner_settings, "retrieval_mode", "vector")
+    try:
+        dataset_data, corpus, baseline = await _build_and_run(db_session, tmp_path)
+        for result in baseline.results:
+            scores = result.candidate_scores
+            assert scores == sorted(scores, reverse=True), (
+                "vector-mode scores must be ranked best-first"
+            )
     finally:
         await _cleanup(db_session)
 

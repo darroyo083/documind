@@ -31,7 +31,7 @@ EXPECTED_TABLES = {
     "space_intelligence",
     "users",
 }
-EXPECTED_HEAD = "011"
+EXPECTED_HEAD = "012"
 DISPOSABLE_DATABASE_PREFIX = "documind_migration_verify_"
 LOCAL_DATABASE_HOSTS = {"127.0.0.1", "::1", "db", "localhost"}
 PROTECTED_DATABASE_NAMES = {"postgres", "template0", "template1"}

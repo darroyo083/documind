@@ -1,7 +1,8 @@
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -51,10 +52,14 @@ async def search_spaces(
 ) -> list[GlobalSearchHit]:
     """Search READY private documents across the user's Spaces.
 
-    One query embedding is computed and reused. Ownership is enforced in the SQL
-    WHERE clause (joined to the current user) BEFORE ranking, so unauthorized
-    chunks never enter candidate results. ``space_ids`` narrows the search to
-    the user's own Spaces (foreign IDs simply match nothing).
+    One query embedding is computed and reused. Candidates come from two
+    channels — semantic similarity and lexical full-text relevance — fused with
+    Reciprocal Rank Fusion; this keeps exact identifiers and rare technical
+    terms findable when embedding similarity alone is weak. Ownership is
+    enforced in the SQL WHERE clause (joined to the current user) BEFORE
+    ranking, so unauthorized chunks never enter candidate results in either
+    channel. ``space_ids`` narrows the search to the user's own Spaces (foreign
+    IDs simply match nothing).
     """
     normalized = _normalize_query(query)
     result_limit = limit if limit is not None else settings.search_max_results
@@ -67,8 +72,9 @@ async def search_spaces(
     if len(query_embedding) != settings.embedding_dimension:
         raise ProviderError("Embedding provider returned an invalid vector shape")
 
+    overfetch = result_limit * _SEARCH_OVERFETCH_MULTIPLIER
     distance = DocumentChunk.embedding.cosine_distance(query_embedding)
-    statement = (
+    vector_statement = (
         select(DocumentChunk, Document, KnowledgeSpace, (1 - distance).label("score"))
         .join(Document, DocumentChunk.document_id == Document.id)
         .join(KnowledgeSpace, Document.knowledge_space_id == KnowledgeSpace.id)
@@ -83,13 +89,56 @@ async def search_spaces(
             DocumentChunk.page_number,
             DocumentChunk.chunk_index,
         )
-        .limit(result_limit * _SEARCH_OVERFETCH_MULTIPLIER)
+        .limit(overfetch)
+    )
+    tsquery = func.websearch_to_tsquery("english", normalized)
+    rank = func.ts_rank_cd(DocumentChunk.search_vector, tsquery)
+    lexical_statement = (
+        select(DocumentChunk, Document, KnowledgeSpace, (1 - distance).label("score"))
+        .join(Document, DocumentChunk.document_id == Document.id)
+        .join(KnowledgeSpace, Document.knowledge_space_id == KnowledgeSpace.id)
+        .where(
+            KnowledgeSpace.user_id == user_id,
+            Document.status == DocumentStatus.READY.value,
+            DocumentChunk.search_vector.op("@@")(tsquery),
+        )
+        .order_by(rank.desc(), Document.id, DocumentChunk.page_number, DocumentChunk.chunk_index)
+        .limit(overfetch)
     )
     if space_ids:
-        statement = statement.where(KnowledgeSpace.id.in_(space_ids))
+        vector_statement = vector_statement.where(KnowledgeSpace.id.in_(space_ids))
+        lexical_statement = lexical_statement.where(KnowledgeSpace.id.in_(space_ids))
 
-    result = await db.execute(statement)
-    candidates = result.all()
+    vector_rows = (await db.execute(vector_statement)).all()
+    lexical_rows = (await db.execute(lexical_statement)).all()
+
+    fused_weights: dict[str, float] = {}
+    rows_by_key: dict[str, Any] = {}
+    first_seen_rank: dict[str, int] = {}
+    for channel in (vector_rows, lexical_rows):
+        for position, row in enumerate(channel, start=1):
+            chunk = row[0]
+            key = str(chunk.id)
+            fused_weights[key] = fused_weights.get(key, 0.0) + 1.0 / (
+                settings.retrieval_rrf_k + position
+            )
+            existing = rows_by_key.get(key)
+            if existing is None or float(row[3]) > float(existing[3]):
+                rows_by_key[key] = row
+            first_seen_rank.setdefault(key, position)
+
+    ranked_keys = sorted(
+        fused_weights,
+        key=lambda key: (
+            -fused_weights[key],
+            first_seen_rank[key],
+            -float(rows_by_key[key][3]),
+            rows_by_key[key][1].id,
+            rows_by_key[key][0].page_number,
+            rows_by_key[key][0].chunk_index,
+        ),
+    )
+    candidates = [rows_by_key[key] for key in ranked_keys]
 
     seen_pages: set[tuple[str, int]] = set()
     per_document: dict[str, int] = {}
