@@ -1,14 +1,19 @@
 import asyncio
 import hashlib
 import json
+import logging
 import math
 import re
+import time
 from typing import Any
 
 import httpx
 
 from app.domain.errors import ProviderError
 from app.domain.rag import GeneratedAnswer, RetrievedChunk
+from app.observability import log_event, monotonic_ms
+
+logger = logging.getLogger("documind.provider")
 
 
 class DeterministicEmbeddingProvider:
@@ -153,6 +158,7 @@ class DeepSeekAnswerProvider:
             "max_tokens": 800,
         }
         try:
+            started = time.perf_counter()
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 response = await client.post(
                     f"{self.base_url}/chat/completions",
@@ -160,6 +166,15 @@ class DeepSeekAnswerProvider:
                     json=payload,
                 )
                 response.raise_for_status()
+            log_event(
+                logger,
+                logging.INFO,
+                "generation_call",
+                model=self.model_name,
+                context_chunks=len(context),
+                question_length=len(question),
+                duration_ms=monotonic_ms(started),
+            )
             raw_content = response.json()["choices"][0]["message"]["content"]
             parsed = json.loads(raw_content)
             answer = parsed.get("answer")
@@ -173,4 +188,11 @@ class DeepSeekAnswerProvider:
                 raise ValueError("Invalid citation identifiers")
             return GeneratedAnswer(answer, supported, citations)
         except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            log_event(
+                logger,
+                logging.WARNING,
+                "generation_failed",
+                model=self.model_name,
+                error_type=type(exc).__name__,
+            )
             raise ProviderError("Answer provider failed") from exc

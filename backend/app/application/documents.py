@@ -1,3 +1,5 @@
+import logging
+import time
 import uuid
 from pathlib import PurePath
 
@@ -21,6 +23,9 @@ from app.infrastructure.models import (
     KnowledgeSpace,
 )
 from app.infrastructure.pdf import PdfPageExtractor
+from app.observability import log_event, monotonic_ms
+
+logger = logging.getLogger("documind.ingestion")
 
 
 async def get_owned_space(
@@ -141,16 +146,22 @@ async def _process_document(
     On failure the document is marked FAILED with a safe ``failure_code`` and the
     storage file is KEPT so the document can be retried without re-uploading.
     """
+    started = time.perf_counter()
     try:
+        extraction_started = time.perf_counter()
         pages = await PdfPageExtractor().extract(storage.path_for(document.storage_key))
         chunks = chunk_pages(pages, settings.chunk_size, settings.chunk_overlap)
         if not chunks:
             raise TextExtractionError("No meaningful text could be extracted from the PDF")
+        extraction_ms = monotonic_ms(extraction_started)
+
+        embedding_started = time.perf_counter()
         embeddings = await embedding_provider.embed_texts([chunk.content for chunk in chunks])
         if len(embeddings) != len(chunks) or any(
             len(embedding) != settings.embedding_dimension for embedding in embeddings
         ):
             raise ProviderError("Embedding provider returned an invalid vector shape")
+        embedding_ms = monotonic_ms(embedding_started)
 
         db.add_all(
             [
@@ -170,12 +181,31 @@ async def _process_document(
         document.error_message = None
         document.failure_code = None
         await db.commit()
+        log_event(
+            logger,
+            logging.INFO,
+            "ingestion_ready",
+            document_id=str(document.id),
+            page_count=len(pages),
+            chunk_count=len(chunks),
+            extraction_ms=extraction_ms,
+            embedding_ms=embedding_ms,
+            duration_ms=monotonic_ms(started),
+        )
     except (InvalidDocumentError, TextExtractionError, ProviderError) as exc:
         await db.rollback()
         document.status = DocumentStatus.FAILED.value
         document.error_message = str(exc)
         document.failure_code = failure_code_for(exc)
         await db.commit()
+        log_event(
+            logger,
+            logging.WARNING,
+            "ingestion_failed",
+            document_id=str(document.id),
+            failure_code=document.failure_code,
+            duration_ms=monotonic_ms(started),
+        )
 
 
 async def retry_document(

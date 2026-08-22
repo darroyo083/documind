@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://documind:documind@localhost:5432/documind"
 
+    log_level: str = "INFO"
+    log_format: str = "json"
+
     secret_key: str = "change-me-in-production"
     access_token_expire_minutes: int = 1440
 

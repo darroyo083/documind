@@ -17,7 +17,9 @@ operates on ranks only; each candidate keeps its true cosine similarity as
 ``score`` for citations and diagnostics.
 """
 
+import logging
 import re
+import time
 import uuid
 from typing import Any
 
@@ -44,7 +46,10 @@ from app.infrastructure.models import (
     ReferenceDocument,
     ReferenceDocumentChunk,
 )
+from app.observability import log_event, monotonic_ms
 from app.schemas.document import AnswerResponse, CitationResponse, SearchResponse
+
+logger = logging.getLogger("documind.retrieval")
 
 _INTERNAL_SOURCE_ID_PATTERN = re.compile(
     r"(?<![A-Za-z0-9_-])(?:(?:private|reference|chunk):)?"
@@ -255,6 +260,7 @@ async def retrieve_chunks(
     embedding_provider: EmbeddingProvider,
     scope: KnowledgeScope = KnowledgeScope.PRIVATE,
 ) -> list[RetrievedChunk]:
+    started = time.perf_counter()
     query_embedding = await embedding_provider.embed_query(query)
     if len(query_embedding) != settings.embedding_dimension:
         raise ProviderError("Embedding provider returned an invalid vector shape")
@@ -265,8 +271,22 @@ async def retrieve_chunks(
         raise ProviderError(str(exc)) from exc
 
     if mode is RetrievalMode.VECTOR:
-        return await _retrieve_vector(db, space_id, user_id, query_embedding, top_k, scope)
-    return await _retrieve_hybrid(db, space_id, user_id, query_embedding, query, top_k, scope)
+        chunks = await _retrieve_vector(db, space_id, user_id, query_embedding, top_k, scope)
+    else:
+        chunks = await _retrieve_hybrid(db, space_id, user_id, query_embedding, query, top_k, scope)
+
+    log_event(
+        logger,
+        logging.DEBUG,
+        "retrieval",
+        mode=mode.value,
+        scope=scope.value,
+        top_k=top_k,
+        candidates=len(chunks),
+        question_length=len(query),
+        duration_ms=monotonic_ms(started),
+    )
+    return chunks
 
 
 async def _retrieve_vector(
