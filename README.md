@@ -145,6 +145,12 @@ Key environment variables (see `.env.example`):
 | `DEFAULT_TOP_K` | Default number of retrieved chunks | `5` |
 | `RETRIEVAL_MAX_TOP_K` | Maximum allowed `top_k` | `10` |
 | `DEFAULT_SIMILARITY_THRESHOLD` | Minimum cosine similarity for retrieved chunks | `0.2` |
+| `RETRIEVAL_MODE` | Retrieval strategy (`hybrid`, `vector`) | `hybrid` |
+| `RETRIEVAL_LEXICAL_WEIGHT` | RRF channel weight of lexical relevance vs. semantic similarity | `0.5` |
+| `RETRIEVAL_RRF_K` | Reciprocal Rank Fusion constant (larger dampens rank differences) | `60` |
+| `LOG_LEVEL` | Root log level | `INFO` |
+| `LOG_FORMAT` | Log output format (`json`, `console`) | `json` |
+| `DOCUMENT_STALE_AFTER_SECONDS` | Age after which a stuck `processing` claim can be reclaimed by retry | `900` |
 | `ANALYSIS_PROVIDER` | Structured analysis provider (`deepseek`, `mock`) | `mock` |
 | `ANALYSIS_MODEL` | DeepSeek model used for structured analysis | `deepseek-chat` |
 | `ANALYSIS_MAX_CONTEXT_CHARS` | Max document characters sent to analysis | `120000` |
@@ -609,15 +615,17 @@ A Space accepts multiple PDFs at once with independent per-document state:
   (`POST /knowledge-spaces/{space_id}/documents/{document_id}/retry`): the
   stored file is reprocessed, never duplicated, and the FAILED → PROCESSING →
   READY/FAILED transition is compare-and-set guarded against concurrent retries.
+  A `processing` claim older than `DOCUMENT_STALE_AFTER_SECONDS` (default
+  900 s) — for example left behind by a crash — is reclaimed atomically by the
+  same CAS, so documents can no longer get stuck in an unrecoverable state.
+- **Duplicate rejection.** Each document stores a SHA-256 content hash; an
+  identical file uploaded twice into one Space returns `409` with the existing
+  document id. The same content in a different Space or user account remains
+  allowed. Legacy rows keep no hash and are unaffected.
 - **Structured failures.** A failed document carries a `failure_code`
   (`no_extractable_text`, `extraction_failed`, or `processing_failed`) plus a
   safe, human-readable `error_message`; no stack traces or provider internals
   are exposed.
-- **Limitations.** Duplicate-content detection is not implemented (uploading
-  the same file twice creates two documents). A document stuck in `processing`
-  after a crash has no automatic reclaim; delete and re-upload it. Uploads are
-  synchronous (extraction/chunking/embedding run within the request).
-- Migration head: `011`.
 
 ### Cross-Space Search (PoC 4E)
 
@@ -639,15 +647,18 @@ GET /search?q=termination&space_ids=<id>&limit=20
   document (highest-scoring per page) and bounded to `SEARCH_MAX_RESULTS`.
 - **Space filter.** Narrow results to one or more of your Spaces; a foreign
   Space ID simply matches nothing.
-- **Semantic, not lexical.** Search uses the existing embedding model, so
-  paraphrases match ("how do I end the agreement" finds a "termination clause").
-  There is no full-text/lexical index; very specific identifiers (e.g. a long
-  invoice number) can be weaker. Vector similarity is a compressed score range,
-  so an unrelated query may still return low-similarity results — results are
-  ranked, and relevance degrades rather than erroring.
+- **Hybrid retrieval.** Search fuses semantic similarity with lexical
+  full-text relevance (PostgreSQL `tsvector`, ranked via Reciprocal Rank
+  Fusion), so exact identifiers and rare technical terms stay findable when
+  embedding similarity alone is weak. Paraphrases still match through the
+  semantic channel ("how do I end the agreement" finds a "termination clause").
+  Vector similarity is a compressed score range, so an unrelated query may
+  still return low-similarity results — results are ranked, and relevance
+  degrades rather than erroring.
 - **Scope.** Private Space documents only. The shared reference library is not
   searched in PoC 4E. This is search, not global Ask.
-- Migration head remains `011` (no schema change).
+- Migration head: `013` (chunk search vectors in `012`; document content hash
+  and processing timestamps in `013`).
 
 ## Development defaults and mock behavior
 
@@ -674,9 +685,9 @@ downloaded to the FastEmbed cache on first use.
 - User authentication and resource-level authorization
 - Isolated knowledge spaces
 - Text-based PDF upload and processing
-- Text extraction and fixed-size chunking
+- Sentence-aware chunking with page-chrome suppression
 - Local embeddings and pgvector storage
-- Semantic retrieval with configurable top-k and similarity threshold
+- Hybrid retrieval (semantic + lexical RRF fusion) with configurable top-k and similarity threshold
 - DeepSeek generation (or mock provider for testing)
 - RAG pipeline with page-level citations and insufficient-context detection
 - Structured Document Intelligence: document type, title, summary, important
