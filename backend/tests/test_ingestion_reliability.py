@@ -7,6 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application import documents as app_documents
 from app.config import settings
 from app.infrastructure.models import Document
 from tests.pdf_factory import text_pdf
@@ -58,6 +59,46 @@ async def test_identical_file_in_same_space_is_rejected_with_409(
     assert first.status_code == 201
 
     second = await upload_pdf(async_client, token, space["id"], filename="renamed.pdf")
+    assert second.status_code == 409
+    detail = second.json()["detail"]
+    assert detail["existing_document_id"] == first.json()["id"]
+
+    listing = await async_client.get(
+        f"{SPACES_URL}/{space['id']}/documents", headers=auth_header(token)
+    )
+    assert len(listing.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_concurrent_identical_upload_surfaces_409_not_500(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """When two identical uploads race past the SELECT check, the unique index
+    decides; the loser must get the structured 409 instead of an opaque 500."""
+    token = await register_user(async_client, "dup-race@test.com")
+    space = await create_space(async_client, token)
+
+    first = await upload_pdf(async_client, token, space["id"])
+    assert first.status_code == 201
+
+    # Simulate the loser of a race: its pre-insert duplicate lookup runs
+    # before the winner committed, so it reaches INSERT/commit instead.
+    # Only the first lookup is blinded; later lookups (the IntegrityError
+    # recovery path) must still resolve the winner.
+    real_find_duplicate = app_documents.find_duplicate
+    lookup_calls = {"count": 0}
+
+    async def _lookup_lost_race(*args: object, **kwargs: object) -> Document | None:
+        lookup_calls["count"] += 1
+        if lookup_calls["count"] == 1:
+            return None
+        return await real_find_duplicate(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(app_documents, "find_duplicate", _lookup_lost_race)
+
+    second = await upload_pdf(async_client, token, space["id"], filename="racer.pdf")
     assert second.status_code == 409
     detail = second.json()["detail"]
     assert detail["existing_document_id"] == first.json()["id"]

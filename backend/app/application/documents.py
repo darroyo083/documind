@@ -7,6 +7,7 @@ from pathlib import PurePath
 
 from fastapi import UploadFile
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.chunking import chunk_pages
@@ -136,10 +137,16 @@ async def ingest_document(
     db.add(document)
     try:
         await db.commit()
-    except Exception:
+    except IntegrityError as exc:
+        # Two concurrent uploads of identical content both pass the SELECT
+        # above; the partial unique index decides the winner and the loser is
+        # translated into the same structured 409 instead of a 500.
         await db.rollback()
         await storage.delete(storage_key)
-        raise
+        winner = await find_duplicate(db, space_id, document.content_sha256 or "")
+        if winner is None:
+            raise
+        raise DuplicateDocumentError(str(winner.id)) from exc
     await db.refresh(document)
 
     await _process_document(db, document, storage, embedding_provider)
@@ -238,9 +245,11 @@ async def _process_document(
     except Exception as exc:
         # Unexpected failures must still reach a terminal state instead of
         # leaving the document stuck in PROCESSING forever. The storage file is
-        # kept so the document can be retried.
+        # kept so the document can be retried. The client-facing message stays
+        # curated: str(exc) may contain driver, SQL, or filesystem internals.
         await db.rollback()
         _mark_failed(document, exc)
+        document.error_message = "The document could not be processed. You can retry it."
         await db.commit()
         log_event(
             logger,
@@ -248,6 +257,7 @@ async def _process_document(
             "ingestion_unexpected_failure",
             document_id=str(document.id),
             error_type=type(exc).__name__,
+            detail=str(exc),
             duration_ms=monotonic_ms(started),
             exc_info=True,
         )

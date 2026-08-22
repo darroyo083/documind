@@ -135,6 +135,37 @@ async def test_embedding_failure_records_failed_and_keeps_file_for_retry(
 
 
 @pytest.mark.asyncio
+async def test_unexpected_failure_hides_internals_from_clients(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    """A non-domain exception (e.g. driver outage) must reach a terminal state
+    with curated client copy - never raw str(exc) internals."""
+
+    class ExplodingEmbeddingProvider:
+        model_name = "exploding-test"
+        dimension = 384
+
+        async def embed_texts(self, texts):
+            raise RuntimeError("pgbouncer auth failed for user documind")
+
+        async def embed_query(self, text):
+            raise RuntimeError("pgbouncer auth failed for user documind")
+
+    token = await register_user(async_client, "unexpected-fail@test.com")
+    space = await create_space(async_client, token)
+    app.dependency_overrides[get_embedding_provider] = ExplodingEmbeddingProvider
+
+    response = await upload_pdf(async_client, token, space["id"])
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "failed"
+    assert body["failure_code"] == "processing_failed"
+    assert body["error_message"] == ("The document could not be processed. You can retry it.")
+    assert "pgbouncer" not in body["error_message"]
+
+
+@pytest.mark.asyncio
 async def test_retrieval_orders_by_similarity_and_filters_threshold(
     async_client: AsyncClient,
 ):
