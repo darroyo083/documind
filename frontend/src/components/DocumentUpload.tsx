@@ -57,12 +57,16 @@ export default function DocumentUpload({
       pump();
     } catch (err: unknown) {
       inFlightRef.current.delete(item.key);
-      const message =
-        err instanceof api.ApiError
-          ? err.status === 422
-            ? "Rejected: this file could not be processed"
-            : err.detail || "Upload failed"
-          : "Upload failed";
+      let message = "Upload failed";
+      if (err instanceof api.ApiError) {
+        if (err.status === 409) {
+          message = "This exact file is already in this Space.";
+        } else if (err.status === 422) {
+          message = "Rejected: this file could not be processed";
+        } else {
+          message = err.detail || "Upload failed";
+        }
+      }
       syncItems((current) =>
         current.map((entry) =>
           entry.key === item.key ? { ...entry, state: "upload_failed", message } : entry
@@ -128,6 +132,8 @@ export default function DocumentUpload({
     syncItems((current) => current.filter((entry) => entry.key !== item.key));
   };
 
+  const openFilePicker = () => inputRef.current?.click();
+
   return (
     <div>
       <div
@@ -137,7 +143,17 @@ export default function DocumentUpload({
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`dm-upload-dropzone text-center transition-colors ${
+        onClick={openFilePicker}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openFilePicker();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload PDFs: drop files here or press Enter to choose files"
+        className={`dm-upload-dropzone dm-upload-dropzone-interactive text-center transition-colors ${
           dragging ? "dm-upload-dropzone-active" : ""
         }`}
       >
@@ -145,7 +161,10 @@ export default function DocumentUpload({
           Drop PDFs here, or{" "}
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={(event) => {
+              event.stopPropagation();
+              openFilePicker();
+            }}
             className="font-medium text-indigo-600 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             choose files
@@ -159,11 +178,13 @@ export default function DocumentUpload({
           multiple
           onChange={handleSelect}
           className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
         />
       </div>
 
       {items.length > 0 && (
-        <ul className="dm-upload-queue" aria-label="Uploads">
+        <ul className="dm-upload-queue" aria-label="Uploads" aria-live="polite">
           {items.map((item) => (
             <li
               key={item.key}

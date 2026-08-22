@@ -59,6 +59,29 @@ function mapAnalysisError(status: number, detail: string): string {
   return detail || "Document analysis could not be completed.";
 }
 
+const FAILURE_COPY: Record<string, { title: string; hint?: string }> = {
+  no_extractable_text: {
+    title: "No readable text found",
+    hint: "This looks like a scanned or image-only PDF, which DocuMind cannot read yet. A text-based PDF will process normally.",
+  },
+  extraction_failed: {
+    title: "The file could not be read as a PDF",
+    hint: "The upload may be damaged or an unusual PDF variant. Retrying rarely helps; try re-exporting the document.",
+  },
+  processing_failed: {
+    title: "Processing failed unexpectedly",
+    hint: "Retrying usually helps. If it keeps failing, the service may be temporarily overloaded.",
+  },
+};
+
+function describeDocumentFailure(
+  code: string | null,
+  rawMessage: string | null
+): { title: string; hint?: string } {
+  if (code && FAILURE_COPY[code]) return FAILURE_COPY[code];
+  return { title: rawMessage || "Processing failed." };
+}
+
 export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
   const { id: routeId } = useParams<{ id: string }>();
   const id = routeId ?? (demo ? DEMO_SPACE_ID : undefined);
@@ -148,6 +171,21 @@ export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
     window.addEventListener("focus", refetch);
     return () => window.removeEventListener("focus", refetch);
   }, [id]);
+
+  const hasProcessingDocuments = documents.some(
+    (document) => document.status === "processing"
+  );
+
+  useEffect(() => {
+    if (!id || !hasProcessingDocuments) return;
+    const interval = window.setInterval(() => {
+      api
+        .listDocuments(id)
+        .then(setDocuments)
+        .catch(() => undefined);
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [id, hasProcessingDocuments]);
 
   useEffect(() => {
     if (!id || !selectedDocumentId) return;
@@ -432,7 +470,7 @@ export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
           <p className="dm-space-description mb-7 max-w-prose text-gray-600">{space.description}</p>
         )}
         {documents.length === 0 ? (
-          <section className="dm-empty-space-layout" aria-label="Empty Space">
+          <section className="dm-empty-space-layout dm-dither-field" aria-label="Empty Space">
             <div className="dm-empty-space-content">
               <EmptyState
                 title="This space is empty"
@@ -523,7 +561,7 @@ export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
                     key={document.id}
                     className={`dm-document-row ${
                       isSelected ? "dm-document-row-selected" : ""
-                    }`}
+                    } ${document.status === "processing" ? "dm-dither-field dm-dither-processing" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <button
@@ -566,11 +604,20 @@ export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
                       </button>}
                     </div>
                     {document.error_message && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {document.failure_code === "no_extractable_text"
-                          ? "No extractable text. Scanned PDFs are not supported."
-                          : document.error_message}
-                      </p>
+                      (() => {
+                        const failure = describeDocumentFailure(
+                          document.failure_code,
+                          document.error_message
+                        );
+                        return (
+                          <div className="mt-2">
+                            <p className="text-sm font-medium text-red-600">{failure.title}</p>
+                            {failure.hint && (
+                              <p className="mt-1 text-xs text-gray-500">{failure.hint}</p>
+                            )}
+                          </div>
+                        );
+                      })()
                     )}
                   </article>
                 );
@@ -738,15 +785,37 @@ export default function SpaceDetail({ demo = false }: { demo?: boolean }) {
                       <section className="dm-ask-conversation" aria-label="Ask conversation">
                         <div className={`dm-ask-history ${!question && !answer ? "dm-ask-history-empty" : ""}`} aria-live="polite">
                           {!question && !answer && (
-                            <div className="dm-ask-empty">
-                              <h2>How can I help?</h2>
-                              <p>Ask a focused question and keep the supporting passages in view.</p>
+                            <div className="dm-ask-empty dm-dither-field">
+                              <h2>Ask your documents a question.</h2>
+                              <p>
+                                Answers come only from the documents in this Space, and every
+                                claim links to the exact page it came from.
+                              </p>
                             </div>
                           )}
                           {question && <p className="dm-ask-question">{question}</p>}
-                          {answer && (
+                          {asking && (
+                            <p role="status" className="mt-4 text-xs text-gray-500">
+                              Searching this Space for supporting passages...
+                            </p>
+                          )}
+                          {answer && !answer.supported && (
+                            <article className="dm-ask-answer dm-ask-answer-unsupported">
+                              <div className="dm-ask-answer-heading">No supporting evidence</div>
+                              <p className="dm-ask-answer-text">{answer.answer}</p>
+                              <p className="dm-field-help mt-3">
+                                Nothing in the selected scope matched this question closely
+                                enough to ground an answer. Try different wording, another scope,
+                                or check that a document covering this topic is ready.
+                              </p>
+                            </article>
+                          )}
+                          {answer && answer.supported && (
                             <article className="dm-ask-answer">
-                              <div className="dm-ask-answer-heading">Analysis complete</div>
+                              <div className="dm-ask-answer-heading">
+                                Grounded answer · {answer.citations.length}{" "}
+                                {answer.citations.length === 1 ? "source" : "sources"}
+                              </div>
                               {answerScope && <p className="dm-ask-answer-scope">Scope: {SCOPE_LABELS[answerScope]}</p>}
                               <p className="dm-ask-answer-text">{answer.answer}</p>
                             </article>

@@ -24,6 +24,20 @@
   --dm-accent-container: #0052fe;
   --dm-accent-soft: #e8eeff;
   --dm-halftone-dots: radial-gradient(circle, rgb(0 82 255 / 0.96) 0 1.3px, transparent 1.5px), radial-gradient(circle, rgb(0 82 255 / 0.52) 0 0.9px, transparent 1.1px);
+
+  /* Dithering system: one dot vocabulary derived from the accent.
+     Primitives (.dm-dither-field / .dm-dither-frame) consume these tokens so
+     every dithered surface shares density, scale, and contrast behavior. */
+  --dm-dither-dot-strong: rgb(0 82 255 / 0.34);
+  --dm-dither-dot-soft: rgb(0 82 255 / 0.16);
+  --dm-dither-cell: 5px;
+  --dm-dither-cell-fine: 8px;
+  --dm-dither-offset: 12px 4px;
+
+  /* Motion tokens: durations pair with --dm-ease-out-expo everywhere. */
+  --dm-duration-fast: 140ms;
+  --dm-duration-base: 180ms;
+  --dm-duration-slow: 260ms;
   --dm-info: #0052ff;
   --dm-info-soft: #e8eeff;
   --dm-success: #216e4e;
@@ -606,6 +620,9 @@
   .dm-empty-space-layout .dm-empty-state { width: min(100%, 560px); border: 1px solid var(--dm-border-strong); }
   .dm-upload-dropzone { border: 1px solid var(--dm-border-strong); background: var(--dm-surface-low); padding: 24px; }
   .dm-upload-dropzone-active { border-color: var(--dm-accent); background: var(--dm-accent-soft); }
+  .dm-upload-dropzone-interactive { cursor: pointer; transition: border-color var(--dm-duration-base) var(--dm-ease-out-expo), background-color var(--dm-duration-base) var(--dm-ease-out-expo); }
+  .dm-upload-dropzone-interactive:hover { border-color: var(--dm-accent); }
+  .dm-upload-dropzone-interactive:focus-visible { outline: 2px solid var(--dm-focus); outline-offset: 2px; }
   .dm-upload-dropzone p { margin: 0; color: var(--dm-muted); font-size: 13px; }
   .dm-upload-queue { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
   .dm-upload-item { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--dm-border); padding: 10px 0; }
@@ -691,6 +708,9 @@
   .dm-ask-answer { max-width: 88%; margin-top: 24px; border: 1px solid var(--dm-border-strong); padding: 20px; }
   .dm-ask-answer-heading { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--dm-border); padding-bottom: 10px; color: var(--dm-ink); font-family: var(--dm-font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
   .dm-ask-answer-heading::before { width: 8px; height: 8px; background: var(--dm-accent); content: ""; }
+  .dm-ask-answer-unsupported { border-left: 2px solid var(--dm-warning); }
+  .dm-ask-answer-unsupported .dm-ask-answer-heading { color: var(--dm-warning); }
+  .dm-ask-answer-unsupported .dm-ask-answer-heading::before { background: var(--dm-warning); }
   .dm-ask-answer-text { margin: 16px 0 0; color: var(--dm-ink); font-size: 15px; line-height: 24px; white-space: pre-wrap; }
   .dm-ask-composer { border-top: 1px solid var(--dm-border-strong); background: var(--dm-surface); padding: 16px; }
   .dm-ask-scope { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; color: var(--dm-muted); font-family: var(--dm-font-mono); font-size: 10px; text-transform: uppercase; }
@@ -2132,4 +2152,85 @@
   .dm-preview-source { transition: none; }
 
   .dm-product-preview::before { animation: none; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Dithering system                                                           */
+/* -------------------------------------------------------------------------- */
+/* DocuMind's dither identity: documents fragment into evidence, and evidence */
+/* reassembles into answers. The dot field is the visual metaphor for that    */
+/* pipeline - always derived from --dm-dither-* tokens, masked per surface,   */
+/* and static by default so it never costs GPU time while idle.               */
+
+.dm-dither-field,
+.dm-dither-frame {
+  position: relative;
+  isolation: isolate;
+}
+
+.dm-dither-field > *,
+.dm-dither-frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dm-dither-field::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, var(--dm-dither-dot-strong) 0 1px, transparent 1.2px),
+    radial-gradient(circle, var(--dm-dither-dot-soft) 0 0.7px, transparent 0.9px);
+  background-position:
+    0 0,
+    var(--dm-dither-offset);
+  background-size:
+    var(--dm-dither-cell) var(--dm-dither-cell),
+    var(--dm-dither-cell-fine) var(--dm-dither-cell-fine);
+  content: "";
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Soft corner mask: dither reads as a quiet texture in one region, never
+   behind the primary copy. Opacity stays low enough to preserve contrast. */
+.dm-dither-field::before {
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse 42% 38% at 88% 12%, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.45) 48%, transparent 78%);
+}
+
+/* Framed variant: a dithered border band around solid content (cards). */
+.dm-dither-frame::before {
+  inset: -10px;
+  padding: 10px;
+  background-image:
+    radial-gradient(circle, var(--dm-dither-dot-soft) 0 0.8px, transparent 1px);
+  background-size: var(--dm-dither-cell-fine) var(--dm-dither-cell-fine);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  clip-path: polygon(2% 0, 98% 0, 100% 6%, 100% 94%, 96% 100%, 4% 100%, 0 92%, 0 8%);
+  content: "";
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Processing state: dots drift once per few seconds while a document is
+   processing, communicating activity without a spinner. The animation runs on
+   background-position only and stops entirely under reduced motion. */
+@keyframes dm-dither-processing {
+  0% { background-position: 0 0, var(--dm-dither-offset); }
+  50% { background-position: calc(var(--dm-dither-cell) * 2) calc(var(--dm-dither-cell-fine)), calc(var(--dm-dither-cell) * -1) calc(var(--dm-dither-cell) * 2); }
+  100% { background-position: 0 0, var(--dm-dither-offset); }
+}
+
+.dm-dither-processing::before {
+  animation: dm-dither-processing 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dm-dither-field::before,
+  .dm-dither-frame::before { animation: none !important; }
+
+  .dm-dither-processing::before { animation: none !important; }
 }

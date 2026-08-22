@@ -31,6 +31,13 @@ export function formatApiErrorDetail(detail: unknown): string {
     return detail;
   }
 
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const record = detail as { message?: unknown };
+    if (typeof record.message === "string" && record.message.trim()) {
+      return record.message;
+    }
+  }
+
   if (Array.isArray(detail)) {
     const messages = detail.flatMap((item) => {
       if (typeof item === "string" && item.trim()) return [item];
