@@ -1659,7 +1659,8 @@
   content: "";
   pointer-events: none;
   animation: dm-halftone-idle 14s ease-in-out infinite;
-  mask-image: radial-gradient(ellipse 56% 58% at 52% 46%, rgb(0 0 0 / 1) 0 40%, rgb(0 0 0 / 0.82) 58%, transparent 80%);
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+  mask-image: linear-gradient(118deg, rgb(0 0 0 / 0.05) 4%, rgb(0 0 0 / 0.72) 40%, rgb(0 0 0 / 1) 66%);
 }
 
 .dm-landing-hero::after {
@@ -1818,7 +1819,8 @@
     opacity: 0.34;
     animation-name: dm-halftone-idle;
     animation-duration: 12s;
-    mask-image: linear-gradient(90deg, transparent 0 30%, rgb(0 0 0 / 0.18) 52%, rgb(0 0 0 / 0.72) 78%, transparent 97%);
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+    mask-image: linear-gradient(100deg, rgb(0 0 0 / 0.05) 6%, rgb(0 0 0 / 0.66) 46%, rgb(0 0 0 / 0.92) 78%, transparent 99%);
   }
 
   .dm-landing-hero::after {
