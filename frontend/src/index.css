@@ -1456,38 +1456,6 @@
     isolation: isolate;
   }
 
-  .dm-evidence-page-main::before,
-  .dm-capabilities-page-main::before {
-    position: absolute;
-    top: 28px;
-    right: 22px;
-    width: 220px;
-    height: 132px;
-    border: 1px solid rgb(0 82 255 / 0.12);
-    border-radius: 38% 62% 46% 54% / 56% 42% 58% 44%;
-    content: "";
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.68;
-    animation: dm-soft-shape 18s ease-in-out infinite;
-  }
-
-  .dm-evidence-page-main::after,
-  .dm-capabilities-page-main::after {
-    position: absolute;
-    top: 128px;
-    right: 188px;
-    width: 18px;
-    height: 18px;
-    border: 1px solid rgb(0 82 255 / 0.11);
-    border-radius: 50%;
-    content: "";
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.58;
-    animation: dm-soft-shape-small 12s ease-in-out infinite;
-  }
-
   .dm-evidence-page-main > *,
   .dm-capabilities-page-main > * {
     position: relative;
@@ -1596,24 +1564,6 @@
     width: 66%;
     opacity: 0.48;
   }
-
-  .dm-evidence-page-main::before,
-  .dm-capabilities-page-main::before {
-    top: 36px;
-    right: 12px;
-    width: 148px;
-    height: 92px;
-    opacity: 0.54;
-  }
-
-  .dm-evidence-page-main::after,
-  .dm-capabilities-page-main::after {
-    top: 104px;
-    right: 132px;
-    width: 14px;
-    height: 14px;
-    opacity: 0.46;
-  }
 }
 
 @keyframes dm-auth-switch {
@@ -1685,16 +1635,6 @@
   flex-basis: 18px;
 }
 
-@keyframes dm-soft-shape {
-  0%, 100% { opacity: 0.56; transform: translate3d(0, 0, 0); }
-  50% { opacity: 0.72; transform: translate3d(-4px, 4px, 0); }
-}
-
-@keyframes dm-soft-shape-small {
-  0%, 100% { opacity: 0.42; transform: translate3d(0, 0, 0); }
-  50% { opacity: 0.62; transform: translate3d(3px, -3px, 0); }
-}
-
 @keyframes dm-halftone-idle {
   0% { background-position: 0 0, 12px 4px; opacity: 0.64; transform: translate3d(0, 0, 0); }
   50% { background-position: 16px 7px, -5px 11px; opacity: 0.84; transform: translate3d(-2px, 1px, 0); }
@@ -1710,7 +1650,7 @@
 .dm-landing-hero::before {
   position: absolute;
   top: 4%;
-  right: -7%;
+  right: 0;
   width: 62%;
   height: 86%;
   background-image: var(--dm-halftone-dots);
@@ -1719,7 +1659,7 @@
   content: "";
   pointer-events: none;
   animation: dm-halftone-idle 14s ease-in-out infinite;
-  mask-image: radial-gradient(ellipse at 62% 50%, rgb(0 0 0 / 1) 0 44%, rgb(0 0 0 / 0.86) 62%, transparent 92%);
+  mask-image: radial-gradient(ellipse 56% 58% at 52% 46%, rgb(0 0 0 / 1) 0 40%, rgb(0 0 0 / 0.82) 58%, transparent 80%);
 }
 
 .dm-landing-hero::after {
@@ -1871,14 +1811,14 @@
   }
 
   .dm-landing-hero::before {
-    right: -32%;
+    right: 0;
     width: 62%;
     height: 58%;
     background-size: 4px 4px, 7px 7px;
     opacity: 0.34;
     animation-name: dm-halftone-idle;
     animation-duration: 12s;
-    mask-image: linear-gradient(90deg, transparent 0 34%, rgb(0 0 0 / 0.18) 52%, rgb(0 0 0 / 0.82) 76%, rgb(0 0 0 / 1) 100%);
+    mask-image: linear-gradient(90deg, transparent 0 30%, rgb(0 0 0 / 0.18) 52%, rgb(0 0 0 / 0.72) 78%, transparent 97%);
   }
 
   .dm-landing-hero::after {
@@ -1940,7 +1880,7 @@
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  clip-path: polygon(0 0, 92% 0, 100% 12%, 100% 84%, 74% 84%, 64% 100%, 16% 100%, 0 92%);
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
   transition: opacity 360ms var(--dm-ease-out-expo), transform 360ms var(--dm-ease-out-expo);
 }
 
