@@ -902,6 +902,7 @@
   .dm-capability-ledger h2 { max-width: 22ch; margin: 0; color: var(--dm-ink); font-size: 24px; font-weight: 600; line-height: 32px; }
   .dm-capability-ledger p { max-width: 52ch; margin: 10px 0 0; color: var(--dm-muted); font-size: 14px; line-height: 22px; }
   .dm-capability-note { justify-self: end; color: var(--dm-faint); font-family: var(--dm-font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .dm-capability-ledger > article > .dm-text-link { justify-self: end; }
 
   .dm-dialog-backdrop { position: fixed; z-index: 400; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(13 17 23 / 0.74); animation: dm-dialog-fade-in 180ms var(--dm-ease-out-expo) both; }
   .dm-signin-dialog { position: relative; width: min(100%, 480px); border: 1px solid var(--dm-surface); border-top: 2px solid var(--dm-accent); background: var(--dm-surface); padding: 32px; animation: dm-dialog-rise-in 260ms var(--dm-ease-out-expo) both; }
@@ -969,6 +970,7 @@
   .dm-evidence-principles h3 { margin-top: 28px; }
   .dm-capability-ledger > article { grid-template-columns: 1fr; gap: 12px; }
   .dm-capability-note { justify-self: start; }
+  .dm-capability-ledger > article > .dm-text-link { justify-self: start; }
   .dm-landing-proof { grid-template-columns: 1fr; gap: 40px; padding-block: 56px; }
   .dm-landing-proof-list { grid-template-columns: 1fr; }
   .dm-landing-proof-list article { min-height: auto; padding: 16px 0 24px; }
