@@ -16,7 +16,16 @@ async def health():
 
 @router.get("/health/ready")
 async def ready():
-    """Readiness probe: the application can reach its database."""
+    """Readiness probe for the active deployment mode."""
+    if settings.public_demo_mode:
+        return {
+            "status": "ok",
+            "version": settings.app_version,
+            "mode": "public-demo",
+            "public_demo": True,
+            "database": "not_required",
+        }
+
     try:
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))

@@ -10,6 +10,8 @@ COPY pyproject.toml .
 RUN pip install .
 
 COPY app ./app
+COPY alembic.ini .
+COPY alembic ./alembic
 
 RUN useradd --create-home --uid 10001 documind \
     && chown -R documind:documind /app

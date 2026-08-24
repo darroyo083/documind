@@ -2,6 +2,8 @@ import logging
 
 import pytest
 
+from app.api import health as health_api
+from app.config import settings
 from app.observability import JsonFormatter, new_request_id, request_id_var
 
 
@@ -21,6 +23,50 @@ async def test_readiness_reports_database_reachable(async_client):
     data = response.json()
     assert data["status"] == "ok"
     assert data["database"] == "reachable"
+
+
+@pytest.mark.asyncio
+async def test_readiness_skips_database_in_public_demo(async_client, monkeypatch):
+    class _UnavailableEngine:
+        def connect(self):
+            raise AssertionError("public demo readiness must not connect to the database")
+
+    monkeypatch.setattr(settings, "public_demo_mode", True)
+    monkeypatch.setattr(health_api, "engine", _UnavailableEngine())
+
+    response = await async_client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "version": "0.1.0",
+        "mode": "public-demo",
+        "public_demo": True,
+        "database": "not_required",
+    }
+
+
+@pytest.mark.asyncio
+async def test_readiness_reports_database_unreachable(async_client, monkeypatch):
+    class _UnavailableConnection:
+        async def __aenter__(self):
+            raise ConnectionError("database unavailable")
+
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            return False
+
+    class _UnavailableEngine:
+        def connect(self):
+            return _UnavailableConnection()
+
+    monkeypatch.setattr(settings, "public_demo_mode", False)
+    monkeypatch.setattr(health_api, "engine", _UnavailableEngine())
+
+    response = await async_client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "degraded"
+    assert response.json()["database"] == "unreachable"
 
 
 @pytest.mark.asyncio
